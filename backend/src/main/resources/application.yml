@@ -1,0 +1,67 @@
+spring:
+  application:
+    name: restaurant-table-planning-backend
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/restaurant_planner}
+    username: ${SPRING_DATASOURCE_USERNAME:restaurant_planner}
+    password: ${SPRING_DATASOURCE_PASSWORD:restaurant_planner}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  jackson:
+    time-zone: UTC
+  mail:
+    host: ${SPRING_MAIL_HOST:localhost}
+    port: ${SPRING_MAIL_PORT:1025}
+    username: ${SPRING_MAIL_USERNAME:}
+    password: ${SPRING_MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${SPRING_MAIL_SMTP_AUTH:false}
+          starttls:
+            enable: ${SPRING_MAIL_STARTTLS_ENABLE:false}
+
+server:
+  port: ${SERVER_PORT:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+logging:
+  level:
+    root: INFO
+    com.restaurantplanner: INFO
+
+app:
+  notification:
+    reminder-interval-ms: ${APP_NOTIFICATION_REMINDER_INTERVAL_MS:300000}
+    sms:
+      enabled: ${APP_NOTIFICATION_SMS_ENABLED:true}
+      provider: ${APP_NOTIFICATION_SMS_PROVIDER:fake}
+      twilio-account-sid: ${APP_NOTIFICATION_SMS_TWILIO_ACCOUNT_SID:}
+      twilio-auth-token: ${APP_NOTIFICATION_SMS_TWILIO_AUTH_TOKEN:}
+      twilio-from-number: ${APP_NOTIFICATION_SMS_TWILIO_FROM_NUMBER:}
+      fake-fail-all: ${APP_NOTIFICATION_SMS_FAKE_FAIL_ALL:false}
+  security:
+    jwt:
+      secret: ${APP_SECURITY_JWT_SECRET:restaurant-table-planning-dev-secret-key-32chars-minimum}
+      access-token-ttl: ${APP_SECURITY_JWT_ACCESS_TOKEN_TTL:PT15M}
+      refresh-token-ttl: ${APP_SECURITY_JWT_REFRESH_TOKEN_TTL:P14D}
+      issuer: ${APP_SECURITY_JWT_ISSUER:restaurant-table-planning}

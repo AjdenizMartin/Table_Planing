@@ -1,0 +1,59 @@
+package com.restaurantplanner.optimization.service;
+
+import com.restaurantplanner.optimization.domain.AssignmentCandidate;
+import com.restaurantplanner.optimization.domain.AssignmentCandidateType;
+import com.restaurantplanner.table.domain.RestaurantTable;
+import com.restaurantplanner.table.domain.RestaurantTableRepository;
+import com.restaurantplanner.tablecombination.domain.TableCombination;
+import com.restaurantplanner.tablecombination.domain.TableCombinationRepository;
+import java.util.ArrayList;
+import java.util.List;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+public class CandidateFinder {
+
+    private final RestaurantTableRepository restaurantTableRepository;
+    private final TableCombinationRepository tableCombinationRepository;
+
+    public CandidateFinder(
+        RestaurantTableRepository restaurantTableRepository,
+        TableCombinationRepository tableCombinationRepository
+    ) {
+        this.restaurantTableRepository = restaurantTableRepository;
+        this.tableCombinationRepository = tableCombinationRepository;
+    }
+
+    @Transactional(readOnly = true)
+    public List<AssignmentCandidate> findCandidates(Long restaurantId) {
+        List<AssignmentCandidate> candidates = new ArrayList<>();
+
+        for (RestaurantTable table : restaurantTableRepository.findByRestaurantIdOrderByDiningRoomIdAscCodeAsc(restaurantId)) {
+            candidates.add(new AssignmentCandidate(
+                AssignmentCandidateType.TABLE,
+                table,
+                null,
+                List.of(table),
+                table.getMinCapacity(),
+                table.getMaxCapacity(),
+                table.getCode()
+            ));
+        }
+
+        for (TableCombination combination : tableCombinationRepository.findByRestaurantIdAndActiveTrueOrderByNameAscIdAsc(restaurantId)) {
+            List<RestaurantTable> tables = combination.getItems().stream().map(item -> item.getTable()).toList();
+            candidates.add(new AssignmentCandidate(
+                AssignmentCandidateType.TABLE_COMBINATION,
+                null,
+                combination,
+                tables,
+                combination.getMinCapacity(),
+                combination.getMaxCapacity(),
+                combination.getName()
+            ));
+        }
+
+        return candidates;
+    }
+}
