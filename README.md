@@ -77,26 +77,26 @@ La aplicacion no debe limitarse a guardar reservas. Debe funcionar como un motor
 
 ## Estado actual
 
-Actualmente este repositorio contiene la documentacion fundacional del proyecto. Todavia no se ha implementado codigo de aplicacion.
+El proyecto ya no esta solo en fase documental. Actualmente incluye una primera base funcional con:
 
-Ahora tambien incluye un esqueleto inicial de monorepo con:
-
-- `backend/` para Spring Boot
-- `frontend/` para React + TypeScript + Vite
-- `docker-compose.yml` con PostgreSQL y servicios base
-- configuracion minima para arrancar y evolucionar el sistema
+- backend `Spring Boot` con autenticacion JWT, multi-tenant y modulos iniciales
+- configuracion de restaurante, salones, mesas y combinaciones
+- clientes, reservas manuales y asignacion automatica inicial
+- planning diario, tiempo real por `WebSocket` e insights operativos deterministas
+- frontend `React + TypeScript` con login, configuracion, reservas y planning visual
+- `docker-compose.yml` para levantar `PostgreSQL`, backend y frontend
 
 ## Documentacion clave
 
-- [ARCHITECTURE.md](/Users/angel/Desktop/Table_Planing/ARCHITECTURE.md)
-- [DATABASE.md](/Users/angel/Desktop/Table_Planing/DATABASE.md)
-- [ALGORITHM.md](/Users/angel/Desktop/Table_Planing/ALGORITHM.md)
-- [API.md](/Users/angel/Desktop/Table_Planing/API.md)
-- [SECURITY.md](/Users/angel/Desktop/Table_Planing/SECURITY.md)
-- [TESTING.md](/Users/angel/Desktop/Table_Planing/TESTING.md)
-- [DEPLOYMENT.md](/Users/angel/Desktop/Table_Planing/DEPLOYMENT.md)
-- [ROADMAP.md](/Users/angel/Desktop/Table_Planing/ROADMAP.md)
-- [AGENTS.md](/Users/angel/Desktop/Table_Planing/AGENTS.md)
+- [ARCHITECTURE.md](./ARCHITECTURE.md)
+- [DATABASE.md](./DATABASE.md)
+- [ALGORITHM.md](./ALGORITHM.md)
+- [API.md](./API.md)
+- [SECURITY.md](./SECURITY.md)
+- [TESTING.md](./TESTING.md)
+- [DEPLOYMENT.md](./DEPLOYMENT.md)
+- [ROADMAP.md](./ROADMAP.md)
+- [AGENTS.md](./AGENTS.md)
 
 ## Principios de construccion
 
@@ -107,9 +107,9 @@ Ahora tambien incluye un esqueleto inicial de monorepo con:
 - Trazabilidad de decisiones y cambios.
 - UX pensada para tablet y operacion real en sala.
 
-## MVP recomendado
+## MVP implementado parcialmente
 
-La primera version funcional debe incluir:
+La base actual ya cubre una parte relevante del MVP:
 
 - autenticacion y roles
 - configuracion del restaurante
@@ -119,13 +119,25 @@ La primera version funcional debe incluir:
 - planning visual diario
 - confirmaciones basicas por SMS
 
-## Siguientes pasos
+Pendiente para una fase mas madura:
 
-1. Crear la estructura tecnica del repositorio.
-2. Inicializar backend y frontend.
-3. Definir migraciones base y dominio inicial.
-4. Implementar autenticacion y aislamiento por restaurante.
-5. Construir configuracion de restaurante antes de desarrollar el algoritmo.
+- automatizaciones operativas mas profundas
+- integraciones externas adicionales
+- refinamiento del algoritmo y analitica avanzada
+
+## Arranque rapido
+
+### Requisitos
+
+- Docker Desktop o daemon Docker en ejecucion
+- o alternativamente `Java 21`, `Maven` y `Node.js 20+`
+
+### URLs locales esperadas
+
+- Frontend: `http://localhost:5173`
+- Backend API: `http://localhost:8080`
+- Healthcheck: `http://localhost:8080/actuator/health`
+- Ping tecnico: `http://localhost:8080/api/system/ping`
 
 ## Estructura del repositorio
 
@@ -160,6 +172,8 @@ docker compose up postgres
 docker compose up --build
 ```
 
+Si Docker no esta arrancado, este comando fallara. En macOS eso suele significar que Docker Desktop no esta abierto o el socket Docker no esta disponible.
+
 ### Opcion 3. Desarrollo mixto
 
 Backend:
@@ -180,4 +194,7 @@ npm run dev
 ## Notas de entorno
 
 - El backend esta configurado para `Java 21`.
-- En este entorno local actual no hay `Maven` instalado y la JVM disponible es `Java 19`, por lo que la forma mas estable de levantar el backend es mediante Docker o instalando Java 21 y Maven.
+- La validacion reciente del proyecto confirma:
+  - `mvn -q -DskipTests package` correcto en `backend`
+  - `npm run build` correcto en `frontend`
+- Si el proyecto no arranca localmente, revisa primero que Docker Desktop este levantado.
