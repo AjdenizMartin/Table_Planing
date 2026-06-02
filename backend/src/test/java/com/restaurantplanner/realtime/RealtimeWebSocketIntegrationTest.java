@@ -23,6 +23,7 @@ import com.restaurantplanner.table.domain.RestaurantTableRepository;
 import com.restaurantplanner.user.domain.User;
 import com.restaurantplanner.user.domain.UserRepository;
 import com.restaurantplanner.user.domain.UserStatus;
+import jakarta.persistence.EntityManager;
 import java.lang.reflect.Type;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -51,6 +52,7 @@ import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
+import org.springframework.test.context.jdbc.Sql;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -60,6 +62,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
 @Testcontainers
+@Sql(scripts = "/cleanup.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 class RealtimeWebSocketIntegrationTest {
 
     @Container
@@ -102,6 +105,9 @@ class RealtimeWebSocketIntegrationTest {
     @Autowired
     private RestaurantTableRepository restaurantTableRepository;
 
+    @Autowired
+    private EntityManager entityManager;
+
     @LocalServerPort
     private int port;
 
@@ -109,18 +115,11 @@ class RealtimeWebSocketIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        refreshTokenRepository.deleteAll();
-        roleAssignmentRepository.deleteAll();
-        reservationAssignmentRepository.deleteAll();
-        reservationRepository.deleteAll();
-        restaurantTableRepository.deleteAll();
-        diningRoomRepository.deleteAll();
-        customerRepository.deleteAll();
-        userRepository.deleteAll();
-        restaurantRepository.deleteAll();
-
+        entityManager.clear();
         stompClient = new WebSocketStompClient(new StandardWebSocketClient());
-        stompClient.setMessageConverter(new MappingJackson2MessageConverter());
+        MappingJackson2MessageConverter converter = new MappingJackson2MessageConverter();
+        converter.setObjectMapper(objectMapper);
+        stompClient.setMessageConverter(converter);
     }
 
     @AfterEach

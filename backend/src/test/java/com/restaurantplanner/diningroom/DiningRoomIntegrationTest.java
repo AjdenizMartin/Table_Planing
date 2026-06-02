@@ -26,6 +26,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
+import org.springframework.test.context.jdbc.Sql;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -38,6 +39,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @Testcontainers
+@Sql(scripts = "/cleanup.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 class DiningRoomIntegrationTest {
 
     @Container
@@ -67,15 +69,6 @@ class DiningRoomIntegrationTest {
 
     @Autowired
     private DiningRoomRepository diningRoomRepository;
-
-    @BeforeEach
-    void setUp() {
-        refreshTokenRepository.deleteAll();
-        roleAssignmentRepository.deleteAll();
-        diningRoomRepository.deleteAll();
-        userRepository.deleteAll();
-        restaurantRepository.deleteAll();
-    }
 
     @Test
     void ownerCanCreateDiningRoom() throws Exception {

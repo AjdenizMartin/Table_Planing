@@ -8,6 +8,8 @@ import com.restaurantplanner.auth.domain.RoleAssignment;
 import com.restaurantplanner.auth.domain.RoleAssignmentRepository;
 import com.restaurantplanner.customer.domain.Customer;
 import com.restaurantplanner.customer.domain.CustomerRepository;
+import com.restaurantplanner.diningroom.domain.DiningRoom;
+import com.restaurantplanner.diningroom.domain.DiningRoomRepository;
 import com.restaurantplanner.reservation.domain.Reservation;
 import com.restaurantplanner.reservation.domain.ReservationAssignmentRepository;
 import com.restaurantplanner.reservation.domain.ReservationChannel;
@@ -16,11 +18,14 @@ import com.restaurantplanner.reservation.domain.ReservationStatus;
 import com.restaurantplanner.restaurant.domain.Restaurant;
 import com.restaurantplanner.restaurant.domain.RestaurantRepository;
 import com.restaurantplanner.restaurant.domain.RestaurantStatus;
+import com.restaurantplanner.table.domain.RestaurantTable;
+import com.restaurantplanner.table.domain.RestaurantTableRepository;
 import com.restaurantplanner.user.domain.User;
 import com.restaurantplanner.user.domain.UserRepository;
 import com.restaurantplanner.user.domain.UserStatus;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +38,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
+import org.springframework.test.context.jdbc.Sql;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -44,6 +50,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @Testcontainers
+@Sql(scripts = "/cleanup.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 class ReservationIntegrationTest {
 
     @Container
@@ -80,15 +87,18 @@ class ReservationIntegrationTest {
     @Autowired
     private ReservationAssignmentRepository reservationAssignmentRepository;
 
+    @Autowired
+    private DiningRoomRepository diningRoomRepository;
+
+    @Autowired
+    private RestaurantTableRepository restaurantTableRepository;
+
+    @Autowired
+    private EntityManager entityManager;
+
     @BeforeEach
-    void setUp() {
-        refreshTokenRepository.deleteAll();
-        roleAssignmentRepository.deleteAll();
-        reservationAssignmentRepository.deleteAll();
-        reservationRepository.deleteAll();
-        customerRepository.deleteAll();
-        userRepository.deleteAll();
-        restaurantRepository.deleteAll();
+    void clearEntityManager() {
+        entityManager.clear();
     }
 
     @Test
@@ -150,6 +160,8 @@ class ReservationIntegrationTest {
     @Test
     void confirmReservation() throws Exception {
         Restaurant restaurant = createRestaurant("Main", "main");
+        DiningRoom diningRoom = createDiningRoom(restaurant, "Main Room");
+        createTable(restaurant, diningRoom, "T1", 2, 4);
         Customer customer = createCustomer(restaurant, "Ana", "Lopez", "+34600111222");
         Reservation reservation = createReservation(restaurant, customer, ReservationStatus.PENDING, LocalDate.of(2026, 5, 26));
         User manager = createUser("manager@example.com", "secret123", "Manager");
@@ -307,6 +319,35 @@ class ReservationIntegrationTest {
         reservation.setSpecialRequests("Window seat");
         reservation.setAccessibilityRequired(false);
         return reservationRepository.save(reservation);
+    }
+
+    private DiningRoom createDiningRoom(Restaurant restaurant, String name) {
+        DiningRoom diningRoom = new DiningRoom();
+        diningRoom.setRestaurant(restaurant);
+        diningRoom.setName(name);
+        diningRoom.setPriority(1);
+        diningRoom.setAccessible(true);
+        diningRoom.setActive(true);
+        diningRoom.setLayoutWidth(1200);
+        diningRoom.setLayoutHeight(800);
+        return diningRoomRepository.save(diningRoom);
+    }
+
+    private RestaurantTable createTable(Restaurant restaurant, DiningRoom diningRoom, String code, int minCapacity, int maxCapacity) {
+        RestaurantTable table = new RestaurantTable();
+        table.setRestaurant(restaurant);
+        table.setDiningRoom(diningRoom);
+        table.setCode(code);
+        table.setLabel(code);
+        table.setMinCapacity(minCapacity);
+        table.setMaxCapacity(maxCapacity);
+        table.setShape("RECTANGLE");
+        table.setX(100);
+        table.setY(100);
+        table.setWidth(120);
+        table.setHeight(80);
+        table.setActive(true);
+        return restaurantTableRepository.save(table);
     }
 
     private String bearer(String token) {

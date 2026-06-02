@@ -1,0 +1,19 @@
+TRUNCATE TABLE
+    reservation_assignment,
+    table_combination_item,
+    audit_log,
+    notification,
+    scheduled_notification,
+    notification_log,
+    ai_insight,
+    restaurant_rule,
+    refresh_token,
+    reservation,
+    table_combination,
+    restaurant_table,
+    customer,
+    dining_room,
+    role_assignment,
+    app_user,
+    restaurant
+CASCADE;

@@ -24,6 +24,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
+import org.springframework.test.context.jdbc.Sql;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -35,6 +36,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @Testcontainers
+@Sql(scripts = "/cleanup.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 class AuthIntegrationTest {
 
     @Container
@@ -61,14 +63,6 @@ class AuthIntegrationTest {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
-
-    @BeforeEach
-    void setUp() {
-        refreshTokenRepository.deleteAll();
-        roleAssignmentRepository.deleteAll();
-        userRepository.deleteAll();
-        restaurantRepository.deleteAll();
-    }
 
     @Test
     void loginReturnsTokensAndAccessibleRestaurants() throws Exception {

@@ -91,6 +91,27 @@ Beneficios:
 - validacion real de migraciones Flyway
 - menor riesgo de diferencias entre local y CI
 
+## Ejecucion de suites
+
+La suite backend se separa en pruebas rapidas y pruebas de integracion para evitar que Docker bloquee el feedback diario.
+
+Comandos:
+
+- `mvn test` desde `backend/`: ejecuta unit tests y excluye `*IntegrationTest`.
+- `mvn test -Pintegration-tests` desde `backend/`: ejecuta tambien `*IntegrationTest`; requiere Docker/Testcontainers disponible.
+- `mvn clean compile` desde `backend/`: valida compilacion sin ejecutar tests.
+
+Nota local:
+
+- si Docker CLI responde pero Testcontainers falla con `Could not find a valid Docker environment`, revisar el socket activo de Docker Desktop y la compatibilidad de `docker-java`/Testcontainers con la version de Docker Desktop instalada
+- en macOS con Docker Desktop puede ser necesario exponer correctamente el socket usado por el contexto `desktop-linux`; hasta resolverlo, `mvn test` sigue siendo la suite obligatoria de feedback rapido
+
+Regla practica:
+
+- cambios en algoritmo, reglas, SMS, audit o AI deben tener unit tests rapidos cuando sea posible
+- flujos HTTP, seguridad real, Flyway y JPA deben validarse con integration tests
+- si Docker no esta disponible, no se debe bloquear la suite rapida por tests de integracion
+
 ## Tipos de pruebas por modulo
 
 ### Auth y Security
@@ -138,6 +159,7 @@ Casos importantes:
 
 - registrar log de envio
 - reintento segun estado
+- no llamar al proveedor externo si SMS esta deshabilitado
 - no exponer datos sensibles a roles no permitidos
 
 ### AI
@@ -145,6 +167,7 @@ Casos importantes:
 Casos importantes:
 
 - generar recomendacion explicativa desde datos validos
+- preservar dismissed al regenerar insights equivalentes
 - no permitir que la IA actue como fuente primaria de asignacion
 
 ## Testing del algoritmo

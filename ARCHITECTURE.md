@@ -103,6 +103,12 @@ Responsabilidades:
 - detectar conflictos y huecos
 - preparar informacion operativa para UI
 
+Implementacion actual:
+
+- `PlanningService` orquesta permisos, recalculo, movimientos manuales, auditoria y eventos realtime
+- `PlanningSnapshotService` construye el snapshot diario reutilizable por planning, asignacion e insights
+- `ReservationAssignmentService` no depende de `PlanningService`; usa `PlanningSnapshotService` para regenerar insights despues de asignar
+
 ### 4. Optimization Engine
 
 Responsabilidades:
@@ -195,7 +201,7 @@ WebSocket se usa para sincronizacion visual. La validacion y consistencia siguen
 | `table` | mesas, capacidades, estados, layout |
 | `customer` | clientes y preferencias |
 | `reservation` | reservas, estados y ciclo de vida |
-| `planning` | vista operativa del dia |
+| `planning` | vista operativa del dia y snapshot reutilizable |
 | `optimization` | scoring, candidatos y recolocacion |
 | `availability` | consulta de disponibilidad |
 | `notification` | SMS, WhatsApp y logs |

@@ -34,6 +34,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
+import org.springframework.test.context.jdbc.Sql;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -42,9 +43,13 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest(properties = "app.notification.sms.provider=fake")
+@SpringBootTest(properties = {
+    "app.notification.sms.enabled=true",
+    "app.notification.sms.provider=fake"
+})
 @AutoConfigureMockMvc
 @Testcontainers
+@Sql(scripts = "/cleanup.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 class SmsNotificationIntegrationTest {
 
     @Container
@@ -83,18 +88,6 @@ class SmsNotificationIntegrationTest {
 
     @Autowired
     private NotificationLogRepository notificationLogRepository;
-
-    @BeforeEach
-    void setUp() {
-        refreshTokenRepository.deleteAll();
-        roleAssignmentRepository.deleteAll();
-        reservationAssignmentRepository.deleteAll();
-        notificationLogRepository.deleteAll();
-        reservationRepository.deleteAll();
-        customerRepository.deleteAll();
-        userRepository.deleteAll();
-        restaurantRepository.deleteAll();
-    }
 
     @Test
     void sendsSmsWithFakeProvider() throws Exception {

@@ -13,7 +13,7 @@ import com.restaurantplanner.optimization.domain.AssignmentCandidateType;
 import com.restaurantplanner.optimization.domain.AssignmentExplanation;
 import com.restaurantplanner.optimization.domain.CandidateAvailability;
 import com.restaurantplanner.optimization.domain.ScoredCandidate;
-import com.restaurantplanner.planning.service.PlanningService;
+import com.restaurantplanner.planning.service.PlanningSnapshotService;
 import com.restaurantplanner.realtime.RestaurantRealtimePublisher;
 import com.restaurantplanner.reservation.domain.Reservation;
 import com.restaurantplanner.reservation.domain.ReservationAssignment;
@@ -35,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -58,7 +57,7 @@ public class ReservationAssignmentService {
     private final RestaurantRealtimePublisher realtimePublisher;
     private final AuditService auditService;
     private final AiService aiService;
-    private final PlanningService planningService;
+    private final PlanningSnapshotService planningSnapshotService;
 
     public ReservationAssignmentService(
         CandidateFinder candidateFinder,
@@ -73,7 +72,7 @@ public class ReservationAssignmentService {
         RestaurantRealtimePublisher realtimePublisher,
         AuditService auditService,
         AiService aiService,
-        @Lazy PlanningService planningService
+        PlanningSnapshotService planningSnapshotService
     ) {
         this.candidateFinder = candidateFinder;
         this.availabilityChecker = availabilityChecker;
@@ -87,7 +86,7 @@ public class ReservationAssignmentService {
         this.realtimePublisher = realtimePublisher;
         this.auditService = auditService;
         this.aiService = aiService;
-        this.planningService = planningService;
+        this.planningSnapshotService = planningSnapshotService;
     }
 
     @Transactional
@@ -170,7 +169,7 @@ public class ReservationAssignmentService {
         aiService.generateInsightsForDate(
             restaurantId,
             reservation.getReservationDate(),
-            planningService.getPlanningDayInternal(restaurantId, reservation.getReservationDate())
+            planningSnapshotService.build(restaurantId, reservation.getReservationDate())
         );
         auditService.record(restaurantId, "Reservation", reservation.getId(), "reservation.assigned", authenticatedUser.userId(), explanation.explanationJson());
         realtimePublisher.publishReservationEvent(

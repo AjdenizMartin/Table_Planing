@@ -26,6 +26,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
+import org.springframework.test.context.jdbc.Sql;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -37,6 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @Testcontainers
+@Sql(scripts = "/cleanup.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 class CustomerIntegrationTest {
 
     @Container
@@ -67,15 +69,6 @@ class CustomerIntegrationTest {
     @Autowired
     private CustomerRepository customerRepository;
 
-    @BeforeEach
-    void setUp() {
-        refreshTokenRepository.deleteAll();
-        roleAssignmentRepository.deleteAll();
-        customerRepository.deleteAll();
-        userRepository.deleteAll();
-        restaurantRepository.deleteAll();
-    }
-
     @Test
     void createCustomer() throws Exception {
         Restaurant restaurant = createRestaurant("Main", "main");
@@ -93,7 +86,7 @@ class CustomerIntegrationTest {
                       "phone": "+34600111222",
                       "email": "ana@example.com",
                       "notes": "Prefers quiet area",
-                      "tagsJson": "[\"vip\"]",
+                      "tagsJson": "[\\"vip\\"]",
                       "mobilityNeeds": "wheelchair"
                     }
                     """))

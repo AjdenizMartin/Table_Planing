@@ -1,5 +1,6 @@
 package com.restaurantplanner.rules.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.restaurantplanner.auth.domain.Role;
 import com.restaurantplanner.auth.domain.RoleAssignmentRepository;
 import com.restaurantplanner.auth.security.AuthenticatedUser;
@@ -28,17 +29,20 @@ public class RuleService {
     private final RestaurantRepository restaurantRepository;
     private final RoleAssignmentRepository roleAssignmentRepository;
     private final RuleMapper ruleMapper;
+    private final ObjectMapper objectMapper;
 
     public RuleService(
         RuleRepository ruleRepository,
         RestaurantRepository restaurantRepository,
         RoleAssignmentRepository roleAssignmentRepository,
-        RuleMapper ruleMapper
+        RuleMapper ruleMapper,
+        ObjectMapper objectMapper
     ) {
         this.ruleRepository = ruleRepository;
         this.restaurantRepository = restaurantRepository;
         this.roleAssignmentRepository = roleAssignmentRepository;
         this.ruleMapper = ruleMapper;
+        this.objectMapper = objectMapper;
     }
 
     @Transactional
@@ -142,8 +146,7 @@ public class RuleService {
             return false;
         }
         try {
-            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-            var config = mapper.readTree(rule.getConfigJson());
+            var config = objectMapper.readTree(rule.getConfigJson());
             if (config.has("minParty") && config.has("maxParty")) {
                 int min = config.get("minParty").asInt();
                 int max = config.get("maxParty").asInt();
@@ -160,8 +163,7 @@ public class RuleService {
             return null;
         }
         try {
-            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-            var config = mapper.readTree(rule.getConfigJson());
+            var config = objectMapper.readTree(rule.getConfigJson());
             if (config.has(key)) {
                 return config.get(key).asInt();
             }
