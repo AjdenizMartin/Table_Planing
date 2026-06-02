@@ -6,8 +6,6 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-restaurant_planner}
       POSTGRES_USER: ${POSTGRES_USER:-restaurant_planner}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-restaurant_planner}
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
@@ -30,6 +28,17 @@ services:
       SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://postgres:5432/restaurant_planner}
       SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-restaurant_planner}
       SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-restaurant_planner}
+      APP_SECURITY_JWT_SECRET: ${APP_SECURITY_JWT_SECRET:-change-me-in-production-change-me-in-production}
+      APP_SECURITY_JWT_ACCESS_TOKEN_TTL: ${APP_SECURITY_JWT_ACCESS_TOKEN_TTL:-PT15M}
+      APP_SECURITY_JWT_REFRESH_TOKEN_TTL: ${APP_SECURITY_JWT_REFRESH_TOKEN_TTL:-P14D}
+      APP_NOTIFICATION_SMS_ENABLED: ${APP_NOTIFICATION_SMS_ENABLED:-false}
+      APP_NOTIFICATION_SMS_PROVIDER: ${APP_NOTIFICATION_SMS_PROVIDER:-fake}
+      APP_BOOTSTRAP_ADMIN_NAME: ${APP_BOOTSTRAP_ADMIN_NAME:-Demo Owner}
+      APP_BOOTSTRAP_ADMIN_EMAIL: ${APP_BOOTSTRAP_ADMIN_EMAIL:-demo@restaurant.com}
+      APP_BOOTSTRAP_ADMIN_PASSWORD: ${APP_BOOTSTRAP_ADMIN_PASSWORD:-Demo1234!}
+      APP_BOOTSTRAP_RESTAURANT_NAME: ${APP_BOOTSTRAP_RESTAURANT_NAME:-Demo Restaurant}
+      APP_BOOTSTRAP_RESTAURANT_SLUG: ${APP_BOOTSTRAP_RESTAURANT_SLUG:-demo-restaurant}
+      APP_BOOTSTRAP_RESTAURANT_TIMEZONE: ${APP_BOOTSTRAP_RESTAURANT_TIMEZONE:-Europe/Madrid}
     ports:
       - "${BACKEND_PORT:-8080}:8080"
 

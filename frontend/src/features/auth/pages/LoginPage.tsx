@@ -14,8 +14,8 @@ export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { login, status, session } = useAuth();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("demo@restaurant.com");
+  const [password, setPassword] = useState("Demo1234!");
 
   const mutation = useMutation({
     mutationFn: login,
@@ -41,12 +41,7 @@ export function LoginPage() {
     );
   }
 
-  const errorMessage =
-    mutation.error instanceof ApiError
-      ? mutation.error.message
-      : mutation.error
-        ? "No se pudo iniciar sesion."
-        : null;
+  const errorMessage = getLoginErrorMessage(mutation.error);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -107,6 +102,16 @@ export function LoginPage() {
               resolvera despues del login si hace falta.
             </p>
 
+            <div className="mt-5 rounded-2xl border border-emerald-400/25 bg-emerald-500/10 px-4 py-4 text-sm text-emerald-100">
+              <p className="font-semibold">Acceso demo local</p>
+              <p className="mt-2">
+                Email: <span className="font-mono">demo@restaurant.com</span>
+              </p>
+              <p className="mt-1">
+                Password: <span className="font-mono">Demo1234!</span>
+              </p>
+            </div>
+
             <form className="mt-8 grid gap-5" onSubmit={handleSubmit}>
               <label className="grid gap-2">
                 <span className="text-sm font-medium text-slate-200">Email</span>
@@ -154,4 +159,28 @@ export function LoginPage() {
       </div>
     </div>
   );
+}
+
+function getLoginErrorMessage(error: unknown) {
+  if (!error) {
+    return null;
+  }
+
+  if (error instanceof ApiError) {
+    if (error.status === 401 || error.status === 403) {
+      return "Credenciales incorrectas. Revisa el email y la contrasena.";
+    }
+
+    if (error.status >= 500) {
+      return "El backend no esta disponible o ha devuelto un error. Revisa que este arrancado en http://localhost:8080.";
+    }
+
+    return error.message || "No se pudo iniciar sesion.";
+  }
+
+  if (error instanceof TypeError) {
+    return "No se pudo conectar con el backend. Revisa Docker, el puerto 8080 y la configuracion CORS.";
+  }
+
+  return "Error inesperado al iniciar sesion.";
 }

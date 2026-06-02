@@ -6,7 +6,7 @@ export function ConfigCard({
   children,
 }: PropsWithChildren<{ title: string; subtitle?: string }>) {
   return (
-    <section className="rounded-[2rem] border border-white/10 bg-slate-950/65 p-5 shadow-2xl shadow-black/20 sm:p-6">
+    <section className="min-w-0 rounded-[2rem] border border-white/10 bg-slate-950/65 p-5 shadow-2xl shadow-black/20 sm:p-6">
       <header className="mb-5">
         <h2 className="text-xl font-semibold text-white">{title}</h2>
         {subtitle ? (
@@ -17,4 +17,3 @@ export function ConfigCard({
     </section>
   );
 }
-

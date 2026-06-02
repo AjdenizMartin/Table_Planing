@@ -6,13 +6,59 @@ import { ConfigShell } from "@/features/restaurant-config/components/ConfigShell
 import { SelectField, TextField } from "@/features/restaurant-config/components/Field";
 import { StatusMessage } from "@/features/restaurant-config/components/StatusMessage";
 import { useActiveRestaurant } from "@/features/restaurant-config/hooks/useActiveRestaurant";
+import {
+  useDraggableTable,
+  type TableLayoutDraft,
+} from "@/features/restaurant-config/hooks/useDraggableTable";
+import type {
+  DiningRoomResponse,
+  RestaurantTableResponse,
+} from "@/features/restaurant-config/types";
 import { getErrorMessage } from "@/features/restaurant-config/utils/errorMessage";
+
+interface UpdateLayoutVariables {
+  tableId: number;
+  layout: TableLayoutDraft;
+  previous: TableLayoutDraft;
+}
+
+function layoutFromTable(table: RestaurantTableResponse): TableLayoutDraft {
+  return {
+    x: table.x,
+    y: table.y,
+    width: table.width,
+    height: table.height,
+  };
+}
+
+function sameLayout(left: TableLayoutDraft, right: TableLayoutDraft) {
+  return (
+    left.x === right.x &&
+    left.y === right.y &&
+    left.width === right.width &&
+    left.height === right.height
+  );
+}
+
+function clampLayoutToRoom(layout: TableLayoutDraft, room: DiningRoomResponse) {
+  const width = Math.min(layout.width, room.layoutWidth);
+  const height = Math.min(layout.height, room.layoutHeight);
+  return {
+    x: Math.max(0, Math.min(layout.x, Math.max(0, room.layoutWidth - width))),
+    y: Math.max(0, Math.min(layout.y, Math.max(0, room.layoutHeight - height))),
+    width,
+    height,
+  };
+}
 
 export function TableLayoutEditorPage() {
   const queryClient = useQueryClient();
   const { activeRestaurantId } = useActiveRestaurant();
   const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null);
   const [selectedTableId, setSelectedTableId] = useState<number | null>(null);
+  const [tableLayouts, setTableLayouts] = useState<Record<number, TableLayoutDraft>>({});
+  const [snapToGrid, setSnapToGrid] = useState(true);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [draft, setDraft] = useState({
     x: "",
     y: "",
@@ -35,7 +81,11 @@ export function TableLayoutEditorPage() {
 
   const availableRooms = diningRoomsQuery.data ?? [];
   const roomId = selectedRoomId ?? availableRooms[0]?.id ?? null;
-  const tablesInRoom = (tablesQuery.data ?? []).filter((table) => table.diningRoomId === roomId);
+  const tablesWithLocalLayout = (tablesQuery.data ?? []).map((table) => ({
+    ...table,
+    ...(tableLayouts[table.id] ?? {}),
+  }));
+  const tablesInRoom = tablesWithLocalLayout.filter((table) => table.diningRoomId === roomId);
   const selectedTable =
     tablesInRoom.find((table) => table.id === selectedTableId) ?? tablesInRoom[0] ?? null;
   const selectedRoom = availableRooms.find((room) => room.id === roomId) ?? null;
@@ -47,21 +97,50 @@ export function TableLayoutEditorPage() {
     return Math.min(1, 680 / selectedRoom.layoutWidth);
   }, [selectedRoom]);
 
-  const refresh = async () => {
-    await queryClient.invalidateQueries({ queryKey: ["tables", activeRestaurantId] });
-  };
-
   const updateLayoutMutation = useMutation({
-    mutationFn: (payload: { x: number; y: number; width: number; height: number }) =>
-      configApi.updateTableLayout(activeRestaurantId!, selectedTable!.id, payload),
-    onSuccess: async () => {
-      await refresh();
+    mutationFn: ({ tableId, layout }: UpdateLayoutVariables) =>
+      configApi.updateTableLayout(activeRestaurantId!, tableId, layout),
+    onSuccess: async (updatedTable) => {
+      setSaveError(null);
+      setTableLayouts((current) => ({
+        ...current,
+        [updatedTable.id]: layoutFromTable(updatedTable),
+      }));
+      queryClient.setQueryData<RestaurantTableResponse[]>(
+        ["tables", activeRestaurantId],
+        (current = []) =>
+          current.map((table) => (table.id === updatedTable.id ? updatedTable : table)),
+      );
+      await queryClient.invalidateQueries({ queryKey: ["planning", activeRestaurantId] });
+    },
+    onError: (_error, variables) => {
+      setSaveError("Could not save table position. Please try again.");
+      setTableLayouts((current) => ({
+        ...current,
+        [variables.tableId]: variables.previous,
+      }));
     },
   });
 
   const selectedTableSignature = selectedTable
     ? `${selectedTable.id}:${selectedTable.x}:${selectedTable.y}:${selectedTable.width}:${selectedTable.height}`
     : "empty";
+
+  useEffect(() => {
+    if (!tablesQuery.data) {
+      return;
+    }
+
+    setTableLayouts((current) => {
+      const next = { ...current };
+      for (const table of tablesQuery.data) {
+        if (!next[table.id]) {
+          next[table.id] = layoutFromTable(table);
+        }
+      }
+      return next;
+    });
+  }, [tablesQuery.data]);
 
   useEffect(() => {
     if (!selectedTable) {
@@ -95,6 +174,10 @@ export function TableLayoutEditorPage() {
       return "El tamaño de la mesa debe ser razonable para el plano.";
     }
 
+    if (selectedRoom && (x + width > selectedRoom.layoutWidth || y + height > selectedRoom.layoutHeight)) {
+      return "La mesa debe quedar dentro de los limites del salon.";
+    }
+
     return null;
   }
 
@@ -110,45 +193,57 @@ export function TableLayoutEditorPage() {
     }
 
     setValidationError(null);
+    setSaveError(null);
+    const previous = layoutFromTable(selectedTable);
+    const next = selectedRoom
+      ? clampLayoutToRoom({
+          x: Number(draft.x),
+          y: Number(draft.y),
+          width: Number(draft.width),
+          height: Number(draft.height),
+        }, selectedRoom)
+      : {
+          x: Number(draft.x),
+          y: Number(draft.y),
+          width: Number(draft.width),
+          height: Number(draft.height),
+        };
+
+    setTableLayouts((current) => ({ ...current, [selectedTable.id]: next }));
     updateLayoutMutation.mutate({
-      x: Number(draft.x),
-      y: Number(draft.y),
-      width: Number(draft.width),
-      height: Number(draft.height),
+      tableId: selectedTable.id,
+      layout: next,
+      previous,
     });
   }
 
-  function patchSelectedTable(delta: Partial<{ x: number; y: number; width: number; height: number }>) {
-    if (!selectedTable) {
+  function previewTableLayout(tableId: number, layout: TableLayoutDraft) {
+    setTableLayouts((current) => ({ ...current, [tableId]: layout }));
+  }
+
+  function commitTableLayout(tableId: number, previous: TableLayoutDraft, next: TableLayoutDraft) {
+    if (sameLayout(previous, next)) {
       return;
     }
 
-    const nextDraft = {
-      x: String(delta.x ?? selectedTable.x),
-      y: String(delta.y ?? selectedTable.y),
-      width: String(delta.width ?? selectedTable.width),
-      height: String(delta.height ?? selectedTable.height),
-    };
-
-    setDraft(nextDraft);
     setValidationError(null);
+    setSaveError(null);
     updateLayoutMutation.mutate({
-      x: Number(nextDraft.x),
-      y: Number(nextDraft.y),
-      width: Number(nextDraft.width),
-      height: Number(nextDraft.height),
+      tableId,
+      layout: next,
+      previous,
     });
   }
 
   return (
     <ConfigShell
       title="Editor de plano visual"
-      description="Ajusta la posicion y el tamaño de las mesas dentro del salon activo. El backend sigue validando coordenadas y dimensiones razonables."
+      description="Arrastra mesas directamente sobre el plano del salon. El backend valida permisos, tenant y limites del layout antes de guardar."
     >
       <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
         <ConfigCard
           title="Plano del salon"
-          subtitle="Selecciona un salon y una mesa para reposicionarla con controles grandes y precisos para tablet."
+          subtitle="Modo edicion activo: drag tables to reposition them. Mouse, touch y lapiz usan la misma interaccion directa."
         >
           {diningRoomsQuery.error || tablesQuery.error ? (
             <StatusMessage tone="error">
@@ -186,6 +281,25 @@ export function TableLayoutEditorPage() {
             </SelectField>
           </div>
 
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-brand-300/20 bg-brand-500/10 px-4 py-3">
+            <p className="text-sm text-brand-100">
+              Pulsa una mesa y arrastrala. Se guarda automaticamente al soltar.
+            </p>
+            <label className="inline-flex items-center gap-3 text-sm font-medium text-slate-200">
+              <input
+                className="h-5 w-5 rounded border-white/20 bg-slate-950"
+                type="checkbox"
+                checked={snapToGrid}
+                onChange={(event) => setSnapToGrid(event.target.checked)}
+              />
+              Snap 10px
+            </label>
+          </div>
+
+          {saveError ? (
+            <StatusMessage tone="error">{saveError}</StatusMessage>
+          ) : null}
+
           {selectedRoom ? (
             <div className="overflow-auto rounded-[1.75rem] border border-white/10 bg-slate-950/80 p-4">
               <div
@@ -194,28 +308,24 @@ export function TableLayoutEditorPage() {
                   width: selectedRoom.layoutWidth * boardScale,
                   height: selectedRoom.layoutHeight * boardScale,
                   minWidth: "280px",
+                  touchAction: "none",
+                  userSelect: "none",
                 }}
               >
+                <div className="absolute inset-0 opacity-35 [background-image:linear-gradient(rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:20px_20px]" />
                 {tablesInRoom.map((table) => (
-                  <button
+                  <DraggableTable
                     key={table.id}
-                    type="button"
-                    className={[
-                      "absolute rounded-2xl border text-xs font-semibold transition",
-                      selectedTable?.id === table.id
-                        ? "border-brand-300 bg-brand-500 text-slate-950"
-                        : "border-white/10 bg-slate-900/90 text-white hover:border-brand-400/40",
-                    ].join(" ")}
-                    style={{
-                      left: table.x * boardScale,
-                      top: table.y * boardScale,
-                      width: Math.max(56, table.width * boardScale),
-                      height: Math.max(48, table.height * boardScale),
-                    }}
-                    onClick={() => setSelectedTableId(table.id)}
-                  >
-                    {table.code}
-                  </button>
+                    table={table}
+                    room={selectedRoom}
+                    boardScale={boardScale}
+                    selected={selectedTable?.id === table.id}
+                    saving={updateLayoutMutation.isPending && updateLayoutMutation.variables?.tableId === table.id}
+                    snapToGrid={snapToGrid}
+                    onSelect={setSelectedTableId}
+                    onPreview={previewTableLayout}
+                    onCommit={commitTableLayout}
+                  />
                 ))}
               </div>
             </div>
@@ -248,36 +358,9 @@ export function TableLayoutEditorPage() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
-                <button
-                  className="col-start-2 h-14 rounded-2xl border border-white/10 bg-white/5 text-sm font-semibold text-white transition hover:border-brand-400/40 hover:bg-brand-500/10"
-                  type="button"
-                  onClick={() => patchSelectedTable({ y: Math.max(0, selectedTable.y - 20) })}
-                >
-                  Arriba
-                </button>
-                <button
-                  className="h-14 rounded-2xl border border-white/10 bg-white/5 text-sm font-semibold text-white transition hover:border-brand-400/40 hover:bg-brand-500/10"
-                  type="button"
-                  onClick={() => patchSelectedTable({ x: Math.max(0, selectedTable.x - 20) })}
-                >
-                  Izquierda
-                </button>
-                <button
-                  className="h-14 rounded-2xl border border-white/10 bg-white/5 text-sm font-semibold text-white transition hover:border-brand-400/40 hover:bg-brand-500/10"
-                  type="button"
-                  onClick={() => patchSelectedTable({ x: selectedTable.x + 20 })}
-                >
-                  Derecha
-                </button>
-                <button
-                  className="col-start-2 h-14 rounded-2xl border border-white/10 bg-white/5 text-sm font-semibold text-white transition hover:border-brand-400/40 hover:bg-brand-500/10"
-                  type="button"
-                  onClick={() => patchSelectedTable({ y: selectedTable.y + 20 })}
-                >
-                  Abajo
-                </button>
-              </div>
+              <StatusMessage tone="info">
+                Para mover la mesa, arrastrala directamente en el plano. Estos campos quedan para ajustes exactos de tamaño y coordenadas.
+              </StatusMessage>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <TextField
@@ -334,5 +417,73 @@ export function TableLayoutEditorPage() {
         </ConfigCard>
       </div>
     </ConfigShell>
+  );
+}
+
+function DraggableTable({
+  table,
+  room,
+  boardScale,
+  selected,
+  saving,
+  snapToGrid,
+  onSelect,
+  onPreview,
+  onCommit,
+}: {
+  table: RestaurantTableResponse;
+  room: DiningRoomResponse;
+  boardScale: number;
+  selected: boolean;
+  saving: boolean;
+  snapToGrid: boolean;
+  onSelect: (tableId: number) => void;
+  onPreview: (tableId: number, layout: TableLayoutDraft) => void;
+  onCommit: (tableId: number, previous: TableLayoutDraft, next: TableLayoutDraft) => void;
+}) {
+  const layout = layoutFromTable(table);
+  const { isDragging, dragHandlers } = useDraggableTable({
+    tableId: table.id,
+    layout,
+    boardScale,
+    bounds: {
+      width: room.layoutWidth,
+      height: room.layoutHeight,
+    },
+    snapToGrid,
+    onSelect,
+    onPreview,
+    onCommit,
+  });
+
+  return (
+    <button
+      type="button"
+      aria-label={`Move ${table.code}`}
+      title="Drag to reposition table"
+      className={[
+        "absolute z-10 touch-none select-none rounded-2xl border text-xs font-semibold transition-transform duration-100",
+        "cursor-grab active:cursor-grabbing",
+        selected
+          ? "border-brand-300 bg-brand-500 text-slate-950"
+          : "border-white/10 bg-slate-900/90 text-white hover:border-brand-400/40",
+        isDragging ? "z-20 scale-105 shadow-2xl shadow-brand-500/30 ring-2 ring-brand-200" : "shadow-lg shadow-black/25",
+        saving ? "opacity-70" : "",
+      ].join(" ")}
+      style={{
+        left: layout.x * boardScale,
+        top: layout.y * boardScale,
+        width: Math.max(56, layout.width * boardScale),
+        height: Math.max(48, layout.height * boardScale),
+      }}
+      {...dragHandlers}
+    >
+      <span className="grid gap-1">
+        <span>{table.code}</span>
+        <span className="text-[0.65rem] opacity-70">
+          {saving ? "Saving..." : `${table.minCapacity}-${table.maxCapacity} pax`}
+        </span>
+      </span>
+    </button>
   );
 }

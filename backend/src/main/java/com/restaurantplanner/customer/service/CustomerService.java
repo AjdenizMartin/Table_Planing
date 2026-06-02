@@ -70,7 +70,11 @@ public class CustomerService {
     public List<CustomerResponse> findAll(Long restaurantId, String query, AuthenticatedUser authenticatedUser) {
         findAccessibleRestaurantOrThrow(restaurantId, authenticatedUser);
         String normalizedQuery = normalizeSearchQuery(query);
-        return customerRepository.searchByRestaurantId(restaurantId, normalizedQuery).stream()
+        List<Customer> customers = normalizedQuery == null
+            ? customerRepository.findByRestaurantIdOrderByLastNameAscFirstNameAscIdAsc(restaurantId)
+            : customerRepository.searchByRestaurantId(restaurantId, normalizedQuery);
+
+        return customers.stream()
             .map(customerMapper::toResponse)
             .toList();
     }

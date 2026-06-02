@@ -61,8 +61,16 @@ public class AiService {
         Restaurant restaurant = restaurantRepository.findById(restaurantId)
             .orElseThrow(() -> new NotFoundException("Restaurant not found"));
 
+        Set<String> dismissedInsightKeys = aiInsightRepository
+            .findByRestaurantIdAndDateOrderByDismissedAscSeverityDescCreatedAtDesc(restaurantId, date)
+            .stream()
+            .filter(AiInsight::isDismissed)
+            .map(this::insightKey)
+            .collect(java.util.stream.Collectors.toSet());
+
         aiInsightRepository.deleteByRestaurantIdAndDate(restaurantId, date);
         List<AiInsight> generated = insightGenerator.generate(restaurant, date, planningDay);
+        generated.forEach(insight -> insight.setDismissed(dismissedInsightKeys.contains(insightKey(insight))));
         List<AiInsight> saved = aiInsightRepository.saveAll(generated);
         realtimePublisher.publishAiInsightsUpdated(
             restaurantId,
@@ -153,5 +161,9 @@ public class AiService {
             case MEDIUM -> 1;
             case LOW -> 2;
         };
+    }
+
+    private String insightKey(AiInsight insight) {
+        return insight.getType() + "|" + insight.getEntityType() + "|" + insight.getEntityId() + "|" + insight.getTitle();
     }
 }

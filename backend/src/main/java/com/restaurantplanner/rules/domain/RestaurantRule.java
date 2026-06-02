@@ -10,6 +10,9 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.ColumnTransformer;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "restaurant_rule")
@@ -32,6 +35,8 @@ public class RestaurantRule extends BaseEntity {
     @Column(nullable = false)
     private Integer priority;
 
+    @JdbcTypeCode(SqlTypes.JSON)
+    @ColumnTransformer(write = "?::jsonb")
     @Column(name = "config_json", columnDefinition = "jsonb")
     private String configJson;
 

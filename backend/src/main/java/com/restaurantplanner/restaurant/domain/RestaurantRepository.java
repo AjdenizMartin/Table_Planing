@@ -10,6 +10,8 @@ public interface RestaurantRepository extends JpaRepository<Restaurant, Long> {
 
     boolean existsBySlugIgnoreCase(String slug);
 
+    Optional<Restaurant> findBySlugIgnoreCase(String slug);
+
     boolean existsBySlugIgnoreCaseAndIdNot(String slug, Long id);
 
     @Query("""

@@ -8,6 +8,9 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.ColumnTransformer;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "customer")
@@ -32,6 +35,8 @@ public class Customer extends BaseEntity {
     @Column(columnDefinition = "text")
     private String notes;
 
+    @JdbcTypeCode(SqlTypes.JSON)
+    @ColumnTransformer(write = "?::jsonb")
     @Column(name = "tags_json", columnDefinition = "jsonb")
     private String tagsJson;
 

@@ -44,11 +44,15 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(ConflictException.class)
     public ResponseEntity<Map<String, Object>> handleConflict(ConflictException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
-            "code", "CONFLICT",
-            "message", ex.getMessage(),
-            "timestamp", Instant.now().toString()
-        ));
+        Map<String, Object> body = new java.util.LinkedHashMap<>();
+        body.put("code", "CONFLICT");
+        body.put("message", ex.getMessage());
+        body.put("timestamp", Instant.now().toString());
+        if (!ex.getDetails().isEmpty()) {
+            body.put("details", ex.getDetails());
+        }
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

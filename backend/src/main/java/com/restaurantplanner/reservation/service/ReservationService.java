@@ -7,6 +7,8 @@ import com.restaurantplanner.auth.domain.RoleAssignmentRepository;
 import com.restaurantplanner.auth.security.AuthenticatedUser;
 import com.restaurantplanner.common.api.ConflictException;
 import com.restaurantplanner.common.api.NotFoundException;
+import com.restaurantplanner.optimization.api.AssignReservationResponse;
+import com.restaurantplanner.optimization.service.ReservationAssignmentService;
 import com.restaurantplanner.customer.domain.Customer;
 import com.restaurantplanner.customer.domain.CustomerRepository;
 import com.restaurantplanner.reservation.api.CreateReservationRequest;
@@ -15,6 +17,7 @@ import com.restaurantplanner.reservation.api.ReservationResponse;
 import com.restaurantplanner.reservation.api.UpdateReservationRequest;
 import com.restaurantplanner.reservation.domain.Reservation;
 import com.restaurantplanner.reservation.domain.ReservationChannel;
+import com.restaurantplanner.reservation.domain.ReservationAssignmentRepository;
 import com.restaurantplanner.reservation.domain.ReservationRepository;
 import com.restaurantplanner.reservation.domain.ReservationStatus;
 import com.restaurantplanner.realtime.RestaurantRealtimePublisher;
@@ -38,6 +41,7 @@ import org.springframework.util.StringUtils;
 public class ReservationService {
 
     private final ReservationRepository reservationRepository;
+    private final ReservationAssignmentRepository reservationAssignmentRepository;
     private final RestaurantRepository restaurantRepository;
     private final CustomerRepository customerRepository;
     private final RoleAssignmentRepository roleAssignmentRepository;
@@ -45,18 +49,22 @@ public class ReservationService {
     private final RestaurantRealtimePublisher realtimePublisher;
     private final AuditService auditService;
     private final ApplicationEventPublisher eventPublisher;
+    private final ReservationAssignmentService reservationAssignmentService;
 
     public ReservationService(
         ReservationRepository reservationRepository,
+        ReservationAssignmentRepository reservationAssignmentRepository,
         RestaurantRepository restaurantRepository,
         CustomerRepository customerRepository,
         RoleAssignmentRepository roleAssignmentRepository,
         ReservationMapper reservationMapper,
         RestaurantRealtimePublisher realtimePublisher,
         AuditService auditService,
-        ApplicationEventPublisher eventPublisher
+        ApplicationEventPublisher eventPublisher,
+        ReservationAssignmentService reservationAssignmentService
     ) {
         this.reservationRepository = reservationRepository;
+        this.reservationAssignmentRepository = reservationAssignmentRepository;
         this.restaurantRepository = restaurantRepository;
         this.customerRepository = customerRepository;
         this.roleAssignmentRepository = roleAssignmentRepository;
@@ -64,6 +72,7 @@ public class ReservationService {
         this.realtimePublisher = realtimePublisher;
         this.auditService = auditService;
         this.eventPublisher = eventPublisher;
+        this.reservationAssignmentService = reservationAssignmentService;
     }
 
     @Transactional
@@ -197,6 +206,7 @@ public class ReservationService {
 
         Reservation reservation = findReservationOrThrow(restaurantId, reservationId);
         ensureTransitionAllowed(reservation.getStatus(), ReservationStatus.CONFIRMED);
+        ensureAssignedBeforeConfirming(restaurantId, reservation, authenticatedUser);
         reservation.setStatus(ReservationStatus.CONFIRMED);
         if (reservation.getConfirmedAt() == null) {
             reservation.setConfirmedAt(Instant.now());
@@ -443,6 +453,37 @@ public class ReservationService {
         if (!allowed) {
             throw new ConflictException("Invalid reservation status transition");
         }
+    }
+
+    private void ensureAssignedBeforeConfirming(
+        Long restaurantId,
+        Reservation reservation,
+        AuthenticatedUser authenticatedUser
+    ) {
+        if (!reservationAssignmentRepository.findByReservationIdAndActiveTrue(reservation.getId()).isEmpty()) {
+            return;
+        }
+
+        AssignReservationResponse assignmentResponse = reservationAssignmentService.assign(
+            restaurantId,
+            reservation.getId(),
+            authenticatedUser
+        );
+
+        if (assignmentResponse.assigned()) {
+            return;
+        }
+
+        Map<String, Object> details = new LinkedHashMap<>();
+        details.put("reservationId", reservation.getId());
+        details.put("reasons", assignmentResponse.reasons());
+        details.put("recommendedStartTime", assignmentResponse.recommendedStartTime());
+        details.put("recommendationSummary", assignmentResponse.recommendationSummary());
+
+        throw new ConflictException(
+            "No se puede confirmar esta reserva porque no hay mesa disponible a la hora solicitada.",
+            details
+        );
     }
 
     private boolean isTerminalStatus(ReservationStatus status) {

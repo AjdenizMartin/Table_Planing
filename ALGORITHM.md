@@ -4,6 +4,25 @@
 
 El motor de asignacion debe decidir la mejor mesa o combinacion para cada reserva, no solo una mesa libre cualquiera. El objetivo es optimizar ocupacion, flexibilidad futura y calidad operativa del servicio.
 
+## Version implementada actualmente
+
+Estado actual: `PARTIALLY_DONE`
+
+Implementado hoy:
+
+- ventana efectiva usando `start_time`, `end_time` y `cleaning_buffer`
+- candidatos con mesas activas y combinaciones predefinidas activas
+- restricciones duras de capacidad, actividad, accesibilidad y solapamiento
+- scoring determinista con explicacion persistida
+- desempate determinista
+
+No implementado todavia:
+
+- replanning profundo o cascadas de reasignacion
+- optimizacion batch por turno completo
+- simulacion avanzada de demanda futura
+- disponibilidad como modulo/API separado
+
 ## Principios
 
 - algoritmo determinista antes que heuristicas opacas
@@ -118,16 +137,7 @@ Guardar:
 
 ## Recolocacion limitada
 
-Si no hay una opcion directa, el sistema puede intentar:
-
-- mover una reserva existente a otra mesa valida
-- recalcular dos asignaciones para liberar un recurso mejor
-
-Reglas de seguridad:
-
-- profundidad limitada
-- coste de recolocacion penalizado
-- no hacer cascadas grandes en tiempo real
+Documentado como evolucion prevista. La version actual no hace recolocacion automatica profunda; solo soporta movimiento manual desde planning y asignacion automatica directa.
 
 ## Formula inicial de scoring
 
@@ -216,7 +226,7 @@ Los pesos del scoring deben ser configurables por defecto a nivel plataforma y a
 - mesas individuales
 - combinaciones predefinidas
 - scoring heuristico
-- recolocacion de un salto
+- explicacion persistida
 
 ### Version 2
 

@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import * as frontdeskApi from "@/features/frontdesk/api/frontdeskApi";
 import { OperationsShell } from "@/features/frontdesk/components/OperationsShell";
 import { ReservationDetailPanel } from "@/features/frontdesk/components/ReservationDetailPanel";
@@ -20,10 +21,15 @@ import { useAuth } from "@/features/auth/context/AuthContext";
 
 export function ReservationsPage() {
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const createReservationSectionRef = useRef<HTMLDivElement | null>(null);
   const { session } = useAuth();
   const { activeRestaurantId } = useActiveRestaurant();
-  const [selectedDate, setSelectedDate] = useState(todayDateValue());
+  const [selectedDate, setSelectedDate] = useState(searchParams.get("date") ?? todayDateValue());
   const [selectedReservationId, setSelectedReservationId] = useState<number | null>(null);
+  const [mode, setMode] = useState<"create" | "detail">(
+    searchParams.get("mode") === "new" ? "create" : "detail",
+  );
 
   const activeRoles =
     session.restaurants.find((restaurant) => restaurant.id === activeRestaurantId)?.roles ?? [];
@@ -45,9 +51,27 @@ export function ReservationsPage() {
   );
 
   const selectedReservation =
-    reservations.find((reservation) => reservation.id === selectedReservationId) ?? null;
+    mode === "detail"
+      ? reservations.find((reservation) => reservation.id === selectedReservationId) ?? null
+      : null;
 
   useEffect(() => {
+    const queryDate = searchParams.get("date");
+    if (queryDate && queryDate !== selectedDate) {
+      setSelectedDate(queryDate);
+    }
+
+    if (searchParams.get("mode") === "new") {
+      setMode("create");
+      setSelectedReservationId(null);
+    }
+  }, [searchParams, selectedDate]);
+
+  useEffect(() => {
+    if (mode === "create") {
+      return;
+    }
+
     if (!selectedReservationId && reservations.length > 0) {
       setSelectedReservationId(reservations[0].id);
       return;
@@ -59,7 +83,20 @@ export function ReservationsPage() {
     ) {
       setSelectedReservationId(null);
     }
-  }, [reservations, selectedReservationId]);
+  }, [mode, reservations, selectedReservationId]);
+
+  useEffect(() => {
+    if (mode !== "create") {
+      return;
+    }
+
+    window.requestAnimationFrame(() => {
+      createReservationSectionRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  }, [mode]);
 
   async function refreshReservations() {
     await queryClient.invalidateQueries({
@@ -90,13 +127,33 @@ export function ReservationsPage() {
                 label="Fecha"
                 type="date"
                 value={selectedDate}
-                onChange={(event) => setSelectedDate(event.target.value)}
+                onChange={(event) => {
+                  const nextDate = event.target.value;
+                  setSelectedDate(nextDate);
+                  setSearchParams((current) => {
+                    const next = new URLSearchParams(current);
+                    next.set("date", nextDate);
+                    if (mode === "create") {
+                      next.set("mode", "new");
+                    }
+                    return next;
+                  });
+                }}
               />
               <div className="flex gap-3">
                 <button
                   className="h-12 rounded-2xl border border-white/10 bg-white/5 px-5 text-sm font-medium text-white transition hover:border-brand-400/40 hover:bg-brand-500/10"
                   type="button"
-                  onClick={() => setSelectedReservationId(null)}
+                  onClick={() => {
+                    setMode("create");
+                    setSelectedReservationId(null);
+                    setSearchParams((current) => {
+                      const next = new URLSearchParams(current);
+                      next.set("mode", "new");
+                      next.set("date", selectedDate);
+                      return next;
+                    });
+                  }}
                 >
                   Nueva reserva
                 </button>
@@ -123,7 +180,16 @@ export function ReservationsPage() {
                       : "border-white/10 bg-white/5 hover:border-brand-400/30",
                   ].join(" ")}
                   type="button"
-                  onClick={() => setSelectedReservationId(reservation.id)}
+                  onClick={() => {
+                    setMode("detail");
+                    setSelectedReservationId(reservation.id);
+                    setSearchParams((current) => {
+                      const next = new URLSearchParams(current);
+                      next.delete("mode");
+                      next.set("date", selectedDate);
+                      return next;
+                    });
+                  }}
                 >
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div>
@@ -159,29 +225,39 @@ export function ReservationsPage() {
           </ConfigCard>
         </div>
 
-        <ConfigCard
-          title={selectedReservation ? "Detalle de reserva" : "Crear reserva manual"}
-          subtitle="La operativa vive en backend; esta vista solo acelera el flujo del front desk."
-        >
-          {selectedReservation ? (
-            <ReservationDetailPanel
-              reservation={selectedReservation}
-              canOperateReservations={canOperateReservations}
-              onChanged={(nextReservation) => {
-                handleReservationChanged(nextReservation);
-                void refreshReservations();
-              }}
-            />
-          ) : (
-            <ReservationForm
-              canManageReservations={canManageReservations}
-              onCreated={(reservationId) => {
-                void refreshReservations();
-                setSelectedReservationId(reservationId);
-              }}
-            />
-          )}
-        </ConfigCard>
+        <div ref={createReservationSectionRef}>
+          <ConfigCard
+            title={selectedReservation ? "Detalle de reserva" : "Crear reserva manual"}
+            subtitle="La operativa vive en backend; esta vista solo acelera el flujo del front desk."
+          >
+            {selectedReservation ? (
+              <ReservationDetailPanel
+                reservation={selectedReservation}
+                canOperateReservations={canOperateReservations}
+                onChanged={(nextReservation) => {
+                  handleReservationChanged(nextReservation);
+                  void refreshReservations();
+                }}
+              />
+            ) : (
+              <ReservationForm
+                canManageReservations={canManageReservations}
+                initialDate={selectedDate}
+                onCreated={(reservationId) => {
+                  setMode("detail");
+                  void refreshReservations();
+                  setSelectedReservationId(reservationId);
+                  setSearchParams((current) => {
+                    const next = new URLSearchParams(current);
+                    next.delete("mode");
+                    next.set("date", selectedDate);
+                    return next;
+                  });
+                }}
+              />
+            )}
+          </ConfigCard>
+        </div>
       </div>
     </OperationsShell>
   );

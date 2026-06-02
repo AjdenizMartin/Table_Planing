@@ -118,15 +118,15 @@ Un cambio esta realmente terminado cuando:
 
 ## Documentos de referencia obligatorios
 
-- [README.md](/Users/angel/Desktop/Table_Planing/README.md)
-- [ARCHITECTURE.md](/Users/angel/Desktop/Table_Planing/ARCHITECTURE.md)
-- [DATABASE.md](/Users/angel/Desktop/Table_Planing/DATABASE.md)
-- [ALGORITHM.md](/Users/angel/Desktop/Table_Planing/ALGORITHM.md)
-- [API.md](/Users/angel/Desktop/Table_Planing/API.md)
-- [SECURITY.md](/Users/angel/Desktop/Table_Planing/SECURITY.md)
-- [TESTING.md](/Users/angel/Desktop/Table_Planing/TESTING.md)
-- [DEPLOYMENT.md](/Users/angel/Desktop/Table_Planing/DEPLOYMENT.md)
-- [ROADMAP.md](/Users/angel/Desktop/Table_Planing/ROADMAP.md)
+- [README.md](./README.md)
+- [ARCHITECTURE.md](./ARCHITECTURE.md)
+- [DATABASE.md](./DATABASE.md)
+- [ALGORITHM.md](./ALGORITHM.md)
+- [API.md](./API.md)
+- [SECURITY.md](./SECURITY.md)
+- [TESTING.md](./TESTING.md)
+- [DEPLOYMENT.md](./DEPLOYMENT.md)
+- [ROADMAP.md](./ROADMAP.md)
 
 ## Instruccion final para agentes
 

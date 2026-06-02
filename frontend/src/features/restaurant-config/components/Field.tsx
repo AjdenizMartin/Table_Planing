@@ -14,12 +14,12 @@ export function TextField({
   hint?: string;
 }) {
   return (
-    <label className="grid gap-2">
+    <label className="grid min-w-0 gap-2">
       <span className="text-sm font-medium text-slate-200">{label}</span>
       <input
         {...props}
         className={[
-          "h-12 rounded-2xl border border-white/10 bg-slate-900/90 px-4 text-sm text-white outline-none transition focus:border-brand-400/70 focus:ring-2 focus:ring-brand-400/30",
+          "h-12 w-full min-w-0 rounded-2xl border border-white/10 bg-slate-900/90 px-4 text-sm text-white outline-none transition focus:border-brand-400/70 focus:ring-2 focus:ring-brand-400/30",
           props.className ?? "",
         ].join(" ")}
       />
@@ -37,12 +37,12 @@ export function SelectField({
   children: ReactNode;
 }) {
   return (
-    <label className="grid gap-2">
+    <label className="grid min-w-0 gap-2">
       <span className="text-sm font-medium text-slate-200">{label}</span>
       <select
         {...props}
         className={[
-          "h-12 rounded-2xl border border-white/10 bg-slate-900/90 px-4 text-sm text-white outline-none transition focus:border-brand-400/70 focus:ring-2 focus:ring-brand-400/30",
+          "h-12 w-full min-w-0 rounded-2xl border border-white/10 bg-slate-900/90 px-4 text-sm text-white outline-none transition focus:border-brand-400/70 focus:ring-2 focus:ring-brand-400/30",
           props.className ?? "",
         ].join(" ")}
       >
@@ -62,14 +62,14 @@ export function CheckboxField({
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <label className="flex min-h-12 items-center gap-3 rounded-2xl border border-white/10 bg-slate-900/70 px-4 py-3">
+    <label className="flex min-h-12 min-w-0 items-center gap-3 rounded-2xl border border-white/10 bg-slate-900/70 px-4 py-3">
       <input
         className="h-5 w-5 accent-brand-400"
         type="checkbox"
         checked={checked}
         onChange={(event) => onChange(event.target.checked)}
       />
-      <span className="text-sm font-medium text-slate-200">{label}</span>
+      <span className="min-w-0 text-sm font-medium text-slate-200">{label}</span>
     </label>
   );
 }
@@ -83,12 +83,12 @@ export function TextAreaField({
   hint?: string;
 }) {
   return (
-    <label className="grid gap-2">
+    <label className="grid min-w-0 gap-2">
       <span className="text-sm font-medium text-slate-200">{label}</span>
       <textarea
         {...props}
         className={[
-          "min-h-28 rounded-2xl border border-white/10 bg-slate-900/90 px-4 py-3 text-sm text-white outline-none transition focus:border-brand-400/70 focus:ring-2 focus:ring-brand-400/30",
+          "min-h-28 w-full min-w-0 rounded-2xl border border-white/10 bg-slate-900/90 px-4 py-3 text-sm text-white outline-none transition focus:border-brand-400/70 focus:ring-2 focus:ring-brand-400/30",
           props.className ?? "",
         ].join(" ")}
       />

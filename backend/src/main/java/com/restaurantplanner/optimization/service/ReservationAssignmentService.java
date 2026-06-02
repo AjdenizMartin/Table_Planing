@@ -24,7 +24,9 @@ import com.restaurantplanner.restaurant.domain.Restaurant;
 import com.restaurantplanner.restaurant.domain.RestaurantRepository;
 import com.restaurantplanner.user.domain.User;
 import com.restaurantplanner.user.domain.UserRepository;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumSet;
@@ -32,6 +34,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -69,7 +73,7 @@ public class ReservationAssignmentService {
         RestaurantRealtimePublisher realtimePublisher,
         AuditService auditService,
         AiService aiService,
-        PlanningService planningService
+        @Lazy PlanningService planningService
     ) {
         this.candidateFinder = candidateFinder;
         this.availabilityChecker = availabilityChecker;
@@ -98,7 +102,12 @@ public class ReservationAssignmentService {
 
         List<AssignmentCandidate> candidates = candidateFinder.findCandidates(restaurantId);
         if (candidates.isEmpty()) {
-            return noAssignment(reservationId, List.of("No active tables or combinations are configured for this restaurant"));
+            return noAssignment(
+                reservation,
+                List.of("No active tables or combinations are configured for this restaurant"),
+                candidates,
+                List.of()
+            );
         }
 
         List<ReservationAssignment> occupiedAssignments = reservationAssignmentRepository
@@ -125,7 +134,12 @@ public class ReservationAssignmentService {
         }
 
         if (validCandidates.isEmpty()) {
-            return noAssignment(reservationId, buildNoCandidateReasons(rejectionCounts));
+            return noAssignment(
+                reservation,
+                buildNoCandidateReasons(rejectionCounts),
+                candidates,
+                occupiedAssignments
+            );
         }
 
         List<ScoredCandidate> scoredCandidates = validCandidates.stream()
@@ -180,7 +194,9 @@ public class ReservationAssignmentService {
             saved.getScore(),
             explanation.summary(),
             explanation.explanationJson(),
-            List.of()
+            List.of(),
+            null,
+            null
         );
     }
 
@@ -251,10 +267,20 @@ public class ReservationAssignmentService {
         return status == ReservationStatus.CANCELLED || status == ReservationStatus.COMPLETED || status == ReservationStatus.NO_SHOW;
     }
 
-    private AssignReservationResponse noAssignment(Long reservationId, List<String> reasons) {
+    private AssignReservationResponse noAssignment(
+        Reservation reservation,
+        List<String> reasons,
+        List<AssignmentCandidate> candidates,
+        List<ReservationAssignment> occupiedAssignments
+    ) {
+        LocalTime recommendedStart = findNextAvailableStartTime(reservation, candidates, occupiedAssignments);
+        String recommendationSummary = recommendedStart == null
+            ? "No same-day table option was found after the requested time. Try another date, reduce party size, or create/activate more table combinations."
+            : "Nearest available table option is at " + recommendedStart + ". The reservation time was not changed automatically.";
+
         return new AssignReservationResponse(
             false,
-            reservationId,
+            reservation.getId(),
             null,
             null,
             null,
@@ -265,7 +291,116 @@ public class ReservationAssignmentService {
             null,
             null,
             null,
-            reasons
+            reasons,
+            recommendedStart == null ? null : recommendedStart.toString(),
+            recommendationSummary
         );
+    }
+
+    private LocalTime findNextAvailableStartTime(
+        Reservation reservation,
+        List<AssignmentCandidate> candidates,
+        List<ReservationAssignment> occupiedAssignments
+    ) {
+        if (candidates.isEmpty()) {
+            return null;
+        }
+
+        int durationWithCleaning = reservation.getEstimatedDurationMin() + reservation.getCleaningBufferMin();
+        int requestedStart = reservation.getStartTime().getHour() * 60 + reservation.getStartTime().getMinute();
+        int latestStart = (24 * 60) - durationWithCleaning;
+
+        for (int proposedStart = roundUpToNextQuarter(requestedStart + 1); proposedStart <= latestStart; proposedStart += 15) {
+            int candidateStart = proposedStart;
+            if (candidates.stream().anyMatch(candidate -> canCandidateFitAt(candidate, reservation, occupiedAssignments, candidateStart))) {
+                return LocalTime.of(proposedStart / 60, proposedStart % 60);
+            }
+        }
+
+        return null;
+    }
+
+    private int roundUpToNextQuarter(int minutes) {
+        return ((minutes + 14) / 15) * 15;
+    }
+
+    private boolean canCandidateFitAt(
+        AssignmentCandidate candidate,
+        Reservation reservation,
+        List<ReservationAssignment> occupiedAssignments,
+        int proposedStartMinutes
+    ) {
+        if (candidate.maxCapacity() < reservation.getPartySize()) {
+            return false;
+        }
+
+        if (candidate.minCapacity() > reservation.getPartySize()) {
+            return false;
+        }
+
+        if (candidate.type() == AssignmentCandidateType.TABLE && (candidate.table() == null || !candidate.table().isActive())) {
+            return false;
+        }
+
+        if (candidate.type() == AssignmentCandidateType.TABLE_COMBINATION
+            && (candidate.tableCombination() == null || !candidate.tableCombination().isActive())) {
+            return false;
+        }
+
+        if (candidate.tables().stream().anyMatch(table -> !table.isActive())) {
+            return false;
+        }
+
+        if (!candidate.allDiningRoomsActive()) {
+            return false;
+        }
+
+        if (reservation.isAccessibilityRequired() && !candidate.allDiningRoomsAccessible()) {
+            return false;
+        }
+
+        int proposedEffectiveEnd = proposedStartMinutes + reservation.getEstimatedDurationMin() + reservation.getCleaningBufferMin();
+        Set<Long> candidateTableIds = Set.copyOf(candidate.tableIds());
+
+        for (ReservationAssignment assignment : occupiedAssignments) {
+            if (assignment.getReservation().getId().equals(reservation.getId())) {
+                continue;
+            }
+
+            Set<Long> occupiedTableIds = extractOccupiedTableIds(assignment);
+            boolean sharesResource = occupiedTableIds.stream().anyMatch(candidateTableIds::contains);
+            if (!sharesResource) {
+                continue;
+            }
+
+            int occupiedStart = toMinutes(assignment.getReservation().getStartTime());
+            int occupiedEffectiveEnd = toMinutes(assignment.getReservation().getEndTime())
+                + assignment.getReservation().getCleaningBufferMin();
+
+            boolean overlaps = proposedStartMinutes < occupiedEffectiveEnd && proposedEffectiveEnd > occupiedStart;
+            if (overlaps) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private int toMinutes(LocalTime time) {
+        return (int) Duration.between(LocalTime.MIDNIGHT, time).toMinutes();
+    }
+
+    private Set<Long> extractOccupiedTableIds(ReservationAssignment assignment) {
+        if (assignment.getTable() != null) {
+            return Set.of(assignment.getTable().getId());
+        }
+
+        if (assignment.getTableCombination() != null) {
+            return assignment.getTableCombination().getItems().stream()
+                .map(item -> item.getTable().getId())
+                .collect(java.util.stream.Collectors.toSet());
+        }
+
+        return Set.of();
     }
 }

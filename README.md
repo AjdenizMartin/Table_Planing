@@ -97,6 +97,10 @@ El proyecto ya no esta solo en fase documental. Actualmente incluye una primera 
 - [DEPLOYMENT.md](./DEPLOYMENT.md)
 - [ROADMAP.md](./ROADMAP.md)
 - [AGENTS.md](./AGENTS.md)
+- [docs/PROJECT_AUDIT.md](./docs/PROJECT_AUDIT.md)
+- [docs/TECHNICAL_TODO.md](./docs/TECHNICAL_TODO.md)
+- [docs/PLANNING_PANEL_VISION.md](./docs/PLANNING_PANEL_VISION.md)
+- [docs/PLANNING_PANEL_IMPLEMENTATION_PLAN.md](./docs/PLANNING_PANEL_IMPLEMENTATION_PLAN.md)
 
 ## Principios de construccion
 
@@ -132,6 +136,28 @@ Pendiente para una fase mas madura:
 - Docker Desktop o daemon Docker en ejecucion
 - o alternativamente `Java 21`, `Maven` y `Node.js 20+`
 
+### Estado implementado vs planificado
+
+Implementado actualmente:
+
+- autenticacion JWT con refresh token
+- restaurante, salones, mesas y combinaciones
+- clientes y reservas manuales
+- planning diario
+- asignacion automatica determinista
+- eventos realtime
+- notificaciones internas y SMS basicos
+- insights explicativos de planning
+
+Planificado o parcial:
+
+- disponibilidad dedicada como modulo/API separada
+- simulacion de planning
+- drag and drop avanzado
+- WhatsApp y canales externos
+- Redis
+- Spring AI / proveedor externo de IA
+
 ### URLs locales esperadas
 
 - Frontend: `http://localhost:5173`
@@ -158,6 +184,73 @@ Pendiente para una fase mas madura:
 └── AGENTS.md
 ```
 
+## Demo local
+
+La demo local queda preparada para entrar directamente con un usuario propietario y datos operativos minimos. En perfil `dev`, el backend crea de forma idempotente el restaurante demo, salones, mesas, combinaciones, clientes y reservas del dia.
+
+### Credenciales demo
+
+- email: `demo@restaurant.com`
+- password: `Demo1234!`
+- rol: `RESTAURANT_OWNER`
+- restaurante: `Demo Restaurant`
+
+### Datos demo incluidos
+
+- Salones: `Main Dining Room`, `Side Dining Room`, `Upper Dining Room`
+- Mesas: `Table 1` a `Table 7` con capacidades de 2, 4 y 6 comensales
+- Combinaciones: `Table 1 + Table 2` y `Table 3 + Table 4`
+- Clientes: `John Smith`, `Maria Garcia`, `David Murphy`
+- Reservas del dia actual con estados mezclados entre pendientes y confirmadas
+
+### Opcion 1. Solo base de datos con Docker
+
+```bash
+docker compose up postgres
+```
+
+Este modo es util si quieres arrancar el backend desde tu maquina. PostgreSQL se usa internamente en Docker Compose; si quieres conectar herramientas externas al puerto 5432, revisa primero que ese puerto no este ocupado en tu equipo.
+
+### Opcion 2. Stack completo con Docker
+
+```bash
+docker compose up --build
+```
+
+Despues abre:
+
+- Frontend: `http://localhost:5173`
+- Backend: `http://localhost:8080`
+- Health: `http://localhost:8080/actuator/health`
+- Ping: `http://localhost:8080/api/system/ping`
+
+### Opcion 3. Desarrollo mixto
+
+Backend:
+
+```bash
+cd backend
+mvn spring-boot:run
+```
+
+Frontend:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Para desarrollo mixto, el frontend usa `VITE_API_BASE_URL=http://localhost:8080`. Si el backend no responde, el login mostrara un mensaje indicando que revise Docker, el puerto 8080 o CORS.
+
+### Errores comunes
+
+- Si Docker indica que un puerto esta ocupado, libera el contenedor/proceso que lo usa o cambia el puerto en un archivo `.env` local.
+- Si el login falla con credenciales incorrectas, usa exactamente `demo@restaurant.com` y `Demo1234!`.
+- Si el navegador muestra error de CORS, confirma que el backend esta arrancado y que el frontend se abre desde `http://localhost:5173`.
+- Si `health` aparece `DOWN`, revisa los logs del backend y la conexion con PostgreSQL.
+- Si ya habias probado datos antiguos y quieres una demo limpia, puedes recrear la base local con `docker compose down -v` y despues `docker compose up --build`. Esto elimina los datos locales del volumen Docker.
+
 ## Arranque base
 
 ### Opcion 1. Solo base de datos con Docker
@@ -173,6 +266,11 @@ docker compose up --build
 ```
 
 Si Docker no esta arrancado, este comando fallara. En macOS eso suele significar que Docker Desktop no esta abierto o el socket Docker no esta disponible.
+
+Credenciales demo locales en perfil `dev`:
+
+- email: `demo@restaurant.com`
+- password: `Demo1234!`
 
 ### Opcion 3. Desarrollo mixto
 
@@ -198,3 +296,4 @@ npm run dev
   - `mvn -q -DskipTests package` correcto en `backend`
   - `npm run build` correcto en `frontend`
 - Si el proyecto no arranca localmente, revisa primero que Docker Desktop este levantado.
+- PostgreSQL no necesita exponerse al host para que la aplicacion funcione dentro de Docker Compose.

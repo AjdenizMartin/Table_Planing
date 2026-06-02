@@ -18,8 +18,8 @@ export function ConfigShell({
   const { activeRestaurant } = useActiveRestaurant();
 
   return (
-    <section className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
-      <aside className="rounded-[2rem] border border-white/10 bg-slate-950/65 p-5 shadow-2xl shadow-black/20">
+    <section className="grid min-w-0 gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+      <aside className="min-w-0 rounded-[2rem] border border-white/10 bg-slate-950/65 p-5 shadow-2xl shadow-black/20">
         <p className="text-xs uppercase tracking-[0.3em] text-brand-300">
           Configuracion
         </p>
@@ -51,7 +51,7 @@ export function ConfigShell({
         </nav>
       </aside>
 
-      <div className="grid gap-6">
+      <div className="grid min-w-0 gap-6">
         <header className="rounded-[2rem] border border-white/10 bg-white/5 p-6 shadow-2xl shadow-black/20 sm:p-8">
           <p className="text-xs uppercase tracking-[0.3em] text-brand-300">
             Configuracion Operativa
@@ -69,4 +69,3 @@ export function ConfigShell({
     </section>
   );
 }
-

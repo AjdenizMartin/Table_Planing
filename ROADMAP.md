@@ -1,10 +1,25 @@
 # Roadmap
 
+## Estado de fases
+
+- `Fase 1`: PARTIALLY_DONE
+- `Fase 2`: PARTIALLY_DONE
+- `Fase 3`: PARTIALLY_DONE
+- `Fase 4`: PARTIALLY_DONE
+- `Fase 5`: PARTIALLY_DONE
+- `Fase 6`: PARTIALLY_DONE
+- `Fase 7`: PARTIALLY_DONE
+- `Fase 8`: PARTIALLY_DONE
+- `Fase 9`: NOT_STARTED
+- `Fase 10`: IN_PROGRESS
+
 ## Enfoque
 
 El roadmap prioriza primero el nucleo de valor del producto: configuracion del restaurante, reservas, motor de asignacion y planning visual. Integraciones avanzadas e IA se incorporan despues de estabilizar la operativa principal.
 
 ## Fase 1. Base del proyecto y autenticacion
+
+**Estado:** `PARTIALLY_DONE`
 
 ### Objetivos
 
@@ -29,6 +44,8 @@ El roadmap prioriza primero el nucleo de valor del producto: configuracion del r
 
 ## Fase 2. Configuracion del restaurante
 
+**Estado:** `PARTIALLY_DONE`
+
 ### Objetivos
 
 - modelar restaurante, salones y mesas
@@ -48,6 +65,8 @@ El roadmap prioriza primero el nucleo de valor del producto: configuracion del r
 - un restaurante puede quedar totalmente configurado sin tocar codigo
 
 ## Fase 3. Gestion de reservas
+
+**Estado:** `PARTIALLY_DONE`
 
 ### Objetivos
 
@@ -70,6 +89,8 @@ El roadmap prioriza primero el nucleo de valor del producto: configuracion del r
 
 ## Fase 4. Algoritmo basico de asignacion
 
+**Estado:** `PARTIALLY_DONE`
+
 ### Objetivos
 
 - asignar mesas automaticamente
@@ -90,6 +111,8 @@ El roadmap prioriza primero el nucleo de valor del producto: configuracion del r
 
 ## Fase 5. Planning visual
 
+**Estado:** `PARTIALLY_DONE`
+
 ### Objetivos
 
 - ofrecer una vista clara del servicio diario
@@ -109,6 +132,8 @@ El roadmap prioriza primero el nucleo de valor del producto: configuracion del r
 
 ## Fase 6. Tiempo real
 
+**Estado:** `PARTIALLY_DONE`
+
 ### Objetivos
 
 - sincronizar cambios entre dispositivos
@@ -126,6 +151,8 @@ El roadmap prioriza primero el nucleo de valor del producto: configuracion del r
 - cambios visibles casi en tiempo real en dos clientes conectados
 
 ## Fase 7. Confirmaciones SMS y WhatsApp
+
+**Estado:** `PARTIALLY_DONE`
 
 ### Objetivos
 
@@ -146,6 +173,8 @@ El roadmap prioriza primero el nucleo de valor del producto: configuracion del r
 
 ## Fase 8. IA y recomendaciones
 
+**Estado:** `PARTIALLY_DONE`
+
 ### Objetivos
 
 - añadir una capa de inteligencia explicativa
@@ -162,6 +191,8 @@ El roadmap prioriza primero el nucleo de valor del producto: configuracion del r
 - la IA aporta contexto util sin sustituir al algoritmo
 
 ## Fase 9. Estadisticas y optimizacion avanzada
+
+**Estado:** `NOT_STARTED`
 
 ### Objetivos
 
@@ -181,6 +212,8 @@ El roadmap prioriza primero el nucleo de valor del producto: configuracion del r
 - se pueden justificar mejoras del producto con metricas
 
 ## Fase 10. Preparacion para produccion
+
+**Estado:** `IN_PROGRESS`
 
 ### Objetivos
 

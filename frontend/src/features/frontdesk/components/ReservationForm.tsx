@@ -1,7 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import * as frontdeskApi from "@/features/frontdesk/api/frontdeskApi";
-import type { CreateReservationPayload, ReservationChannel } from "@/features/frontdesk/types";
+import type {
+  CreateCustomerPayload,
+  CreateReservationPayload,
+  ReservationChannel,
+} from "@/features/frontdesk/types";
 import { formatCustomerName, todayDateValue } from "@/features/frontdesk/utils/frontdeskUtils";
 import { useActiveRestaurant } from "@/features/restaurant-config/hooks/useActiveRestaurant";
 import {
@@ -24,8 +28,14 @@ const channels: ReservationChannel[] = [
 ];
 
 const defaultForm = {
+  customerMode: "quick" as "quick" | "existing",
   customerSearch: "",
   customerId: "",
+  customerFirstName: "",
+  customerLastName: "",
+  customerPhone: "",
+  customerEmail: "",
+  customerNotes: "",
   channel: "MANUAL" as ReservationChannel,
   partySize: "2",
   reservationDate: todayDateValue(),
@@ -38,15 +48,20 @@ const defaultForm = {
 
 interface ReservationFormProps {
   canManageReservations: boolean;
+  initialDate?: string;
   onCreated: (reservationId: number) => void;
 }
 
 export function ReservationForm({
   canManageReservations,
+  initialDate,
   onCreated,
 }: ReservationFormProps) {
   const { activeRestaurantId } = useActiveRestaurant();
-  const [form, setForm] = useState(defaultForm);
+  const [form, setForm] = useState({
+    ...defaultForm,
+    reservationDate: initialDate ?? defaultForm.reservationDate,
+  });
   const [validationError, setValidationError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -63,15 +78,38 @@ export function ReservationForm({
     [customersQuery.data],
   );
 
+  useEffect(() => {
+    if (!initialDate) {
+      return;
+    }
+
+    setForm((current) => ({
+      ...current,
+      reservationDate: initialDate,
+    }));
+  }, [initialDate]);
+
   function resetForm() {
-    setForm(defaultForm);
+    setForm({
+      ...defaultForm,
+      reservationDate: initialDate ?? defaultForm.reservationDate,
+    });
     setValidationError(null);
     setSubmitError(null);
   }
 
   function validateForm() {
-    if (!form.customerId) {
+    if (form.customerMode === "existing" && !form.customerId) {
       return "Selecciona un cliente para la reserva.";
+    }
+
+    if (
+      form.customerMode === "quick" &&
+      !form.customerFirstName.trim() &&
+      !form.customerLastName.trim() &&
+      !form.customerPhone.trim()
+    ) {
+      return "Introduce al menos nombre, apellido o telefono del cliente.";
     }
 
     if (Number(form.partySize) <= 0) {
@@ -112,20 +150,37 @@ export function ReservationForm({
     setSubmitError(null);
     setIsSubmitting(true);
 
-    const payload: CreateReservationPayload = {
-      customerId: Number(form.customerId),
-      channel: form.channel,
-      partySize: Number(form.partySize),
-      reservationDate: form.reservationDate,
-      startTime: form.startTime,
-      endTime: null,
-      estimatedDurationMin: Number(form.estimatedDurationMin),
-      cleaningBufferMin: Number(form.cleaningBufferMin),
-      specialRequests: form.specialRequests.trim() || null,
-      accessibilityRequired: form.accessibilityRequired,
-    };
-
     try {
+      let customerId = Number(form.customerId);
+
+      if (form.customerMode === "quick") {
+        const customerPayload: CreateCustomerPayload = {
+          firstName: form.customerFirstName.trim() || null,
+          lastName: form.customerLastName.trim() || null,
+          phone: form.customerPhone.trim() || null,
+          email: form.customerEmail.trim() || null,
+          notes: form.customerNotes.trim() || null,
+          tagsJson: null,
+          mobilityNeeds: form.accessibilityRequired ? "Accessibility required for reservation" : null,
+        };
+
+        const customer = await frontdeskApi.createCustomer(activeRestaurantId, customerPayload);
+        customerId = customer.id;
+      }
+
+      const payload: CreateReservationPayload = {
+        customerId,
+        channel: form.channel,
+        partySize: Number(form.partySize),
+        reservationDate: form.reservationDate,
+        startTime: form.startTime,
+        endTime: null,
+        estimatedDurationMin: Number(form.estimatedDurationMin),
+        cleaningBufferMin: Number(form.cleaningBufferMin),
+        specialRequests: form.specialRequests.trim() || null,
+        accessibilityRequired: form.accessibilityRequired,
+      };
+
       const reservation = await frontdeskApi.createReservation(activeRestaurantId, payload);
       resetForm();
       onCreated(reservation.id);
@@ -152,32 +207,125 @@ export function ReservationForm({
       {submitError ? <StatusMessage tone="error">{submitError}</StatusMessage> : null}
 
       <div className="grid gap-4">
-        <TextField
-          label="Buscar cliente"
-          value={form.customerSearch}
-          onChange={(event) =>
-            setForm((current) => ({ ...current, customerSearch: event.target.value }))
-          }
-          placeholder="Nombre o telefono"
-        />
+        <section className="rounded-3xl border border-white/10 bg-white/5 p-4">
+          <div className="grid gap-2 sm:grid-cols-2">
+            <button
+              type="button"
+              className={[
+                "min-h-11 rounded-2xl px-4 py-2 text-sm font-semibold transition",
+                form.customerMode === "quick"
+                  ? "bg-brand-500 text-slate-950"
+                  : "border border-white/10 bg-slate-950/50 text-slate-200 hover:border-brand-300/40",
+              ].join(" ")}
+              onClick={() =>
+                setForm((current) => ({
+                  ...current,
+                  customerMode: "quick",
+                  customerId: "",
+                }))
+              }
+            >
+              Cliente nuevo rapido
+            </button>
+            <button
+              type="button"
+              className={[
+                "min-h-11 rounded-2xl px-4 py-2 text-sm font-semibold transition",
+                form.customerMode === "existing"
+                  ? "bg-brand-500 text-slate-950"
+                  : "border border-white/10 bg-slate-950/50 text-slate-200 hover:border-brand-300/40",
+              ].join(" ")}
+              onClick={() =>
+                setForm((current) => ({
+                  ...current,
+                  customerMode: "existing",
+                }))
+              }
+            >
+              Buscar existente
+            </button>
+          </div>
 
-        <SelectField
-          label="Cliente"
-          value={form.customerId}
-          onChange={(event) =>
-            setForm((current) => ({ ...current, customerId: event.target.value }))
-          }
-        >
-          <option value="" disabled>
-            Selecciona un cliente
-          </option>
-          {customerOptions.map((customer) => (
-            <option key={customer.id} value={customer.id}>
-              {formatCustomerName(customer)}
-              {customer.phone ? ` · ${customer.phone}` : ""}
-            </option>
-          ))}
-        </SelectField>
+          {form.customerMode === "quick" ? (
+            <div className="mt-4 grid gap-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <TextField
+                  label="Nombre"
+                  value={form.customerFirstName}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, customerFirstName: event.target.value }))
+                  }
+                  placeholder="John"
+                />
+                <TextField
+                  label="Apellido"
+                  value={form.customerLastName}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, customerLastName: event.target.value }))
+                  }
+                  placeholder="Smith"
+                />
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <TextField
+                  label="Telefono"
+                  type="tel"
+                  value={form.customerPhone}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, customerPhone: event.target.value }))
+                  }
+                  placeholder="+353..."
+                />
+                <TextField
+                  label="Email"
+                  type="email"
+                  value={form.customerEmail}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, customerEmail: event.target.value }))
+                  }
+                  placeholder="cliente@email.com"
+                />
+              </div>
+              <TextAreaField
+                label="Notas del cliente"
+                value={form.customerNotes}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, customerNotes: event.target.value }))
+                }
+                placeholder="Cliente habitual, preferencias, idioma..."
+              />
+            </div>
+          ) : (
+            <div className="mt-4 grid gap-4">
+              <TextField
+                label="Buscar cliente"
+                value={form.customerSearch}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, customerSearch: event.target.value }))
+                }
+                placeholder="Nombre o telefono"
+              />
+
+              <SelectField
+                label="Cliente"
+                value={form.customerId}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, customerId: event.target.value }))
+                }
+              >
+                <option value="" disabled>
+                  Selecciona un cliente
+                </option>
+                {customerOptions.map((customer) => (
+                  <option key={customer.id} value={customer.id}>
+                    {formatCustomerName(customer)}
+                    {customer.phone ? ` · ${customer.phone}` : ""}
+                  </option>
+                ))}
+              </SelectField>
+            </div>
+          )}
+        </section>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <TextField
@@ -198,7 +346,7 @@ export function ReservationForm({
           />
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2">
           <TextField
             label="Comensales"
             type="number"
@@ -286,7 +434,11 @@ export function ReservationForm({
             void handleSubmit();
           }}
         >
-          {isSubmitting ? "Creando..." : "Crear reserva"}
+          {isSubmitting
+            ? "Creando..."
+            : form.customerMode === "quick"
+              ? "Crear cliente y reserva"
+              : "Crear reserva"}
         </button>
       </div>
     </div>

@@ -10,13 +10,14 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
 
     Optional<Customer> findByIdAndRestaurantId(Long id, Long restaurantId);
 
+    List<Customer> findByRestaurantIdOrderByLastNameAscFirstNameAscIdAsc(Long restaurantId);
+
     @Query("""
         select c
         from Customer c
         where c.restaurant.id = :restaurantId
           and (
-            :query is null
-            or lower(coalesce(c.firstName, '')) like concat('%', :query, '%')
+            lower(coalesce(c.firstName, '')) like concat('%', :query, '%')
             or lower(coalesce(c.lastName, '')) like concat('%', :query, '%')
             or lower(concat(coalesce(c.firstName, ''), ' ', coalesce(c.lastName, ''))) like concat('%', :query, '%')
             or lower(coalesce(c.phone, '')) like concat('%', :query, '%')

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import * as frontdeskApi from "@/features/frontdesk/api/frontdeskApi";
 import type { ReservationResponse } from "@/features/frontdesk/types";
+import { ApiError } from "@/services/api/client";
 import {
   formatReservationCustomerName,
   normalizeTimeForInput,
@@ -9,6 +10,13 @@ import { StatusPill } from "@/features/frontdesk/components/StatusPill";
 import { StatusMessage } from "@/features/restaurant-config/components/StatusMessage";
 import { getErrorMessage } from "@/features/restaurant-config/utils/errorMessage";
 import { useActiveRestaurant } from "@/features/restaurant-config/hooks/useActiveRestaurant";
+
+interface AvailabilityConflictDetails {
+  reservationId?: number;
+  reasons?: string[];
+  recommendedStartTime?: string | null;
+  recommendationSummary?: string | null;
+}
 
 interface ReservationDetailPanelProps {
   reservation: ReservationResponse;
@@ -23,6 +31,8 @@ export function ReservationDetailPanel({
 }: ReservationDetailPanelProps) {
   const { activeRestaurantId } = useActiveRestaurant();
   const [error, setError] = useState<string | null>(null);
+  const [availabilityConflict, setAvailabilityConflict] =
+    useState<AvailabilityConflictDetails | null>(null);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
 
   async function runAction(
@@ -34,6 +44,7 @@ export function ReservationDetailPanel({
 
     setPendingAction(action);
     setError(null);
+    setAvailabilityConflict(null);
 
     try {
       const nextReservation =
@@ -50,6 +61,7 @@ export function ReservationDetailPanel({
       onChanged(nextReservation);
     } catch (actionError) {
       setError(getErrorMessage(actionError));
+      setAvailabilityConflict(extractAvailabilityConflict(actionError));
     } finally {
       setPendingAction(null);
     }
@@ -58,6 +70,9 @@ export function ReservationDetailPanel({
   return (
     <div className="grid gap-5">
       {error ? <StatusMessage tone="error">{error}</StatusMessage> : null}
+      {availabilityConflict ? (
+        <AvailabilityConflictCard details={availabilityConflict} />
+      ) : null}
 
       <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
@@ -194,4 +209,91 @@ export function ReservationDetailPanel({
       </div>
     </div>
   );
+}
+
+function extractAvailabilityConflict(error: unknown): AvailabilityConflictDetails | null {
+  if (!(error instanceof ApiError)) {
+    return null;
+  }
+
+  const payload = error.details as { details?: unknown } | undefined;
+  if (!payload || !payload.details || Array.isArray(payload.details)) {
+    return null;
+  }
+
+  const details = payload.details as Record<string, unknown>;
+  const reasons = Array.isArray(details.reasons)
+    ? details.reasons.filter((reason): reason is string => typeof reason === "string")
+    : [];
+  const recommendedStartTime = typeof details.recommendedStartTime === "string"
+    ? details.recommendedStartTime
+    : null;
+  const recommendationSummary = typeof details.recommendationSummary === "string"
+    ? details.recommendationSummary
+    : null;
+
+  if (!reasons.length && !recommendedStartTime && !recommendationSummary) {
+    return null;
+  }
+
+  return {
+    reservationId: typeof details.reservationId === "number" ? details.reservationId : undefined,
+    reasons,
+    recommendedStartTime,
+    recommendationSummary,
+  };
+}
+
+function AvailabilityConflictCard({ details }: { details: AvailabilityConflictDetails }) {
+  return (
+    <div className="rounded-3xl border border-rose-300/30 bg-rose-500/10 p-5 text-sm text-rose-50">
+      <p className="font-semibold text-white">No hay mesa disponible para confirmar</p>
+      <p className="mt-2 text-rose-100/90">
+        Esta reserva no se ha confirmado porque no puede asignarse a ninguna mesa o combinacion en la hora solicitada.
+      </p>
+
+      {details.reasons?.length ? (
+        <ul className="mt-3 grid gap-2">
+          {details.reasons.map((reason) => (
+            <li key={reason} className="rounded-2xl border border-rose-200/15 bg-slate-950/35 px-3 py-2">
+              {humanizeAvailabilityReason(reason)}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      <div className="mt-4 rounded-2xl border border-brand-300/30 bg-brand-400/10 p-3 text-brand-50">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-200">
+          Proxima opcion
+        </p>
+        {details.recommendedStartTime ? (
+          <>
+            <p className="mt-2 text-2xl font-semibold text-white">
+              {normalizeTimeForInput(details.recommendedStartTime)}
+            </p>
+            <p className="mt-1 text-sm text-brand-100">
+              Si el cliente acepta, cambia la hora manualmente y vuelve a confirmar.
+            </p>
+          </>
+        ) : (
+          <p className="mt-2 text-sm text-brand-100">
+            No se encontro una opcion posterior en el mismo dia.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function humanizeAvailabilityReason(reason: string) {
+  return reason
+    .replace(/candidate\(s\) rejected due to insufficient_capacity/g, "opciones descartadas por capacidad insuficiente")
+    .replace(/candidate\(s\) rejected due to below_min_capacity/g, "opciones descartadas por capacidad minima demasiado alta")
+    .replace(/candidate\(s\) rejected due to time_overlap/g, "opciones descartadas por solapamiento con otra reserva")
+    .replace(/candidate\(s\) rejected due to accessibility_mismatch/g, "opciones descartadas por accesibilidad")
+    .replace(/candidate\(s\) rejected due to inactive_table/g, "opciones descartadas por mesa inactiva")
+    .replace(/candidate\(s\) rejected due to inactive_dining_room/g, "opciones descartadas por salon inactivo")
+    .replace(/candidate\(s\) rejected due to inactive_combination/g, "opciones descartadas por combinacion inactiva")
+    .replace("No active tables or combinations are configured for this restaurant", "No hay mesas ni combinaciones activas configuradas")
+    .replace("No candidate satisfied the hard constraints", "Ninguna mesa o combinacion cumple las reglas obligatorias");
 }

@@ -12,6 +12,33 @@ La base de datos debe soportar un producto multi-restaurante con consistencia op
 - soporte para auditoria
 - capacidad de extender reglas con `jsonb` cuando convenga
 
+## Estado del esquema
+
+### Tablas reales en migraciones
+
+- `restaurant`
+- `app_user`
+- `role_assignment`
+- `refresh_token`
+- `dining_room`
+- `restaurant_table`
+- `table_combination`
+- `table_combination_item`
+- `customer`
+- `reservation`
+- `reservation_assignment`
+- `audit_log`
+- `restaurant_rule`
+- `notification`
+- `scheduled_notification`
+- `notification_log`
+- `ai_insight`
+
+### Tablas planificadas pero no creadas
+
+- `planning_slot`
+- `ai_recommendation`
+
 ## Entidades principales
 
 ### User
@@ -158,7 +185,7 @@ Permite que un usuario tenga distintos roles segun restaurante.
 - `status`
 - `reservation_id`
 
-Puede ser una vista materializada futura o una tabla persistida si aporta valor operativo.
+Planificado. No existe como tabla real en las migraciones actuales.
 
 ### RestaurantRule
 
@@ -199,6 +226,24 @@ Puede ser una vista materializada futura o una tabla persistida si aporta valor 
 - `status`
 - `created_at`
 
+Planificado en documentos iniciales, pero la implementacion real actual usa `AiInsight` y la tabla `ai_insight`.
+
+### AiInsight
+
+- `id`
+- `restaurant_id`
+- `date`
+- `type`
+- `severity`
+- `title`
+- `description`
+- `entity_type`
+- `entity_id`
+- `metadata_json`
+- `dismissed`
+- `created_at`
+- `updated_at`
+
 ### AuditLog
 
 - `id`
@@ -234,6 +279,7 @@ Puede ser una vista materializada futura o una tabla persistida si aporta valor 
 - `Restaurant 1..N RestaurantRule`
 - `Reservation 1..N NotificationLog`
 - `Restaurant 1..N AIRecommendation`
+- `Restaurant 1..N AiInsight`
 - `User 1..N RefreshToken`
 
 ## Consideraciones de multi-tenant
@@ -258,6 +304,12 @@ Puede ser una vista materializada futura o una tabla persistida si aporta valor 
 - unicidad de `restaurant_table.code` por restaurante
 - unicidad de `dining_room.name` por restaurante si se desea
 - `min_capacity <= max_capacity`
+
+## Observaciones de consistencia
+
+- El esquema real ya cubre la mayor parte del MVP operativo
+- existe un subsistema de notificaciones internas (`notification`) que no estaba bien reflejado en la version anterior del documento
+- `jsonb` se usa en varias tablas reales: `restaurant`, `customer`, `reservation_assignment`, `restaurant_rule`, `audit_log`, `ai_insight`
 - combinaciones sin mesas duplicadas dentro de una misma combinacion
 
 ## Estados de reserva sugeridos

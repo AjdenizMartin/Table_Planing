@@ -172,6 +172,7 @@ public class RestaurantTableService {
         requireOwnerManagerOrAdmin(authenticatedUser, restaurantId);
 
         RestaurantTable table = findTableOrThrow(restaurantId, tableId);
+        validateLayoutWithinDiningRoom(table, request);
         table.setX(request.x());
         table.setY(request.y());
         table.setWidth(request.width());
@@ -241,6 +242,22 @@ public class RestaurantTableService {
     private void validateCapacityRange(int minCapacity, int maxCapacity) {
         if (minCapacity > maxCapacity) {
             throw new IllegalArgumentException("minCapacity must be less than or equal to maxCapacity");
+        }
+    }
+
+    private void validateLayoutWithinDiningRoom(
+        RestaurantTable table,
+        UpdateRestaurantTableLayoutRequest request
+    ) {
+        int layoutWidth = table.getDiningRoom().getLayoutWidth();
+        int layoutHeight = table.getDiningRoom().getLayoutHeight();
+
+        if (request.width() > layoutWidth || request.height() > layoutHeight) {
+            throw new IllegalArgumentException("Table size must fit within dining room layout");
+        }
+
+        if (request.x() + request.width() > layoutWidth || request.y() + request.height() > layoutHeight) {
+            throw new IllegalArgumentException("Table position must stay within dining room layout");
         }
     }
 

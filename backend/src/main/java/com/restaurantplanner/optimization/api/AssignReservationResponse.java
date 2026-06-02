@@ -15,6 +15,8 @@ public record AssignReservationResponse(
     Double score,
     String summary,
     String explanationJson,
-    List<String> reasons
+    List<String> reasons,
+    String recommendedStartTime,
+    String recommendationSummary
 ) {
 }

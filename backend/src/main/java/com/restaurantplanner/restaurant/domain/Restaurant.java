@@ -11,6 +11,9 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import java.util.ArrayList;
 import java.util.List;
+import org.hibernate.annotations.ColumnTransformer;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "restaurant")
@@ -32,6 +35,8 @@ public class Restaurant extends BaseEntity {
     @Column(nullable = false, length = 32)
     private RestaurantStatus status;
 
+    @JdbcTypeCode(SqlTypes.JSON)
+    @ColumnTransformer(write = "?::jsonb")
     @Column(name = "settings_json", columnDefinition = "jsonb")
     private String settingsJson;
 
@@ -86,4 +91,3 @@ public class Restaurant extends BaseEntity {
         this.settingsJson = settingsJson;
     }
 }
-

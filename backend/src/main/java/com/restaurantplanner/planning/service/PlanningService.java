@@ -430,7 +430,7 @@ public class PlanningService {
     private List<String> buildTimeBlocks() {
         List<String> blocks = new ArrayList<>();
         LocalTime current = LocalTime.MIDNIGHT;
-        while (current.isBefore(LocalTime.of(23, 59))) {
+        for (int index = 0; index < 48; index++) {
             blocks.add(current.toString());
             current = current.plusMinutes(30);
         }

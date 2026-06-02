@@ -72,7 +72,6 @@ export interface ApiFieldDetail {
 export interface ApiErrorPayload {
   code?: string;
   message?: string;
-  details?: ApiFieldDetail[];
+  details?: ApiFieldDetail[] | Record<string, unknown>;
   timestamp?: string;
 }
-

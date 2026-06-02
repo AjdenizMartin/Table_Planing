@@ -93,6 +93,8 @@ export interface AssignReservationResponse {
   summary: string | null;
   explanationJson: string | null;
   reasons: string[];
+  recommendedStartTime: string | null;
+  recommendationSummary: string | null;
 }
 
 export interface PlanningMoveOption {

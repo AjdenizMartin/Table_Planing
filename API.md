@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Este documento define la primera superficie REST de la plataforma Restaurant Table Planning. No describe implementacion funcional completa, sino el contrato inicial esperado para la fase tecnica base y las siguientes fases de dominio.
+Este documento distingue entre la API realmente implementada hoy y la API planificada para fases futuras.
 
 ## Principios de la API
 
@@ -80,14 +80,20 @@ Pero nunca debe sustituir la validacion de permisos.
 }
 ```
 
-## Endpoints iniciales
+## Estado actual
+
+- `IMPLEMENTED`: existe controlador y flujo base funcional
+- `PARTIAL`: existe de forma limitada o con alcance menor al plan original
+- `PLANNED`: documentado pero no presente en el backend actual
+
+## Endpoints
 
 ### 1. System
 
 Uso interno o tecnico para verificar estado base del backend.
 
-- `GET /api/system/ping`
-- `GET /actuator/health`
+- `GET /api/system/ping` - `IMPLEMENTED`
+- `GET /actuator/health` - `IMPLEMENTED`
 
 ### 2. Auth
 
@@ -100,10 +106,10 @@ Responsabilidad:
 
 Endpoints:
 
-- `POST /api/auth/login`
-- `POST /api/auth/refresh`
-- `POST /api/auth/logout`
-- `GET /api/auth/me`
+- `POST /api/auth/login` - `IMPLEMENTED`
+- `POST /api/auth/refresh` - `IMPLEMENTED`
+- `POST /api/auth/logout` - `IMPLEMENTED`
+- `GET /api/auth/me` - `IMPLEMENTED`
 
 Payloads iniciales esperados:
 
@@ -148,12 +154,12 @@ Responsabilidad:
 
 Endpoints:
 
-- `POST /api/restaurants`
-- `GET /api/restaurants`
-- `GET /api/restaurants/{restaurantId}`
-- `PUT /api/restaurants/{restaurantId}`
-- `GET /api/restaurants/{restaurantId}/settings`
-- `PUT /api/restaurants/{restaurantId}/settings`
+- `POST /api/restaurants` - `IMPLEMENTED`
+- `GET /api/restaurants` - `IMPLEMENTED`
+- `GET /api/restaurants/{restaurantId}` - `IMPLEMENTED`
+- `PATCH /api/restaurants/{restaurantId}` - `IMPLEMENTED`
+- `GET /api/restaurants/{restaurantId}/settings` - `PLANNED`
+- `PUT /api/restaurants/{restaurantId}/settings` - `PLANNED`
 
 ### 4. Dining Rooms
 
@@ -164,11 +170,11 @@ Responsabilidad:
 
 Endpoints:
 
-- `POST /api/restaurants/{restaurantId}/dining-rooms`
-- `GET /api/restaurants/{restaurantId}/dining-rooms`
-- `GET /api/dining-rooms/{diningRoomId}`
-- `PUT /api/dining-rooms/{diningRoomId}`
-- `DELETE /api/dining-rooms/{diningRoomId}`
+- `POST /api/restaurants/{restaurantId}/dining-rooms` - `IMPLEMENTED`
+- `GET /api/restaurants/{restaurantId}/dining-rooms` - `IMPLEMENTED`
+- `GET /api/restaurants/{restaurantId}/dining-rooms/{diningRoomId}` - `IMPLEMENTED`
+- `PATCH /api/restaurants/{restaurantId}/dining-rooms/{diningRoomId}` - `IMPLEMENTED`
+- `DELETE /api/restaurants/{restaurantId}/dining-rooms/{diningRoomId}` - `IMPLEMENTED`
 
 ### 5. Tables
 
@@ -180,14 +186,14 @@ Responsabilidad:
 
 Endpoints:
 
-- `POST /api/dining-rooms/{diningRoomId}/tables`
-- `GET /api/dining-rooms/{diningRoomId}/tables`
-- `GET /api/tables/{tableId}`
-- `PUT /api/tables/{tableId}`
-- `DELETE /api/tables/{tableId}`
-- `PUT /api/tables/{tableId}/position`
-- `POST /api/tables/{tableId}/enable`
-- `POST /api/tables/{tableId}/disable`
+- `POST /api/restaurants/{restaurantId}/tables` - `IMPLEMENTED`
+- `GET /api/restaurants/{restaurantId}/tables` - `IMPLEMENTED`
+- `GET /api/restaurants/{restaurantId}/tables/{tableId}` - `IMPLEMENTED`
+- `PATCH /api/restaurants/{restaurantId}/tables/{tableId}` - `IMPLEMENTED`
+- `PATCH /api/restaurants/{restaurantId}/tables/{tableId}/layout` - `IMPLEMENTED`
+- `DELETE /api/restaurants/{restaurantId}/tables/{tableId}` - `IMPLEMENTED`
+- `POST /api/tables/{tableId}/enable` - `PLANNED`
+- `POST /api/tables/{tableId}/disable` - `PLANNED`
 
 ### 6. Table Combinations
 
@@ -198,11 +204,11 @@ Responsabilidad:
 
 Endpoints:
 
-- `POST /api/restaurants/{restaurantId}/table-combinations`
-- `GET /api/restaurants/{restaurantId}/table-combinations`
-- `GET /api/table-combinations/{combinationId}`
-- `PUT /api/table-combinations/{combinationId}`
-- `DELETE /api/table-combinations/{combinationId}`
+- `POST /api/restaurants/{restaurantId}/table-combinations` - `IMPLEMENTED`
+- `GET /api/restaurants/{restaurantId}/table-combinations` - `IMPLEMENTED`
+- `GET /api/restaurants/{restaurantId}/table-combinations/{combinationId}` - `IMPLEMENTED`
+- `PATCH /api/restaurants/{restaurantId}/table-combinations/{combinationId}` - `IMPLEMENTED`
+- `DELETE /api/restaurants/{restaurantId}/table-combinations/{combinationId}` - `IMPLEMENTED`
 
 ### 7. Customers
 
@@ -213,10 +219,10 @@ Responsabilidad:
 
 Endpoints:
 
-- `POST /api/customers`
-- `GET /api/customers`
-- `GET /api/customers/{customerId}`
-- `PUT /api/customers/{customerId}`
+- `POST /api/restaurants/{restaurantId}/customers` - `IMPLEMENTED`
+- `GET /api/restaurants/{restaurantId}/customers` - `IMPLEMENTED`
+- `GET /api/restaurants/{restaurantId}/customers/{customerId}` - `IMPLEMENTED`
+- `PATCH /api/restaurants/{restaurantId}/customers/{customerId}` - `IMPLEMENTED`
 
 Filtros previstos:
 
@@ -236,16 +242,18 @@ Responsabilidad:
 
 Endpoints:
 
-- `POST /api/reservations`
-- `GET /api/reservations`
-- `GET /api/reservations/{reservationId}`
-- `PUT /api/reservations/{reservationId}`
-- `POST /api/reservations/{reservationId}/assign`
-- `POST /api/reservations/{reservationId}/reassign`
-- `POST /api/reservations/{reservationId}/confirm`
-- `POST /api/reservations/{reservationId}/cancel`
-- `POST /api/reservations/{reservationId}/arrived`
-- `POST /api/reservations/{reservationId}/no-show`
+- `POST /api/restaurants/{restaurantId}/reservations` - `IMPLEMENTED`
+- `GET /api/restaurants/{restaurantId}/reservations` - `IMPLEMENTED`
+- `GET /api/restaurants/{restaurantId}/reservations/{reservationId}` - `IMPLEMENTED`
+- `PATCH /api/restaurants/{restaurantId}/reservations/{reservationId}` - `IMPLEMENTED`
+- `POST /api/restaurants/{restaurantId}/reservations/{reservationId}/assign` - `IMPLEMENTED`
+- `POST /api/restaurants/{restaurantId}/reservations/{reservationId}/confirm` - `IMPLEMENTED`
+- `POST /api/restaurants/{restaurantId}/reservations/{reservationId}/cancel` - `IMPLEMENTED`
+- `POST /api/restaurants/{restaurantId}/reservations/{reservationId}/seat` - `IMPLEMENTED`
+- `POST /api/restaurants/{restaurantId}/reservations/{reservationId}/complete` - `IMPLEMENTED`
+- `POST /api/restaurants/{restaurantId}/reservations/{reservationId}/no-show` - `IMPLEMENTED`
+- `POST /api/restaurants/{restaurantId}/reservations/{reservationId}/reassign` - `PLANNED`
+- `POST /api/restaurants/{restaurantId}/reservations/{reservationId}/arrived` - `PLANNED`
 
 Filtros previstos:
 
@@ -270,111 +278,35 @@ Payload conceptual para crear reserva:
 }
 ```
 
-### 9. Availability and Planning
+### 9. Planning
 
-Responsabilidad:
-
-- consultar disponibilidad
-- exponer planning operativo
-- recalcular o simular decisiones
-
-Endpoints:
-
-- `GET /api/availability`
-- `GET /api/planning`
-- `GET /api/planning/{date}/rooms/{roomId}`
-- `POST /api/planning/recalculate`
-- `POST /api/planning/simulate`
-
-Ejemplo de query para disponibilidad:
-
-```text
-GET /api/availability?restaurantId=10&date=2026-05-30&time=20:30&partySize=4
-```
+- `GET /api/restaurants/{restaurantId}/planning?date=YYYY-MM-DD` - `IMPLEMENTED`
+- `POST /api/restaurants/{restaurantId}/planning/recalculate` - `IMPLEMENTED`
+- `POST /api/restaurants/{restaurantId}/planning/move-reservation` - `IMPLEMENTED`
+- `GET /api/availability` - `PLANNED`
+- `POST /api/planning/simulate` - `PLANNED`
 
 ### 10. Rules
 
-Responsabilidad:
-
-- gestionar reglas operativas configurables por restaurante
-
-Endpoints:
-
-- `GET /api/restaurants/{restaurantId}/rules`
-- `POST /api/restaurants/{restaurantId}/rules`
-- `GET /api/rules/{ruleId}`
-- `PUT /api/rules/{ruleId}`
-- `DELETE /api/rules/{ruleId}`
-
-Tipos iniciales previstos:
-
-- prioridad de salon
-- accesibilidad
-- duracion por tamaño de grupo
-- buffer de limpieza
-- margen de retraso
-- politica de combinaciones
+- `POST /api/restaurants/{restaurantId}/rules` - `IMPLEMENTED`
+- `GET /api/restaurants/{restaurantId}/rules` - `IMPLEMENTED`
+- `PATCH /api/restaurants/{restaurantId}/rules/{ruleId}` - `IMPLEMENTED`
+- `DELETE /api/restaurants/{restaurantId}/rules/{ruleId}` - `IMPLEMENTED`
 
 ### 11. Notifications
 
-Responsabilidad:
+- `POST /api/restaurants/{restaurantId}/reservations/{reservationId}/notifications/confirmation` - `IMPLEMENTED`
+- `GET /api/restaurants/{restaurantId}/notifications` - `IMPLEMENTED`
+- `GET /api/restaurants/{restaurantId}/notifications/unread-count` - `IMPLEMENTED`
+- `PATCH /api/restaurants/{restaurantId}/notifications/{notificationId}/read` - `IMPLEMENTED`
+- `PATCH /api/restaurants/{restaurantId}/notifications/read-all` - `IMPLEMENTED`
+- `GET /api/restaurants/{restaurantId}/notifications/logs` - `IMPLEMENTED`
 
-- disparar recordatorios y confirmaciones
-- consultar trazas de envio
+### 12. AI Insights
 
-Endpoints:
-
-- `POST /api/reservations/{reservationId}/send-confirmation`
-- `POST /api/reservations/{reservationId}/send-reminder`
-- `GET /api/notifications/logs`
-
-### 12. AI
-
-Responsabilidad:
-
-- exponer analisis explicativo
-- listar recomendaciones
-- sugerir mejoras operativas
-
-Endpoints:
-
-- `POST /api/ai/planning/analyze`
-- `GET /api/ai/recommendations`
-- `POST /api/ai/recommendations/{recommendationId}/apply-suggestion`
-
-Importante:
-
-- la IA no asigna mesas por si sola
-- las recomendaciones deben apoyarse en datos y reglas del sistema
-
-## Orden recomendado de implementacion de API
-
-### Fase 1
-
-- `GET /api/system/ping`
-- `POST /api/auth/login`
-- `POST /api/auth/refresh`
-- `GET /api/auth/me`
-
-### Fase 2
-
-- endpoints de `restaurants`
-- endpoints de `dining-rooms`
-- endpoints de `tables`
-- endpoints de `table-combinations`
-
-### Fase 3
-
-- endpoints de `customers`
-- endpoints de `reservations`
-
-### Fase 4 y posteriores
-
-- `availability`
-- `planning`
-- `rules`
-- `notifications`
-- `ai`
+- `GET /api/restaurants/{restaurantId}/ai/insights?date=YYYY-MM-DD` - `IMPLEMENTED`
+- `GET /api/restaurants/{restaurantId}/ai/insights/summary?date=YYYY-MM-DD` - `IMPLEMENTED`
+- `PATCH /api/restaurants/{restaurantId}/ai/insights/{insightId}/dismiss` - `IMPLEMENTED`
 
 ## Notas de implementacion futura
 
@@ -382,3 +314,4 @@ Importante:
 - separar DTOs de entidades
 - documentar contratos con OpenAPI mas adelante
 - mantener naming coherente con `DATABASE.md`, `ARCHITECTURE.md` y `ALGORITHM.md`
+- la IA no asigna mesas por si sola; en el estado actual solo analiza y explica planning
