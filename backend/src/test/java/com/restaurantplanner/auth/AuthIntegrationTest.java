@@ -28,6 +28,7 @@ import org.springframework.test.context.jdbc.Sql;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -145,6 +146,87 @@ class AuthIntegrationTest {
                 .header("X-Restaurant-Id", targetRestaurant.getId()))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.activeRestaurantId").value(targetRestaurant.getId()));
+    }
+
+    @Test
+    void registerCreatesUserAndRestaurantAndReturnsTokens() throws Exception {
+        String response = mockMvc.perform(post("/api/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "email": "newowner@example.com",
+                      "password": "securePass123",
+                      "name": "New Owner",
+                      "restaurantName": "My New Restaurant"
+                    }
+                    """))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.accessToken").isNotEmpty())
+            .andExpect(jsonPath("$.refreshToken").isNotEmpty())
+            .andExpect(jsonPath("$.user.email").value("newowner@example.com"))
+            .andExpect(jsonPath("$.user.name").value("New Owner"))
+            .andExpect(jsonPath("$.restaurants[0].name").value("My New Restaurant"))
+            .andExpect(jsonPath("$.restaurants[0].roles[0]").value(Role.RESTAURANT_OWNER.name()))
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+        JsonNode json = objectMapper.readTree(response);
+        assertThat(json.get("expiresIn").asLong()).isPositive();
+        assertThat(refreshTokenRepository.findByToken(json.get("refreshToken").asText())).isPresent();
+    }
+
+    @Test
+    void registerWithDuplicateEmailReturnsConflict() throws Exception {
+        createUser("duplicate@example.com", "secret123", "Existing");
+
+        mockMvc.perform(post("/api/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "email": "duplicate@example.com",
+                      "password": "securePass123",
+                      "name": "New Owner",
+                      "restaurantName": "Some Restaurant"
+                    }
+                    """))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.code").value("CONFLICT"));
+    }
+
+    @Test
+    void registerWithGeneratedSlugWhenExists() throws Exception {
+        createRestaurant("Duplicate Slug Restaurant", "my-restaurant");
+
+        mockMvc.perform(post("/api/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "email": "unique@example.com",
+                      "password": "securePass123",
+                      "name": "Unique Owner",
+                      "restaurantName": "My Restaurant"
+                    }
+                    """))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.restaurants[0].name").value("My Restaurant"))
+            .andExpect(jsonPath("$.restaurants[0].slug").value(not("my-restaurant")));
+    }
+
+    @Test
+    void registerWithInvalidDataReturnsBadRequest() throws Exception {
+        mockMvc.perform(post("/api/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "email": "not-an-email",
+                      "password": "short",
+                      "name": "",
+                      "restaurantName": ""
+                    }
+                    """))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
     }
 
     private String loginAndExtractAccessToken(String email, String password) throws Exception {

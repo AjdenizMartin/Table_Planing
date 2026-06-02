@@ -7,6 +7,7 @@ import type {
 const statusLabels: Record<ReservationStatus, string> = {
   PENDING: "Pendiente",
   CONFIRMED: "Confirmada",
+  ARRIVED: "Llegado",
   SEATED: "Sentada",
   COMPLETED: "Completada",
   CANCELLED: "Cancelada",

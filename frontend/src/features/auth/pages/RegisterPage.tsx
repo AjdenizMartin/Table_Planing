@@ -1,29 +1,25 @@
 import { useMutation } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
-import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { ApiError } from "@/services/api/client";
 import { useAuth } from "@/features/auth/context/AuthContext";
 
-interface LocationState {
-  from?: {
-    pathname?: string;
-  };
-}
-
-export function LoginPage() {
+export function RegisterPage() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { login, status, session } = useAuth();
-  const [email, setEmail] = useState("demo@restaurant.com");
-  const [password, setPassword] = useState("Demo1234!");
+  const { register, status, session } = useAuth();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [restaurantName, setRestaurantName] = useState("");
 
   const mutation = useMutation({
-    mutationFn: login,
+    mutationFn: register,
     onSuccess: (nextSession) => {
       const nextPath =
-        nextSession.restaurants.length > 1 && nextSession.activeRestaurantId === null
-          ? "/select-restaurant"
-          : ((location.state as LocationState | null)?.from?.pathname ?? "/");
+        nextSession.restaurants.length > 0
+          ? "/"
+          : "/select-restaurant";
       navigate(nextPath, { replace: true });
     },
   });
@@ -41,13 +37,19 @@ export function LoginPage() {
     );
   }
 
-  const errorMessage = getLoginErrorMessage(mutation.error);
+  const errorMessage = getRegisterErrorMessage(mutation.error);
+  const passwordMismatch = confirmPassword.length > 0 && password !== confirmPassword;
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (passwordMismatch) {
+      return;
+    }
     mutation.mutate({
       email,
       password,
+      name,
+      restaurantName,
     });
   }
 
@@ -59,31 +61,31 @@ export function LoginPage() {
             Restaurant Table Planning
           </p>
           <h1 className="mt-5 max-w-xl text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-            Opera reservas y planning diario con una sesion centralizada.
+            Crea tu restaurante y empieza a operar.
           </h1>
           <p className="mt-5 max-w-2xl text-base leading-7 text-slate-300 sm:text-lg">
-            Esta base de autenticacion prepara el frontend para trabajar con varios
-            restaurantes, mantener sesion y proteger rutas operativas desde tablet
-            o escritorio.
+            Registra tu restaurante en segundos. Al crear tu cuenta,
+            se configurara automaticamente tu primer restaurante con
+            acceso de propietario.
           </p>
 
           <div className="mt-8 grid gap-4 sm:grid-cols-3">
             <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
-              <h2 className="text-sm font-semibold text-white">Sesion persistente</h2>
+              <h2 className="text-sm font-semibold text-white">Sin compromiso</h2>
               <p className="mt-2 text-sm text-slate-400">
-                Refresh token para recuperar sesion sin rehacer login a cada recarga.
+                Empieza a usar la plataforma sin necesidad de configuracion inicial compleja.
               </p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
-              <h2 className="text-sm font-semibold text-white">Multi-restaurante</h2>
+              <h2 className="text-sm font-semibold text-white">Todo incluido</h2>
               <p className="mt-2 text-sm text-slate-400">
-                Seleccion de restaurante activo cuando el usuario tiene varios accesos.
+                Salones, mesas, combinaciones, reservas y planning listos para usar.
               </p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
-              <h2 className="text-sm font-semibold text-white">Ruta protegida</h2>
+              <h2 className="text-sm font-semibold text-white">Multi-dispositivo</h2>
               <p className="mt-2 text-sm text-slate-400">
-                El frontend limpia sesion al recibir `401` y vuelve al flujo de acceso.
+                Opera desde tablet, movil o escritorio con la misma experiencia.
               </p>
             </div>
           </div>
@@ -92,27 +94,29 @@ export function LoginPage() {
         <section className="rounded-[2rem] border border-white/10 bg-slate-950/70 p-6 shadow-2xl shadow-black/40 sm:p-8">
           <div className="mx-auto max-w-md">
             <p className="text-sm uppercase tracking-[0.3em] text-brand-300">
-              Iniciar Sesion
+              Crear Cuenta
             </p>
             <h2 className="mt-4 text-3xl font-semibold text-white">
-              Accede a tu operativa diaria
+              Registra tu restaurante
             </h2>
             <p className="mt-3 text-sm leading-6 text-slate-400">
-              Usa las credenciales creadas en backend. El restaurante activo se
-              resolvera despues del login si hace falta.
+              Todos los campos son obligatorios.
             </p>
 
-            <div className="mt-5 rounded-2xl border border-emerald-400/25 bg-emerald-500/10 px-4 py-4 text-sm text-emerald-100">
-              <p className="font-semibold">Acceso demo local</p>
-              <p className="mt-2">
-                Email: <span className="font-mono">demo@restaurant.com</span>
-              </p>
-              <p className="mt-1">
-                Password: <span className="font-mono">Demo1234!</span>
-              </p>
-            </div>
-
             <form className="mt-8 grid gap-5" onSubmit={handleSubmit}>
+              <label className="grid gap-2">
+                <span className="text-sm font-medium text-slate-200">Tu nombre</span>
+                <input
+                  className="h-14 rounded-2xl border border-white/10 bg-slate-900/80 px-4 text-base text-white outline-none transition focus:border-brand-400/70 focus:ring-2 focus:ring-brand-400/30"
+                  type="text"
+                  autoComplete="name"
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  placeholder="Ana Martinez"
+                  required
+                />
+              </label>
+
               <label className="grid gap-2">
                 <span className="text-sm font-medium text-slate-200">Email</span>
                 <input
@@ -128,17 +132,49 @@ export function LoginPage() {
               </label>
 
               <label className="grid gap-2">
-                <span className="text-sm font-medium text-slate-200">Password</span>
+                <span className="text-sm font-medium text-slate-200">Nombre del restaurante</span>
                 <input
                   className="h-14 rounded-2xl border border-white/10 bg-slate-900/80 px-4 text-base text-white outline-none transition focus:border-brand-400/70 focus:ring-2 focus:ring-brand-400/30"
-                  type="password"
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  placeholder="********"
+                  type="text"
+                  value={restaurantName}
+                  onChange={(event) => setRestaurantName(event.target.value)}
+                  placeholder="Mi Restaurante"
                   required
                 />
               </label>
+
+              <label className="grid gap-2">
+                <span className="text-sm font-medium text-slate-200">Contrasena</span>
+                <input
+                  className="h-14 rounded-2xl border border-white/10 bg-slate-900/80 px-4 text-base text-white outline-none transition focus:border-brand-400/70 focus:ring-2 focus:ring-brand-400/30"
+                  type="password"
+                  autoComplete="new-password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  placeholder="Minimo 8 caracteres"
+                  minLength={8}
+                  required
+                />
+              </label>
+
+              <label className="grid gap-2">
+                <span className="text-sm font-medium text-slate-200">Confirmar contrasena</span>
+                <input
+                  className="h-14 rounded-2xl border border-white/10 bg-slate-900/80 px-4 text-base text-white outline-none transition focus:border-brand-400/70 focus:ring-2 focus:ring-brand-400/30"
+                  type="password"
+                  autoComplete="new-password"
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                  placeholder="Repite la contrasena"
+                  required
+                />
+              </label>
+
+              {passwordMismatch ? (
+                <div className="rounded-2xl border border-rose-400/25 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+                  Las contrasenas no coinciden.
+                </div>
+              ) : null}
 
               {errorMessage ? (
                 <div className="rounded-2xl border border-rose-400/25 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
@@ -149,16 +185,16 @@ export function LoginPage() {
               <button
                 className="mt-2 h-14 rounded-2xl bg-brand-500 px-5 text-base font-semibold text-slate-950 transition hover:bg-brand-400 disabled:cursor-not-allowed disabled:opacity-60"
                 type="submit"
-                disabled={mutation.isPending}
+                disabled={mutation.isPending || passwordMismatch}
               >
-                {mutation.isPending ? "Entrando..." : "Entrar"}
+                {mutation.isPending ? "Creando cuenta..." : "Crear cuenta y entrar"}
               </button>
             </form>
 
             <p className="mt-6 text-center text-sm text-slate-400">
-              No tienes una cuenta?{" "}
-              <Link to="/register" className="font-medium text-brand-400 hover:text-brand-300 transition">
-                Crea tu restaurante
+              Ya tienes una cuenta?{" "}
+              <Link to="/login" className="font-medium text-brand-400 hover:text-brand-300 transition">
+                Inicia sesion
               </Link>
             </p>
           </div>
@@ -168,26 +204,26 @@ export function LoginPage() {
   );
 }
 
-function getLoginErrorMessage(error: unknown) {
+function getRegisterErrorMessage(error: unknown) {
   if (!error) {
     return null;
   }
 
   if (error instanceof ApiError) {
-    if (error.status === 401 || error.status === 403) {
-      return "Credenciales incorrectas. Revisa el email y la contrasena.";
+    if (error.status === 409) {
+      return "Ese email ya esta registrado. Prueba con otro o inicia sesion.";
     }
 
     if (error.status >= 500) {
-      return "El backend no esta disponible o ha devuelto un error. Revisa que este arrancado en http://localhost:8080.";
+      return "El backend no esta disponible. Revisa que este arrancado en http://localhost:8080.";
     }
 
-    return error.message || "No se pudo iniciar sesion.";
+    return error.message || "No se pudo completar el registro.";
   }
 
   if (error instanceof TypeError) {
     return "No se pudo conectar con el backend. Revisa Docker, el puerto 8080 y la configuracion CORS.";
   }
 
-  return "Error inesperado al iniciar sesion.";
+  return "Error inesperado al registrarse.";
 }

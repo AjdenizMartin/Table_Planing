@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import * as frontdeskApi from "@/features/frontdesk/api/frontdeskApi";
+import type { SearchReservationsParams } from "@/features/frontdesk/api/frontdeskApi";
 import { OperationsShell } from "@/features/frontdesk/components/OperationsShell";
 import { ReservationDetailPanel } from "@/features/frontdesk/components/ReservationDetailPanel";
 import { ReservationForm } from "@/features/frontdesk/components/ReservationForm";
@@ -14,7 +15,7 @@ import {
 } from "@/features/frontdesk/utils/frontdeskUtils";
 import { useActiveRestaurant } from "@/features/restaurant-config/hooks/useActiveRestaurant";
 import { ConfigCard } from "@/features/restaurant-config/components/ConfigCard";
-import { TextField } from "@/features/restaurant-config/components/Field";
+import { SelectField, TextField } from "@/features/restaurant-config/components/Field";
 import { StatusMessage } from "@/features/restaurant-config/components/StatusMessage";
 import { getErrorMessage } from "@/features/restaurant-config/utils/errorMessage";
 import { useAuth } from "@/features/auth/context/AuthContext";
@@ -30,6 +31,13 @@ export function ReservationsPage() {
   const [mode, setMode] = useState<"create" | "detail">(
     searchParams.get("mode") === "new" ? "create" : "detail",
   );
+  const [searchMode, setSearchMode] = useState(false);
+  const [searchFilters, setSearchFilters] = useState<SearchReservationsParams>({
+    customerQuery: "",
+    status: "",
+    dateFrom: "",
+    dateTo: "",
+  });
 
   const activeRoles =
     session.restaurants.find((restaurant) => restaurant.id === activeRestaurantId)?.roles ?? [];
@@ -42,12 +50,18 @@ export function ReservationsPage() {
   const reservationsQuery = useQuery({
     queryKey: ["reservations", activeRestaurantId, selectedDate],
     queryFn: () => frontdeskApi.getReservations(activeRestaurantId!, selectedDate),
-    enabled: activeRestaurantId !== null,
+    enabled: activeRestaurantId !== null && !searchMode,
+  });
+
+  const searchQuery = useQuery({
+    queryKey: ["reservations-search", activeRestaurantId, searchFilters],
+    queryFn: () => frontdeskApi.searchReservations(activeRestaurantId!, searchFilters),
+    enabled: activeRestaurantId !== null && searchMode,
   });
 
   const reservations = useMemo(
-    () => reservationsQuery.data ?? [],
-    [reservationsQuery.data],
+    () => (searchMode ? searchQuery.data : reservationsQuery.data) ?? [],
+    [searchMode, searchQuery.data, reservationsQuery.data],
   );
 
   const selectedReservation =
@@ -99,9 +113,15 @@ export function ReservationsPage() {
   }, [mode]);
 
   async function refreshReservations() {
-    await queryClient.invalidateQueries({
-      queryKey: ["reservations", activeRestaurantId, selectedDate],
-    });
+    if (searchMode) {
+      await queryClient.invalidateQueries({
+        queryKey: ["reservations-search", activeRestaurantId],
+      });
+    } else {
+      await queryClient.invalidateQueries({
+        queryKey: ["reservations", activeRestaurantId, selectedDate],
+      });
+    }
   }
 
   function handleReservationChanged(nextReservation: ReservationResponse) {
@@ -121,26 +141,47 @@ export function ReservationsPage() {
     >
       <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
         <div className="grid gap-6">
-          <ConfigCard title="Reservas del dia">
+          <ConfigCard title={searchMode ? "Buscar reservas" : "Reservas del dia"}>
             <div className="mb-5 grid gap-4 sm:grid-cols-[220px_auto] sm:items-end">
-              <TextField
-                label="Fecha"
-                type="date"
-                value={selectedDate}
-                onChange={(event) => {
-                  const nextDate = event.target.value;
-                  setSelectedDate(nextDate);
-                  setSearchParams((current) => {
-                    const next = new URLSearchParams(current);
-                    next.set("date", nextDate);
-                    if (mode === "create") {
-                      next.set("mode", "new");
-                    }
-                    return next;
-                  });
-                }}
-              />
-              <div className="flex gap-3">
+              {searchMode ? (
+                <TextField
+                  label="Buscar cliente"
+                  placeholder="Nombre, apellido..."
+                  value={searchFilters.customerQuery ?? ""}
+                  onChange={(event) =>
+                    setSearchFilters((prev) => ({ ...prev, customerQuery: event.target.value }))
+                  }
+                />
+              ) : (
+                <TextField
+                  label="Fecha"
+                  type="date"
+                  value={selectedDate}
+                  onChange={(event) => {
+                    const nextDate = event.target.value;
+                    setSelectedDate(nextDate);
+                    setSearchParams((current) => {
+                      const next = new URLSearchParams(current);
+                      next.set("date", nextDate);
+                      if (mode === "create") {
+                        next.set("mode", "new");
+                      }
+                      return next;
+                    });
+                  }}
+                />
+              )}
+              <div className="flex flex-wrap gap-3">
+                <button
+                  className="h-12 rounded-2xl border border-white/10 bg-white/5 px-5 text-sm font-medium text-white transition hover:border-brand-400/40 hover:bg-brand-500/10"
+                  type="button"
+                  onClick={() => {
+                    setSearchMode(!searchMode);
+                    setSelectedReservationId(null);
+                  }}
+                >
+                  {searchMode ? "Ver por fecha" : "Buscar"}
+                </button>
                 <button
                   className="h-12 rounded-2xl border border-white/10 bg-white/5 px-5 text-sm font-medium text-white transition hover:border-brand-400/40 hover:bg-brand-500/10"
                   type="button"
@@ -160,12 +201,48 @@ export function ReservationsPage() {
               </div>
             </div>
 
-            {reservationsQuery.isLoading ? (
+            {searchMode ? (
+              <div className="mb-5 grid gap-4 sm:grid-cols-3">
+                <SelectField
+                  label="Estado"
+                  value={searchFilters.status ?? ""}
+                  onChange={(event) =>
+                    setSearchFilters((prev) => ({ ...prev, status: event.target.value }))
+                  }
+                >
+                  <option value="">Todos</option>
+                  <option value="PENDING">Pendiente</option>
+                  <option value="CONFIRMED">Confirmada</option>
+                  <option value="SEATED">Sentada</option>
+                  <option value="COMPLETED">Completada</option>
+                  <option value="CANCELLED">Cancelada</option>
+                  <option value="NO_SHOW">No show</option>
+                </SelectField>
+                <TextField
+                  label="Desde"
+                  type="date"
+                  value={searchFilters.dateFrom ?? ""}
+                  onChange={(event) =>
+                    setSearchFilters((prev) => ({ ...prev, dateFrom: event.target.value }))
+                  }
+                />
+                <TextField
+                  label="Hasta"
+                  type="date"
+                  value={searchFilters.dateTo ?? ""}
+                  onChange={(event) =>
+                    setSearchFilters((prev) => ({ ...prev, dateTo: event.target.value }))
+                  }
+                />
+              </div>
+            ) : null}
+
+            {reservationsQuery.isLoading || searchQuery.isLoading ? (
               <StatusMessage tone="info">Cargando reservas...</StatusMessage>
             ) : null}
-            {reservationsQuery.error ? (
+            {reservationsQuery.error || searchQuery.error ? (
               <StatusMessage tone="error">
-                {getErrorMessage(reservationsQuery.error)}
+                {getErrorMessage(reservationsQuery.error ?? searchQuery.error)}
               </StatusMessage>
             ) : null}
 

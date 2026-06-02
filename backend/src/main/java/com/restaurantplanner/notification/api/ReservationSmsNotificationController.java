@@ -37,4 +37,19 @@ public class ReservationSmsNotificationController {
             )
         );
     }
+
+    @PostMapping("/reminder")
+    public NotificationLogResponse sendReminder(
+        @PathVariable Long restaurantId,
+        @PathVariable Long reservationId,
+        Authentication authentication
+    ) {
+        return notificationLogMapper.toResponse(
+            smsNotificationService.sendReservationReminder(
+                restaurantId,
+                reservationId,
+                (AuthenticatedUser) authentication.getPrincipal()
+            )
+        );
+    }
 }

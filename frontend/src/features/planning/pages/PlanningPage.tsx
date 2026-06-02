@@ -21,6 +21,10 @@ import type {
 } from "@/features/planning/types";
 import { useActiveRestaurant } from "@/features/restaurant-config/hooks/useActiveRestaurant";
 import { getErrorMessage } from "@/features/restaurant-config/utils/errorMessage";
+import * as frontdeskApi from "@/features/frontdesk/api/frontdeskApi";
+import { ReservationSidePanel } from "@/features/planning/components/ReservationSidePanel";
+import { ReservationCreateModal } from "@/features/planning/components/ReservationCreateModal";
+import { NeedsAttentionPanel } from "@/features/planning/components/NeedsAttentionPanel";
 
 type ServiceWindow = "all" | "lunch" | "dinner";
 type StatusFilter = "all" | ReservationStatus | "UNASSIGNED";
@@ -54,6 +58,13 @@ const STATUS_VISUALS: Record<ReservationStatus | "FREE" | "CONFLICT" | "UNASSIGN
     dot: "bg-sky-300",
     tooltip: "Reserva confirmada.",
     action: "Preparar mesa",
+  },
+  ARRIVED: {
+    label: "Arrived",
+    tone: "border-teal-300/35 bg-teal-400/15 text-teal-100",
+    dot: "bg-teal-300",
+    tooltip: "Cliente ha llegado al restaurante.",
+    action: "Asignar mesa y sentar",
   },
   SEATED: {
     label: "In service",
@@ -174,14 +185,11 @@ function pct(value: number, total: number) {
   return Math.max(0, Math.min(100, (value / total) * 100));
 }
 
-function StatCard({ label, value, detail }: { label: string; value: string | number; detail: string }) {
+function StatCardCompact({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-3xl border border-white/10 bg-slate-950/45 px-4 py-3 shadow-lg shadow-black/10">
-      <p className="text-[0.65rem] font-semibold uppercase tracking-[0.22em] text-slate-500">
-        {label}
-      </p>
-      <p className="mt-2 text-2xl font-semibold text-white">{value}</p>
-      <p className="mt-1 text-xs text-slate-400">{detail}</p>
+    <div className="rounded-2xl border border-white/10 bg-slate-950/45 px-3 py-2.5">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-500">{label}</p>
+      <p className="mt-0.5 text-lg font-semibold text-white">{value}</p>
     </div>
   );
 }
@@ -191,6 +199,7 @@ function StatusLegend() {
     "FREE",
     "CONFIRMED",
     "PENDING",
+    "ARRIVED",
     "SEATED",
     "CLEANING",
     "UNASSIGNED",
@@ -232,6 +241,7 @@ export function PlanningPage() {
   const [selectedReservationId, setSelectedReservationId] = useState<number | null>(null);
   const [selectedTableId, setSelectedTableId] = useState<number | null>(null);
   const [lastAssignResponse, setLastAssignResponse] = useState<AssignReservationResponse | null>(null);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
   const [insightPanelOpen, setInsightPanelOpen] = useState(false);
 
   const aiInsightsQuery = useAiInsights(selectedDate);
@@ -272,6 +282,7 @@ export function PlanningPage() {
 
   const planning = planningQuery.data;
   const insights = aiInsightsQuery.data ?? [];
+
   const allReservations = useMemo(() => {
     if (!planning) {
       return [];
@@ -280,6 +291,36 @@ export function PlanningPage() {
       .filter((reservation) => isInsideServiceWindow(reservation, serviceWindow))
       .sort((left, right) => timeToMinutes(left.startTime) - timeToMinutes(right.startTime));
   }, [planning, serviceWindow]);
+
+  const selectedReservation = useMemo(() => {
+    if (!selectedReservationId || !planning) return null;
+    return [...planning.assignedReservations, ...planning.unassignedReservations]
+      .find((r) => r.reservationId === selectedReservationId) ?? null;
+  }, [planning, selectedReservationId]);
+
+  const fullReservationQuery = useQuery({
+    queryKey: ["reservation-detail", activeRestaurantId, selectedReservationId],
+    queryFn: () => frontdeskApi.getReservation(activeRestaurantId!, selectedReservationId!),
+    enabled: selectedReservationId !== null && activeRestaurantId !== null,
+    retry: 1,
+  });
+
+  const customerQuery = useQuery({
+    queryKey: ["customer", activeRestaurantId, selectedReservation?.customerId],
+    queryFn: () => frontdeskApi.getCustomer(activeRestaurantId!, selectedReservation!.customerId),
+    enabled: (selectedReservation?.customerId ?? 0) > 0 && activeRestaurantId !== null,
+    retry: 1,
+  });
+
+  const diningRoomName = useMemo(() => {
+    if (!selectedReservation?.tableId || !planning) return null;
+    for (const room of planning.diningRooms) {
+      if (room.tables.some((t) => t.id === selectedReservation.tableId)) {
+        return room.name;
+      }
+    }
+    return null;
+  }, [planning, selectedReservation]);
 
   const filteredReservations = useMemo(() => {
     const normalizedSearch = searchQuery.trim().toLowerCase();
@@ -306,8 +347,6 @@ export function PlanningPage() {
     return rooms.filter((room) => room.id === selectedRoomId);
   }, [planning?.diningRooms, selectedRoomId]);
 
-  const selectedReservation =
-    allReservations.find((reservation) => reservation.reservationId === selectedReservationId) ?? null;
   const selectedTable = visibleRooms
     .flatMap((room) => room.tables)
     .find((table) => table.id === selectedTableId) ?? null;
@@ -331,85 +370,66 @@ export function PlanningPage() {
 
   return (
     <section className="grid gap-6">
-      <header className="overflow-hidden rounded-[2rem] border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(20,184,166,0.24),transparent_34%),linear-gradient(135deg,rgba(15,23,42,0.96),rgba(2,6,23,0.92))] p-5 shadow-2xl shadow-black/30 sm:p-7">
-        <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.32em] text-brand-300">
-              Live Planning Command Center
-            </p>
-            <h1 className="mt-3 max-w-4xl text-3xl font-semibold tracking-tight text-white sm:text-5xl">
-              Plano visual de salones, mesas y reservas
+      <header className="rounded-[2rem] border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(20,184,166,0.18),transparent_34%),linear-gradient(135deg,rgba(15,23,42,0.96),rgba(2,6,23,0.92))] p-4 shadow-2xl shadow-black/30 sm:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+              Planning
             </h1>
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-300">
-              Reasigna mesas y mejora ocupacion sin cambiar nunca la hora original de una reserva.
-              La timeline es de solo lectura para proteger la hora acordada con el cliente.
-            </p>
+            <p className="mt-1 text-sm text-slate-400">{selectedDate}</p>
           </div>
-
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              className="h-12 rounded-2xl bg-brand-500 px-5 text-sm font-semibold text-slate-950 transition hover:bg-brand-400"
-              onClick={() => navigate(`/reservations?mode=new&date=${encodeURIComponent(selectedDate)}`)}
+              className="h-11 min-w-[120px] rounded-2xl bg-brand-500 px-5 text-sm font-semibold text-slate-950 transition hover:bg-brand-400 active:scale-[0.97]"
+              onClick={() => setCreateModalOpen(true)}
             >
-              New reservation
+              + New
             </button>
             <button
               type="button"
-              className="h-12 rounded-2xl border border-white/10 bg-white/10 px-5 text-sm font-semibold text-white transition hover:border-brand-300/40 hover:bg-brand-500/10 disabled:opacity-60"
+              className="h-11 min-w-[100px] rounded-2xl border border-white/10 bg-white/10 px-4 text-sm font-semibold text-white transition hover:border-brand-300/40 hover:bg-brand-500/10 active:scale-[0.97] disabled:opacity-60"
               disabled={recalculateMutation.isPending || activeRestaurantId === null}
-              onClick={() => {
-                void recalculateMutation.mutateAsync();
-              }}
+              onClick={() => { void recalculateMutation.mutateAsync(); }}
             >
-              {recalculateMutation.isPending ? "Optimizing..." : "Optimize table allocation"}
+              {recalculateMutation.isPending ? "Optimizing..." : "Optimize"}
             </button>
             <button
               type="button"
-              className="h-12 rounded-2xl border border-white/10 bg-white/10 px-5 text-sm font-semibold text-white transition hover:border-brand-300/40 hover:bg-brand-500/10"
+              className="h-11 min-w-[100px] rounded-2xl border border-white/10 bg-white/10 px-4 text-sm font-semibold text-white transition hover:border-brand-300/40 hover:bg-brand-500/10 active:scale-[0.97]"
               onClick={() => navigate("/settings/layout")}
             >
-              Edit layout
+              Layout
             </button>
           </div>
         </div>
 
-        <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-6">
-          <label className="grid gap-2 rounded-3xl border border-white/10 bg-slate-950/40 p-3">
-            <span className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
-              Fecha
-            </span>
+        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
+          <label className="grid gap-1 rounded-2xl border border-white/10 bg-slate-950/40 p-3">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-500">Fecha</span>
             <input
-              className="h-12 rounded-2xl border border-white/10 bg-slate-950/70 px-4 text-white outline-none focus:border-brand-300/70"
+              className="h-10 rounded-xl border border-white/10 bg-slate-950/70 px-3 text-sm text-white outline-none focus:border-brand-300/70"
               type="date"
               value={selectedDate}
               onChange={(event) => setSelectedDate(event.target.value)}
             />
           </label>
-
-          <label className="grid gap-2 rounded-3xl border border-white/10 bg-slate-950/40 p-3">
-            <span className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
-              Turno
-            </span>
+          <label className="grid gap-1 rounded-2xl border border-white/10 bg-slate-950/40 p-3">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-500">Turno</span>
             <select
-              className="h-12 rounded-2xl border border-white/10 bg-slate-950/70 px-4 text-white outline-none focus:border-brand-300/70"
+              className="h-10 rounded-xl border border-white/10 bg-slate-950/70 px-3 text-sm text-white outline-none focus:border-brand-300/70"
               value={serviceWindow}
               onChange={(event) => setServiceWindow(event.target.value as ServiceWindow)}
             >
               {Object.entries(SERVICE_WINDOWS).map(([value, window]) => (
-                <option key={value} value={value}>
-                  {window.label}
-                </option>
+                <option key={value} value={value}>{window.label}</option>
               ))}
             </select>
           </label>
-
-          <label className="grid gap-2 rounded-3xl border border-white/10 bg-slate-950/40 p-3 md:col-span-2">
-            <span className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
-              Salon
-            </span>
+          <label className="col-span-2 grid gap-1 rounded-2xl border border-white/10 bg-slate-950/40 p-3">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-500">Salon</span>
             <select
-              className="h-12 rounded-2xl border border-white/10 bg-slate-950/70 px-4 text-white outline-none focus:border-brand-300/70"
+              className="h-10 rounded-xl border border-white/10 bg-slate-950/70 px-3 text-sm text-white outline-none focus:border-brand-300/70"
               value={selectedRoomId}
               onChange={(event) =>
                 setSelectedRoomId(event.target.value === "all" ? "all" : Number(event.target.value))
@@ -417,22 +437,13 @@ export function PlanningPage() {
             >
               <option value="all">Todos los salones</option>
               {(planning?.diningRooms ?? []).map((room) => (
-                <option key={room.id} value={room.id}>
-                  {room.name}
-                </option>
+                <option key={room.id} value={room.id}>{room.name}</option>
               ))}
             </select>
           </label>
-
-          <StatCard label="Ocupacion" value={`${stats.occupancy}%`} detail={`${stats.occupiedSeats}/${stats.totalSeats} seats`} />
-          <StatCard label="Realtime" value="Connected" detail="REST + WebSocket ready" />
-        </div>
-
-        <div className="mt-4 grid gap-3 md:grid-cols-4">
-          <StatCard label="Reservas" value={stats.reservations} detail="En el turno seleccionado" />
-          <StatCard label="Comensales" value={stats.guests} detail="Total previsto" />
-          <StatCard label="Pendientes" value={stats.pending} detail="Requieren confirmacion" />
-          <StatCard label="Sin asignar" value={stats.unassigned} detail="Necesitan mesa" />
+          <StatCardCompact label="Ocupacion" value={`${stats.occupancy}%`} />
+          <StatCardCompact label="Reservas" value={stats.reservations} />
+          <StatCardCompact label="Pendientes" value={stats.pending} />
         </div>
       </header>
 
@@ -444,15 +455,26 @@ export function PlanningPage() {
         onOpenPanel={() => setInsightPanelOpen(true)}
       />
 
+      <NeedsAttentionPanel
+        planning={planning}
+        onSelectReservation={(reservationId) => {
+          setSelectedReservationId(reservationId);
+          setSelectedTableId(null);
+          setLastAssignResponse(null);
+        }}
+      />
+
       {planningQuery.isLoading ? (
-        <div className="rounded-[2rem] border border-white/10 bg-white/5 p-8 text-slate-300">
-          Cargando planning del dia...
+        <div className="flex items-center gap-3 rounded-[2rem] border border-white/10 bg-white/5 px-6 py-5 text-slate-300">
+          <span className="h-5 w-5 animate-spin rounded-full border-2 border-slate-400 border-t-transparent" />
+          <span className="text-sm">Loading today&apos;s plan&hellip;</span>
         </div>
       ) : null}
 
       {planningQuery.error ? (
-        <div className="rounded-[2rem] border border-rose-300/30 bg-rose-500/10 p-5 text-rose-100">
-          {getErrorMessage(planningQuery.error)}
+        <div className="rounded-[2rem] border border-rose-300/20 bg-rose-500/8 px-6 py-5">
+          <p className="text-sm font-medium text-rose-200">Could not load planning data</p>
+          <p className="mt-1 text-sm text-rose-300/80">{getErrorMessage(planningQuery.error)}</p>
         </div>
       ) : null}
 
@@ -550,6 +572,37 @@ export function PlanningPage() {
         dismissingInsightId={dismissInsightMutation.variables ?? null}
         canDismiss={canDismissInsights}
       />
+
+      <ReservationCreateModal
+        open={createModalOpen}
+        restaurantId={activeRestaurantId!}
+        selectedDate={selectedDate}
+        onClose={() => setCreateModalOpen(false)}
+        onCreated={(reservationId) => {
+          setSelectedReservationId(reservationId);
+          setSelectedTableId(null);
+          setLastAssignResponse(null);
+          setCreateModalOpen(false);
+          queryClient.invalidateQueries({ queryKey: ["planning", activeRestaurantId, selectedDate] });
+        }}
+      />
+
+      <ReservationSidePanel
+        open={selectedReservationId !== null}
+        reservationSummary={selectedReservation}
+        fullReservation={fullReservationQuery.data}
+        fullReservationLoading={fullReservationQuery.isLoading}
+        customer={customerQuery.data}
+        customerLoading={customerQuery.isLoading}
+        diningRoomName={diningRoomName}
+        restaurantId={activeRestaurantId!}
+        selectedDate={selectedDate}
+        onClose={() => {
+          setSelectedReservationId(null);
+          setSelectedTableId(null);
+          setLastAssignResponse(null);
+        }}
+      />
     </section>
   );
 }
@@ -616,7 +669,7 @@ function ReservationQueue({
         ))}
       </div>
 
-      <div className="mt-4 grid max-h-[680px] gap-3 overflow-y-auto pr-1">
+      <div className="mt-4 grid max-h-[640px] gap-2 overflow-y-auto pr-1">
         {reservations.map((reservation) => {
           const isUnassigned = reservation.tableId === null && reservation.tableCombinationId === null;
           return (
@@ -624,57 +677,35 @@ function ReservationQueue({
               key={reservation.reservationId}
               type="button"
               className={[
-                "rounded-3xl border p-4 text-left transition",
+                "rounded-2xl border px-4 py-3 text-left transition active:scale-[0.98]",
                 selectedReservationId === reservation.reservationId
-                  ? "border-brand-300/70 bg-brand-500/15 shadow-lg shadow-brand-950/20"
-                  : "border-white/10 bg-white/5 hover:border-brand-300/40 hover:bg-white/10",
+                  ? "border-brand-300/70 bg-brand-500/15"
+                  : "border-white/[0.06] bg-white/[0.03] hover:border-white/20 hover:bg-white/[0.06]",
               ].join(" ")}
               onClick={() => onSelectReservation(reservation.reservationId)}
             >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-base font-semibold text-white">{reservationName(reservation)}</p>
-                  <p className="mt-1 text-sm text-slate-400">
-                    {normalizeTimeForInput(reservation.startTime)} · {reservation.partySize} pax
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-white">{reservationName(reservation)}</span>
+                    <span className="text-xs text-slate-500">·</span>
+                    <span className="text-xs font-medium text-slate-400">{reservation.partySize}</span>
+                  </div>
+                  <p className="mt-0.5 text-xs text-slate-500">
+                    {normalizeTimeForInput(reservation.startTime)}
+                    {reservation.tableCode ? ` · ${reservation.tableCode}` : ""}
+                    {isUnassigned ? " · Sin mesa" : ""}
                   </p>
                 </div>
                 <StatusPill status={reservation.status} />
-              </div>
-              <div className="mt-3 flex items-center justify-between gap-3">
-                <span className={[
-                  "rounded-full border px-3 py-1 text-xs font-semibold",
-                  isUnassigned ? STATUS_VISUALS.UNASSIGNED.tone : "border-white/10 bg-slate-950/60 text-slate-300",
-                ].join(" ")}>
-                  {isUnassigned ? "Sin mesa" : reservation.tableCode ?? reservation.tableCombinationName}
-                </span>
-                {isUnassigned ? (
-                  <span
-                    role="button"
-                    tabIndex={0}
-                    className="rounded-full bg-brand-500 px-3 py-1 text-xs font-semibold text-slate-950"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      onAssignAutomatically(reservation.reservationId);
-                    }}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        onAssignAutomatically(reservation.reservationId);
-                      }
-                    }}
-                  >
-                    {assigningReservationId === reservation.reservationId ? "Asignando" : "Find best table"}
-                  </span>
-                ) : null}
               </div>
             </button>
           );
         })}
 
         {reservations.length === 0 ? (
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-5 text-sm text-slate-300">
-            No hay reservas que coincidan con los filtros.
+          <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 text-center">
+            <p className="text-sm text-slate-500">No reservations match the current filters.</p>
           </div>
         ) : null}
       </div>

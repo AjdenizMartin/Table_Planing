@@ -5,6 +5,7 @@ export function StatusPill({ status }: { status: ReservationStatus }) {
   const toneByStatus: Record<ReservationStatus, string> = {
     PENDING: "border-amber-400/25 bg-amber-500/10 text-amber-100",
     CONFIRMED: "border-sky-400/25 bg-sky-500/10 text-sky-100",
+    ARRIVED: "border-teal-400/25 bg-teal-500/10 text-teal-100",
     SEATED: "border-emerald-400/25 bg-emerald-500/10 text-emerald-100",
     COMPLETED: "border-slate-400/25 bg-slate-500/10 text-slate-200",
     CANCELLED: "border-rose-400/25 bg-rose-500/10 text-rose-100",

@@ -5,10 +5,19 @@ import type {
   LogoutPayload,
   MeResponse,
   RefreshPayload,
+  RegisterPayload,
 } from "@/features/auth/types";
 
 export function login(payload: LoginPayload) {
   return apiClient.request<AuthResponse>("/api/auth/login", {
+    method: "POST",
+    body: payload,
+    auth: false,
+  });
+}
+
+export function register(payload: RegisterPayload) {
+  return apiClient.request<AuthResponse>("/api/auth/register", {
     method: "POST",
     body: payload,
     auth: false,

@@ -15,6 +15,7 @@ export interface CustomerResponse {
 export type ReservationStatus =
   | "PENDING"
   | "CONFIRMED"
+  | "ARRIVED"
   | "SEATED"
   | "COMPLETED"
   | "CANCELLED"

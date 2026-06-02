@@ -136,6 +136,52 @@ public class ReservationService {
     }
 
     @Transactional(readOnly = true)
+    public List<ReservationResponse> search(
+        Long restaurantId,
+        String customerQuery,
+        String status,
+        LocalDate dateFrom,
+        LocalDate dateTo,
+        Integer partySize,
+        AuthenticatedUser authenticatedUser
+    ) {
+        findAccessibleRestaurantOrThrow(restaurantId, authenticatedUser);
+
+        String normalizedQuery = normalizeOptional(customerQuery);
+        String likePattern = normalizedQuery != null ? "%" + normalizedQuery.toLowerCase() + "%" : null;
+        ReservationStatus searchStatus = normalizeReservationStatus(status);
+
+        List<Reservation> reservations = reservationRepository.search(
+            restaurantId, likePattern, searchStatus, partySize);
+
+        if (dateFrom != null) {
+            reservations = reservations.stream()
+                .filter(r -> !r.getReservationDate().isBefore(dateFrom))
+                .toList();
+        }
+        if (dateTo != null) {
+            reservations = reservations.stream()
+                .filter(r -> !r.getReservationDate().isAfter(dateTo))
+                .toList();
+        }
+
+        return reservations.stream()
+            .map(reservationMapper::toResponse)
+            .toList();
+    }
+
+    private ReservationStatus normalizeReservationStatus(String status) {
+        if (status == null || status.isBlank()) {
+            return null;
+        }
+        try {
+            return ReservationStatus.valueOf(status.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    @Transactional(readOnly = true)
     public ReservationResponse findById(Long restaurantId, Long reservationId, AuthenticatedUser authenticatedUser) {
         findAccessibleRestaurantOrThrow(restaurantId, authenticatedUser);
         return reservationMapper.toResponse(findReservationOrThrow(restaurantId, reservationId));
@@ -281,6 +327,35 @@ public class ReservationService {
             reservation.getId(),
             reservation.getReservationDate(),
             "Reservation seated"
+        );
+        return reservationMapper.toResponse(reservation);
+    }
+
+    @Transactional
+    public ReservationResponse arrived(Long restaurantId, Long reservationId, AuthenticatedUser authenticatedUser) {
+        findAccessibleRestaurantOrThrow(restaurantId, authenticatedUser);
+        requireSeatOrCompletePermission(authenticatedUser, restaurantId);
+
+        Reservation reservation = findReservationOrThrow(restaurantId, reservationId);
+        ensureTransitionAllowed(reservation.getStatus(), ReservationStatus.ARRIVED);
+        reservation.setStatus(ReservationStatus.ARRIVED);
+        if (reservation.getConfirmedAt() == null) {
+            reservation.setConfirmedAt(Instant.now());
+        }
+        auditService.record(restaurantId, "Reservation", reservation.getId(), "reservation.arrived", authenticatedUser.userId(), null);
+        eventPublisher.publishEvent(new ReservationNotificationEvent(
+            "reservation.arrived", restaurantId, reservation.getId(),
+            reservation.getCustomer().getId(), reservation.getCustomer().getEmail(),
+            reservation.getCustomer().getFirstName() + " " + reservation.getCustomer().getLastName(),
+            reservation.getPartySize(), reservation.getReservationDate(), reservation.getStartTime(),
+            authenticatedUser.userId()
+        ));
+        realtimePublisher.publishReservationEvent(
+            "reservation.arrived",
+            restaurantId,
+            reservation.getId(),
+            reservation.getReservationDate(),
+            "Customer arrived at restaurant"
         );
         return reservationMapper.toResponse(reservation);
     }
@@ -443,10 +518,17 @@ public class ReservationService {
     private void ensureTransitionAllowed(ReservationStatus currentStatus, ReservationStatus targetStatus) {
         boolean allowed = switch (targetStatus) {
             case CONFIRMED -> currentStatus == ReservationStatus.PENDING;
-            case CANCELLED -> currentStatus == ReservationStatus.PENDING || currentStatus == ReservationStatus.CONFIRMED;
-            case SEATED -> currentStatus == ReservationStatus.PENDING || currentStatus == ReservationStatus.CONFIRMED;
+            case ARRIVED -> currentStatus == ReservationStatus.PENDING || currentStatus == ReservationStatus.CONFIRMED;
+            case CANCELLED -> currentStatus == ReservationStatus.PENDING
+                || currentStatus == ReservationStatus.CONFIRMED
+                || currentStatus == ReservationStatus.ARRIVED;
+            case SEATED -> currentStatus == ReservationStatus.PENDING
+                || currentStatus == ReservationStatus.CONFIRMED
+                || currentStatus == ReservationStatus.ARRIVED;
             case COMPLETED -> currentStatus == ReservationStatus.SEATED;
-            case NO_SHOW -> currentStatus == ReservationStatus.PENDING || currentStatus == ReservationStatus.CONFIRMED;
+            case NO_SHOW -> currentStatus == ReservationStatus.PENDING
+                || currentStatus == ReservationStatus.CONFIRMED
+                || currentStatus == ReservationStatus.ARRIVED;
             default -> false;
         };
 

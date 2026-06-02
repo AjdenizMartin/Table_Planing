@@ -54,6 +54,30 @@ export function getReservations(restaurantId: number, date?: string) {
   );
 }
 
+export interface SearchReservationsParams {
+  customerQuery?: string;
+  status?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  partySize?: number;
+}
+
+export function searchReservations(
+  restaurantId: number,
+  params: SearchReservationsParams,
+) {
+  const query = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      query.set(key, String(value));
+    }
+  });
+  const qs = query.toString();
+  return apiClient.request<ReservationResponse[]>(
+    `/api/restaurants/${restaurantId}/reservations/search${qs ? `?${qs}` : ""}`,
+  );
+}
+
 export function getReservation(restaurantId: number, reservationId: number) {
   return apiClient.request<ReservationResponse>(
     `/api/restaurants/${restaurantId}/reservations/${reservationId}`,
@@ -83,6 +107,15 @@ export function updateReservation(
     {
       method: "PATCH",
       body: payload,
+    },
+  );
+}
+
+export function arrivedReservation(restaurantId: number, reservationId: number) {
+  return apiClient.request<ReservationResponse>(
+    `/api/restaurants/${restaurantId}/reservations/${reservationId}/arrived`,
+    {
+      method: "POST",
     },
   );
 }
@@ -126,6 +159,31 @@ export function completeReservation(restaurantId: number, reservationId: number)
 export function noShowReservation(restaurantId: number, reservationId: number) {
   return apiClient.request<ReservationResponse>(
     `/api/restaurants/${restaurantId}/reservations/${reservationId}/no-show`,
+    {
+      method: "POST",
+    },
+  );
+}
+
+export interface SendConfirmationResponse {
+  id: number;
+  status: string;
+  errorMessage: string | null;
+  sentAt: string | null;
+}
+
+export function sendReservationConfirmation(restaurantId: number, reservationId: number) {
+  return apiClient.request<SendConfirmationResponse>(
+    `/api/restaurants/${restaurantId}/reservations/${reservationId}/notifications/confirmation`,
+    {
+      method: "POST",
+    },
+  );
+}
+
+export function sendReservationReminder(restaurantId: number, reservationId: number) {
+  return apiClient.request<SendConfirmationResponse>(
+    `/api/restaurants/${restaurantId}/reservations/${reservationId}/notifications/reminder`,
     {
       method: "POST",
     },

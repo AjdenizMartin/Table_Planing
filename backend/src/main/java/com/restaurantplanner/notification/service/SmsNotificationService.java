@@ -201,6 +201,104 @@ public class SmsNotificationService {
         }
     }
 
+    @Transactional
+    public NotificationLog sendReservationReminder(
+        Long restaurantId,
+        Long reservationId,
+        AuthenticatedUser authenticatedUser
+    ) {
+        findAccessibleRestaurantOrThrow(restaurantId, authenticatedUser);
+        requireOwnerManagerOrAdmin(authenticatedUser, restaurantId);
+
+        Reservation reservation = reservationRepository.findByIdAndRestaurantId(reservationId, restaurantId)
+            .orElseThrow(() -> new NotFoundException("Reservation not found"));
+        Customer customer = reservation.getCustomer();
+
+        if (!StringUtils.hasText(customer.getPhone())) {
+            NotificationLog failedLog = createFailureLog(
+                reservation,
+                NotificationTemplateCode.RESERVATION_REMINDER,
+                "Customer does not have a phone number"
+            );
+            auditService.record(
+                restaurantId,
+                "NotificationLog",
+                failedLog.getId(),
+                "sms.reminder.failed",
+                authenticatedUser.userId(),
+                "{\"reason\":\"missing_phone\"}"
+            );
+            return failedLog;
+        }
+
+        if (!properties.isEnabled()) {
+            NotificationLog failedLog = createFailureLog(
+                reservation,
+                NotificationTemplateCode.RESERVATION_REMINDER,
+                "SMS notifications are disabled"
+            );
+            auditService.record(
+                restaurantId,
+                "NotificationLog",
+                failedLog.getId(),
+                "sms.reminder.failed",
+                authenticatedUser.userId(),
+                "{\"reason\":\"sms_disabled\"}"
+            );
+            return failedLog;
+        }
+
+        String message = buildReservationReminderMessage(reservation);
+        try {
+            NotificationProviderResult providerResult = notificationProvider.sendSms(
+                new NotificationSendCommand(
+                    restaurantId,
+                    reservation.getId(),
+                    customer.getId(),
+                    customer.getPhone(),
+                    message,
+                    NotificationTemplateCode.RESERVATION_REMINDER
+                )
+            );
+
+            NotificationLog notificationLog = new NotificationLog();
+            notificationLog.setRestaurant(reservation.getRestaurant());
+            notificationLog.setReservation(reservation);
+            notificationLog.setCustomer(customer);
+            notificationLog.setChannel(NotificationChannel.SMS);
+            notificationLog.setTemplateCode(NotificationTemplateCode.RESERVATION_REMINDER);
+            notificationLog.setStatus(NotificationDeliveryStatus.SENT);
+            notificationLog.setProviderMessageId(providerResult.providerMessageId());
+            notificationLog.setSentAt(Instant.now());
+            NotificationLog saved = notificationLogRepository.save(notificationLog);
+
+            auditService.record(
+                restaurantId,
+                "NotificationLog",
+                saved.getId(),
+                "sms.reminder.sent",
+                authenticatedUser.userId(),
+                "{\"reservationId\":" + reservation.getId() + "}"
+            );
+            return saved;
+        } catch (Exception exception) {
+            NotificationLog failedLog = createFailureLog(
+                reservation,
+                NotificationTemplateCode.RESERVATION_REMINDER,
+                exception.getMessage()
+            );
+            auditService.record(
+                restaurantId,
+                "NotificationLog",
+                failedLog.getId(),
+                "sms.reminder.failed",
+                authenticatedUser.userId(),
+                "{\"reservationId\":" + reservation.getId() + "}"
+            );
+            return failedLog;
+        }
+    }
+
     private String buildReservationConfirmationMessage(Reservation reservation) {
         String customerName = buildCustomerName(reservation.getCustomer());
         return "Hola " + customerName
@@ -208,6 +306,15 @@ public class SmsNotificationService {
             + reservation.getReservationDate().format(DateTimeFormatter.ISO_LOCAL_DATE)
             + " a las " + reservation.getStartTime().format(DateTimeFormatter.ofPattern("HH:mm"))
             + " ha sido registrada. Gracias.";
+    }
+
+    private String buildReservationReminderMessage(Reservation reservation) {
+        String customerName = buildCustomerName(reservation.getCustomer());
+        return "Recordatorio: " + customerName
+            + ", tienes una reserva para " + reservation.getPartySize() + " personas el "
+            + reservation.getReservationDate().format(DateTimeFormatter.ISO_LOCAL_DATE)
+            + " a las " + reservation.getStartTime().format(DateTimeFormatter.ofPattern("HH:mm"))
+            + ". Te esperamos.";
     }
 
     private String buildCustomerName(Customer customer) {

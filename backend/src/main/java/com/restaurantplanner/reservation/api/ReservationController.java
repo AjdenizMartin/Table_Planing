@@ -54,6 +54,22 @@ public class ReservationController {
         return reservationService.findAll(restaurantId, date, (AuthenticatedUser) authentication.getPrincipal());
     }
 
+    @GetMapping("/search")
+    public List<ReservationResponse> search(
+        @PathVariable Long restaurantId,
+        @RequestParam(required = false) String customerQuery,
+        @RequestParam(required = false) String status,
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo,
+        @RequestParam(required = false) Integer partySize,
+        Authentication authentication
+    ) {
+        return reservationService.search(
+            restaurantId, customerQuery, status, dateFrom, dateTo, partySize,
+            (AuthenticatedUser) authentication.getPrincipal()
+        );
+    }
+
     @GetMapping("/{reservationId}")
     public ReservationResponse findById(
         @PathVariable Long restaurantId,
@@ -85,6 +101,15 @@ public class ReservationController {
         Authentication authentication
     ) {
         return reservationService.confirm(restaurantId, reservationId, (AuthenticatedUser) authentication.getPrincipal());
+    }
+
+    @PostMapping("/{reservationId}/arrived")
+    public ReservationResponse arrived(
+        @PathVariable Long restaurantId,
+        @PathVariable Long reservationId,
+        Authentication authentication
+    ) {
+        return reservationService.arrived(restaurantId, reservationId, (AuthenticatedUser) authentication.getPrincipal());
     }
 
     @PostMapping("/{reservationId}/cancel")

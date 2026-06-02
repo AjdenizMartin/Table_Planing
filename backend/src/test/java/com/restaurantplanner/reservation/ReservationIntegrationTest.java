@@ -241,6 +241,133 @@ class ReservationIntegrationTest {
             .andExpect(jsonPath("$[0].reservationDate").value("2026-05-26"));
     }
 
+    @Test
+    void searchByCustomerName() throws Exception {
+        Restaurant restaurant = createRestaurant("Main", "main");
+        Customer ana = createCustomer(restaurant, "Ana", "Lopez", "+34600111222");
+        Customer carlos = createCustomer(restaurant, "Carlos", "Ruiz", "+34600333444");
+        createReservation(restaurant, ana, ReservationStatus.PENDING, LocalDate.of(2026, 5, 26));
+        createReservation(restaurant, carlos, ReservationStatus.CONFIRMED, LocalDate.of(2026, 5, 27));
+        User waiter = createUser("waiter@example.com", "secret123", "Waiter");
+        assignRole(waiter, restaurant, Role.WAITER);
+        String accessToken = loginAndExtractAccessToken("waiter@example.com", "secret123");
+
+        mockMvc.perform(get("/api/restaurants/{restaurantId}/reservations/search", restaurant.getId())
+                .param("customerQuery", "Ana")
+                .header(HttpHeaders.AUTHORIZATION, bearer(accessToken)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(1))
+            .andExpect(jsonPath("$[0].customerFirstName").value("Ana"));
+    }
+
+    @Test
+    void searchByCustomerLastName() throws Exception {
+        Restaurant restaurant = createRestaurant("Main", "main");
+        Customer ana = createCustomer(restaurant, "Ana", "Lopez", "+34600111222");
+        createReservation(restaurant, ana, ReservationStatus.PENDING, LocalDate.of(2026, 5, 26));
+        User waiter = createUser("waiter@example.com", "secret123", "Waiter");
+        assignRole(waiter, restaurant, Role.WAITER);
+        String accessToken = loginAndExtractAccessToken("waiter@example.com", "secret123");
+
+        mockMvc.perform(get("/api/restaurants/{restaurantId}/reservations/search", restaurant.getId())
+                .param("customerQuery", "Lopez")
+                .header(HttpHeaders.AUTHORIZATION, bearer(accessToken)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(1));
+    }
+
+    @Test
+    void searchByStatus() throws Exception {
+        Restaurant restaurant = createRestaurant("Main", "main");
+        Customer ana = createCustomer(restaurant, "Ana", "Lopez", "+34600111222");
+        createReservation(restaurant, ana, ReservationStatus.PENDING, LocalDate.of(2026, 5, 26));
+        createReservation(restaurant, ana, ReservationStatus.CONFIRMED, LocalDate.of(2026, 5, 27));
+        User waiter = createUser("waiter@example.com", "secret123", "Waiter");
+        assignRole(waiter, restaurant, Role.WAITER);
+        String accessToken = loginAndExtractAccessToken("waiter@example.com", "secret123");
+
+        mockMvc.perform(get("/api/restaurants/{restaurantId}/reservations/search", restaurant.getId())
+                .param("status", "CONFIRMED")
+                .header(HttpHeaders.AUTHORIZATION, bearer(accessToken)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(1))
+            .andExpect(jsonPath("$[0].status").value("CONFIRMED"));
+    }
+
+    @Test
+    void searchByDateRange() throws Exception {
+        Restaurant restaurant = createRestaurant("Main", "main");
+        Customer ana = createCustomer(restaurant, "Ana", "Lopez", "+34600111222");
+        createReservation(restaurant, ana, ReservationStatus.PENDING, LocalDate.of(2026, 5, 26));
+        createReservation(restaurant, ana, ReservationStatus.CONFIRMED, LocalDate.of(2026, 5, 28));
+        User waiter = createUser("waiter@example.com", "secret123", "Waiter");
+        assignRole(waiter, restaurant, Role.WAITER);
+        String accessToken = loginAndExtractAccessToken("waiter@example.com", "secret123");
+
+        mockMvc.perform(get("/api/restaurants/{restaurantId}/reservations/search", restaurant.getId())
+                .param("dateFrom", "2026-05-27")
+                .param("dateTo", "2026-05-29")
+                .header(HttpHeaders.AUTHORIZATION, bearer(accessToken)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(1))
+            .andExpect(jsonPath("$[0].reservationDate").value("2026-05-28"));
+    }
+
+    @Test
+    void searchByPartySize() throws Exception {
+        Restaurant restaurant = createRestaurant("Main", "main");
+        Customer ana = createCustomer(restaurant, "Ana", "Lopez", "+34600111222");
+        createReservation(restaurant, ana, ReservationStatus.PENDING, LocalDate.of(2026, 5, 26));
+        createReservation(restaurant, ana, ReservationStatus.CONFIRMED, LocalDate.of(2026, 5, 27));
+        User waiter = createUser("waiter@example.com", "secret123", "Waiter");
+        assignRole(waiter, restaurant, Role.WAITER);
+        String accessToken = loginAndExtractAccessToken("waiter@example.com", "secret123");
+
+        mockMvc.perform(get("/api/restaurants/{restaurantId}/reservations/search", restaurant.getId())
+                .param("partySize", "4")
+                .header(HttpHeaders.AUTHORIZATION, bearer(accessToken)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(2));
+    }
+
+    @Test
+    void searchCombinedFilters() throws Exception {
+        Restaurant restaurant = createRestaurant("Main", "main");
+        Customer ana = createCustomer(restaurant, "Ana", "Lopez", "+34600111222");
+        Customer carlos = createCustomer(restaurant, "Carlos", "Ruiz", "+34600333444");
+        createReservation(restaurant, ana, ReservationStatus.PENDING, LocalDate.of(2026, 5, 26));
+        createReservation(restaurant, carlos, ReservationStatus.CONFIRMED, LocalDate.of(2026, 5, 27));
+        User waiter = createUser("waiter@example.com", "secret123", "Waiter");
+        assignRole(waiter, restaurant, Role.WAITER);
+        String accessToken = loginAndExtractAccessToken("waiter@example.com", "secret123");
+
+        mockMvc.perform(get("/api/restaurants/{restaurantId}/reservations/search", restaurant.getId())
+                .param("customerQuery", "Ruiz")
+                .param("status", "CONFIRMED")
+                .param("dateFrom", "2026-05-26")
+                .param("dateTo", "2026-05-28")
+                .param("partySize", "4")
+                .header(HttpHeaders.AUTHORIZATION, bearer(accessToken)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(1));
+    }
+
+    @Test
+    void searchWithNoFiltersReturnsAll() throws Exception {
+        Restaurant restaurant = createRestaurant("Main", "main");
+        Customer ana = createCustomer(restaurant, "Ana", "Lopez", "+34600111222");
+        createReservation(restaurant, ana, ReservationStatus.PENDING, LocalDate.of(2026, 5, 26));
+        createReservation(restaurant, ana, ReservationStatus.CONFIRMED, LocalDate.of(2026, 5, 27));
+        User waiter = createUser("waiter@example.com", "secret123", "Waiter");
+        assignRole(waiter, restaurant, Role.WAITER);
+        String accessToken = loginAndExtractAccessToken("waiter@example.com", "secret123");
+
+        mockMvc.perform(get("/api/restaurants/{restaurantId}/reservations", restaurant.getId())
+                .header(HttpHeaders.AUTHORIZATION, bearer(accessToken)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(2));
+    }
+
     private String loginAndExtractAccessToken(String email, String password) throws Exception {
         String response = mockMvc.perform(post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)

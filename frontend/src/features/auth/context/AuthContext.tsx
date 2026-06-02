@@ -18,6 +18,7 @@ import type {
   AuthSession,
   AuthStatus,
   LoginPayload,
+  RegisterPayload,
   RestaurantAccess,
 } from "@/features/auth/types";
 import { apiClient } from "@/services/api/client";
@@ -26,6 +27,7 @@ interface AuthContextValue {
   status: AuthStatus;
   session: AuthSession;
   login: (payload: LoginPayload) => Promise<AuthSession>;
+  register: (payload: RegisterPayload) => Promise<AuthSession>;
   logout: () => Promise<void>;
   setActiveRestaurantId: (restaurantId: number) => void;
 }
@@ -175,6 +177,14 @@ export function AuthProvider({ children }: PropsWithChildren) {
       session,
       async login(payload) {
         const authResponse = await authApi.login(payload);
+        const nextSession = mergeAuthResponseIntoSession(sessionRef.current, authResponse);
+        persistSession(nextSession);
+        setSession(nextSession);
+        setStatus("authenticated");
+        return nextSession;
+      },
+      async register(payload) {
+        const authResponse = await authApi.register(payload);
         const nextSession = mergeAuthResponseIntoSession(sessionRef.current, authResponse);
         persistSession(nextSession);
         setSession(nextSession);
