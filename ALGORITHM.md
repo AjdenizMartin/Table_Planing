@@ -15,6 +15,8 @@ Implementado hoy:
 - restricciones duras de capacidad, actividad, accesibilidad y solapamiento
 - scoring determinista con explicacion persistida
 - desempate determinista
+- exclusion de mesas `STORAGE` como candidatas normales
+- exclusion defensiva de combinaciones que contengan mesas `STORAGE`
 
 No implementado todavia:
 
@@ -22,6 +24,8 @@ No implementado todavia:
 - optimizacion batch por turno completo
 - simulacion avanzada de demanda futura
 - disponibilidad como modulo/API separado
+- uso automatico de sillas extra o recursos de almacen
+- montajes especiales con aprobacion y tareas operativas
 
 ## Principios
 
@@ -98,6 +102,23 @@ Buscar:
 - combinaciones predefinidas validas
 
 En una fase avanzada se podran generar combinaciones dinamicas controladas.
+
+Desde Fase 1 de planificacion avanzada, las mesas con `table_type = STORAGE` quedan fuera de la busqueda normal. Las combinaciones estandar tampoco deben contener mesas `STORAGE`; el backend lo valida al crear o actualizar combinaciones y el finder las ignora defensivamente si aparecen por datos legacy. Solo deben evaluarse en niveles avanzados con aprobacion o plan de montaje.
+
+`StorageResource` no es una entrada de `CandidateFinder` ni del planning operativo en Sprint 1. Sus campos de cantidad, capacidad por unidad y tiempo de preparacion son configuracion descriptiva; no amplian capacidades de mesas, no crean candidatos y no modifican horarios o asignaciones.
+
+## Evolucion avanzada por niveles
+
+La evolucion prevista se documenta en [docs/ADVANCED_TABLE_PLANNING_DESIGN.md](./docs/ADVANCED_TABLE_PLANNING_DESIGN.md):
+
+- Nivel 1: mesa individual de salon.
+- Nivel 2: combinacion estandar.
+- Nivel 3: combinacion con sillas extra.
+- Nivel 4: mesa o recurso de almacen.
+- Nivel 5: montaje especial con aprobacion del manager.
+- Nivel 6: sugerir hora alternativa solo para una nueva solicitud.
+
+Regla de seguridad: el algoritmo no debe cambiar la hora de reservas existentes. Cualquier cambio horario requiere solicitud del cliente y edicion manual del staff.
 
 ### Paso 3. Filtrar por restricciones duras
 

@@ -33,11 +33,18 @@ La base de datos debe soportar un producto multi-restaurante con consistencia op
 - `scheduled_notification`
 - `notification_log`
 - `ai_insight`
+- `storage_resource`
 
 ### Tablas planificadas pero no creadas
 
 - `planning_slot`
 - `ai_recommendation`
+- `floor_plan_template`
+- `daily_floor_plan`
+- `table_setup_option`
+- `table_setup_option_item`
+- `reservation_setup_plan`
+- `setup_task`
 
 ## Entidades principales
 
@@ -94,6 +101,7 @@ Permite que un usuario tenga distintos roles segun restaurante.
 - `id`
 - `restaurant_id`
 - `dining_room_id`
+- `table_type` (`FIXED`, `MOVABLE`, `STORAGE`, `TEMPORARY`)
 - `code`
 - `label`
 - `min_capacity`
@@ -106,6 +114,24 @@ Permite que un usuario tenga distintos roles segun restaurante.
 - `active`
 - `created_at`
 - `updated_at`
+
+Las mesas `STORAGE` representan mesas guardadas fuera del salon. En la implementacion de Fase 1 pueden no tener `dining_room_id` y no deben aparecer como mesas normales del planning ni como candidatas del algoritmo basico.
+
+### StorageResource
+
+- `id`
+- `restaurant_id`
+- `resource_type` (`EXTRA_TABLE`, `EXTRA_CHAIR`, `HIGH_CHAIR`, `FOLDING_TABLE`, `TABLE_EXTENSION`, `BENCH`, `STORAGE_TABLE`, `OTHER`)
+- `name`
+- `quantity`
+- `capacity_per_unit`
+- `setup_time_minutes`
+- `active`
+- `notes`
+- `created_at`
+- `updated_at`
+
+Representa inventario agregado de almacen, como sillas extra, mesas plegables, tronas, extensiones o bancos. `STORAGE_TABLE` se conserva por compatibilidad con datos de V14. `quantity`, `capacity_per_unit` y `setup_time_minutes` no admiten valores negativos. Sprint 1 permite configurar y consultar este inventario, pero todavia no lo aplica automaticamente a reservas.
 
 ### TableCombination
 
@@ -347,6 +373,8 @@ Usar `jsonb` de forma controlada en:
 - Flyway desde el primer commit tecnico
 - migraciones pequeñas y secuenciales
 - no editar migraciones ya ejecutadas en entornos compartidos
+- `V14` crea `storage_resource` y el primer conjunto de tipos
+- `V15` amplia tipos y añade `capacity_per_unit` y `setup_time_minutes` con valor inicial `0` para preservar datos existentes
 
 ## Futuras extensiones posibles
 

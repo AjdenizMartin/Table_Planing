@@ -18,6 +18,7 @@ import com.restaurantplanner.restaurant.domain.Restaurant;
 import com.restaurantplanner.restaurant.domain.RestaurantRepository;
 import com.restaurantplanner.table.domain.RestaurantTable;
 import com.restaurantplanner.table.domain.RestaurantTableRepository;
+import com.restaurantplanner.table.domain.TableType;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -78,7 +79,10 @@ public class PlanningSnapshotService {
 
     public PlanningDayResponse build(Restaurant restaurant, LocalDate date) {
         List<DiningRoom> diningRooms = diningRoomRepository.findByRestaurantIdOrderByPriorityAscIdAsc(restaurant.getId());
-        List<RestaurantTable> tables = restaurantTableRepository.findByRestaurantIdOrderByDiningRoomIdAscCodeAsc(restaurant.getId());
+        List<RestaurantTable> tables = restaurantTableRepository.findByRestaurantIdAndTableTypeNotOrderByDiningRoomIdAscCodeAsc(
+            restaurant.getId(),
+            TableType.STORAGE
+        );
         List<Reservation> reservations = reservationRepository.findByRestaurantIdAndReservationDateOrderByStartTimeAscIdAsc(
             restaurant.getId(),
             date

@@ -28,7 +28,8 @@ export interface DiningRoomResponse {
 export interface RestaurantTableResponse {
   id: number;
   restaurantId: number;
-  diningRoomId: number;
+  diningRoomId: number | null;
+  tableType: "FIXED" | "MOVABLE" | "STORAGE" | "TEMPORARY";
   code: string;
   label: string | null;
   minCapacity: number;
@@ -43,10 +44,34 @@ export interface RestaurantTableResponse {
   updatedAt: string;
 }
 
+export type StorageResourceType =
+  | "EXTRA_TABLE"
+  | "EXTRA_CHAIR"
+  | "HIGH_CHAIR"
+  | "FOLDING_TABLE"
+  | "TABLE_EXTENSION"
+  | "BENCH"
+  | "STORAGE_TABLE"
+  | "OTHER";
+
+export interface StorageResourceResponse {
+  id: number;
+  restaurantId: number;
+  resourceType: StorageResourceType;
+  name: string;
+  quantity: number;
+  capacityPerUnit: number;
+  setupTimeMinutes: number;
+  active: boolean;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface TableCombinationItemResponse {
   id: number;
   tableId: number;
-  diningRoomId: number;
+  diningRoomId: number | null;
   tableCode: string;
   tableLabel: string | null;
   orderIndex: number;

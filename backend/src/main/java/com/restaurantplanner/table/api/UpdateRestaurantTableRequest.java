@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Size;
 
 public record UpdateRestaurantTableRequest(
     Long diningRoomId,
+    String tableType,
     @Size(min = 1, max = 80) String code,
     @Size(max = 160) String label,
     @Min(1) Integer minCapacity,
@@ -14,4 +15,3 @@ public record UpdateRestaurantTableRequest(
     Boolean active
 ) {
 }
-

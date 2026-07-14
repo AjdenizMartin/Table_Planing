@@ -7,7 +7,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public record CreateRestaurantTableRequest(
-    @NotNull Long diningRoomId,
+    Long diningRoomId,
+    String tableType,
     @NotBlank @Size(max = 80) String code,
     @Size(max = 160) String label,
     @NotNull @Min(1) Integer minCapacity,
@@ -20,4 +21,3 @@ public record CreateRestaurantTableRequest(
     @NotNull Boolean active
 ) {
 }
-

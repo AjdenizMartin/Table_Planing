@@ -21,6 +21,7 @@ import com.restaurantplanner.restaurant.domain.RestaurantRepository;
 import com.restaurantplanner.restaurant.domain.RestaurantStatus;
 import com.restaurantplanner.table.domain.RestaurantTable;
 import com.restaurantplanner.table.domain.RestaurantTableRepository;
+import com.restaurantplanner.table.domain.TableType;
 import com.restaurantplanner.tablecombination.domain.TableCombination;
 import com.restaurantplanner.tablecombination.domain.TableCombinationItem;
 import com.restaurantplanner.tablecombination.domain.TableCombinationRepository;
@@ -240,6 +241,22 @@ class PlanningIntegrationTest {
             .andExpect(jsonPath("$.diningRooms[0].tables[0].reservations.length()").value(0));
     }
 
+    @Test
+    void storageTableDoesNotAppearAsNormalDiningRoomTable() throws Exception {
+        Restaurant restaurant = createRestaurant("Main", "main");
+        DiningRoom room = createDiningRoom(restaurant, "Main Room", 1, true, true);
+        createTable(restaurant, room, "A1", 2, 4, true);
+        createStorageTable(restaurant, "STORE-1");
+        String token = loginWithRole(restaurant, "waiter@example.com", Role.WAITER);
+
+        mockMvc.perform(get("/api/restaurants/{restaurantId}/planning", restaurant.getId())
+                .param("date", "2026-05-26")
+                .header(HttpHeaders.AUTHORIZATION, bearer(token)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.diningRooms[0].tables.length()").value(1))
+            .andExpect(jsonPath("$.diningRooms[0].tables[0].code").value("A1"));
+    }
+
     private String loginWithRole(Restaurant restaurant, String email, Role role) throws Exception {
         User user = createUser(email, "secret123", role.name());
         assignRole(user, restaurant, role);
@@ -308,6 +325,7 @@ class PlanningIntegrationTest {
         RestaurantTable table = new RestaurantTable();
         table.setRestaurant(restaurant);
         table.setDiningRoom(diningRoom);
+        table.setTableType(TableType.FIXED);
         table.setCode(code);
         table.setLabel("Table " + code);
         table.setMinCapacity(minCapacity);
@@ -318,6 +336,24 @@ class PlanningIntegrationTest {
         table.setWidth(120);
         table.setHeight(80);
         table.setActive(active);
+        return restaurantTableRepository.save(table);
+    }
+
+    private RestaurantTable createStorageTable(Restaurant restaurant, String code) {
+        RestaurantTable table = new RestaurantTable();
+        table.setRestaurant(restaurant);
+        table.setDiningRoom(null);
+        table.setTableType(TableType.STORAGE);
+        table.setCode(code);
+        table.setLabel("Storage " + code);
+        table.setMinCapacity(2);
+        table.setMaxCapacity(6);
+        table.setShape("RECTANGLE");
+        table.setX(0);
+        table.setY(0);
+        table.setWidth(120);
+        table.setHeight(80);
+        table.setActive(true);
         return restaurantTableRepository.save(table);
     }
 

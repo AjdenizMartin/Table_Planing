@@ -105,6 +105,12 @@ El roadmap prioriza primero el nucleo de valor del producto: configuracion del r
 - scoring inicial
 - explicacion de asignacion
 
+### Extension avanzada prevista
+
+- excluir mesas de almacen del algoritmo normal
+- evaluar sillas extra y almacen solo en niveles avanzados con coste operativo
+- generar planes de montaje y tareas antes de aplicar opciones especiales
+
 ### Criterios de finalizacion
 
 - el sistema asigna de forma consistentemente mejor que una regla trivial
@@ -125,6 +131,12 @@ El roadmap prioriza primero el nucleo de valor del producto: configuracion del r
 - filtros por salon
 - acciones operativas rapidas
 - drag and drop inicial
+
+### Extension avanzada prevista
+
+- mostrar recursos de almacen y montajes especiales como elementos operativos diferenciados
+- mostrar tareas de preparacion asociadas a reservas
+- permitir aprobar o rechazar opciones avanzadas sin cambiar horas existentes
 
 ### Criterios de finalizacion
 
@@ -243,6 +255,37 @@ El MVP debe incluir solo lo esencial para demostrar valor real:
 - asignacion automatica inicial
 - planning visual
 - confirmacion SMS basica
+
+## MVP avanzado recomendado
+
+Para demostrar valor en el problema real de mesas moviles y almacen sin romper el sistema actual:
+
+- `tableType` en mesas (`FIXED`, `MOVABLE`, `STORAGE`, `TEMPORARY`)
+- inventario `StorageResource` para sillas extra y mesas guardadas
+- exclusion de mesas `STORAGE` del planning normal y candidatos basicos
+- UI minima para ver y crear recursos de almacen
+- documentacion del algoritmo por niveles antes de implementar montajes automaticos
+
+### Sprint 1. Storage Inventory
+
+**Estado:** `DONE`
+
+- inventario configurable con tipos operativos, cantidad, capacidad por unidad y tiempo de preparacion
+- filtros por tipo y estado
+- resumen de sillas, mesas y recursos activos/inactivos
+- edicion, desactivacion y reactivacion sin borrado fisico
+- aislamiento por restaurante y validaciones negativas cubiertas por tests de integracion
+- sin uso automatico por el algoritmo
+
+### Sprint 2. Combinaciones Avanzadas
+
+**Estado:** `NOT_STARTED`
+
+- definir combinaciones avanzadas sin alterar reservas existentes
+- documentar primero reglas, coste operativo y explicabilidad
+- mantener fuera hasta una decision posterior los planes de montaje, tareas operativas y aprobacion de manager
+
+Las fases posteriores siguen incluyendo planes de montaje, tareas operativas, aprobacion de manager y editor visual avanzado. No forman parte de Sprint 1.
 
 ## Fuera del MVP
 

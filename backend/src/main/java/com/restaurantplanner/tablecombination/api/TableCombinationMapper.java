@@ -25,7 +25,7 @@ public class TableCombinationMapper {
         return new TableCombinationItemResponse(
             item.getId(),
             item.getTable().getId(),
-            item.getTable().getDiningRoom().getId(),
+            item.getTable().getDiningRoom() == null ? null : item.getTable().getDiningRoom().getId(),
             item.getTable().getCode(),
             item.getTable().getLabel(),
             item.getOrderIndex()

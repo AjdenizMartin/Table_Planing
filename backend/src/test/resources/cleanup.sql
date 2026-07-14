@@ -6,6 +6,7 @@ TRUNCATE TABLE
     scheduled_notification,
     notification_log,
     ai_insight,
+    storage_resource,
     restaurant_rule,
     refresh_token,
     reservation,

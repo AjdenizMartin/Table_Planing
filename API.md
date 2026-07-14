@@ -195,6 +195,15 @@ Endpoints:
 - `POST /api/tables/{tableId}/enable` - `PLANNED`
 - `POST /api/tables/{tableId}/disable` - `PLANNED`
 
+Fase 1 de planificacion avanzada anade `tableType` a mesas:
+
+- `FIXED`
+- `MOVABLE`
+- `STORAGE`
+- `TEMPORARY`
+
+Las mesas `STORAGE` se registran como inventario operativo y no aparecen como mesas normales del planning.
+
 ### 6. Table Combinations
 
 Responsabilidad:
@@ -209,6 +218,51 @@ Endpoints:
 - `GET /api/restaurants/{restaurantId}/table-combinations/{combinationId}` - `IMPLEMENTED`
 - `PATCH /api/restaurants/{restaurantId}/table-combinations/{combinationId}` - `IMPLEMENTED`
 - `DELETE /api/restaurants/{restaurantId}/table-combinations/{combinationId}` - `IMPLEMENTED`
+
+### 6b. Storage Resources
+
+Responsabilidad:
+
+- gestionar inventario de almacen como sillas extra o mesas guardadas
+- validar cantidades disponibles para futuras opciones de montaje
+
+Endpoints:
+
+- `POST /api/restaurants/{restaurantId}/storage-resources` - `IMPLEMENTED`
+- `GET /api/restaurants/{restaurantId}/storage-resources?resourceType={type}&active={boolean}` - `IMPLEMENTED`
+- `GET /api/restaurants/{restaurantId}/storage-resources/{resourceId}` - `IMPLEMENTED`
+- `PATCH /api/restaurants/{restaurantId}/storage-resources/{resourceId}` - `IMPLEMENTED`
+- `DELETE /api/restaurants/{restaurantId}/storage-resources/{resourceId}` - `IMPLEMENTED`
+- `POST /api/restaurants/{restaurantId}/storage-resources/{resourceId}/availability-check` - `IMPLEMENTED`
+
+Tipos de recurso actuales:
+
+- `EXTRA_TABLE`
+- `EXTRA_CHAIR`
+- `HIGH_CHAIR`
+- `FOLDING_TABLE`
+- `TABLE_EXTENSION`
+- `BENCH`
+- `STORAGE_TABLE`
+- `OTHER`
+
+Los filtros `resourceType` y `active` son opcionales y combinables. Todas las consultas y modificaciones se resuelven por `restaurantId`; un identificador de recurso perteneciente a otro restaurante devuelve `NOT_FOUND`.
+
+Campos editables mediante `PATCH`:
+
+- `resourceType`
+- `name`
+- `quantity`
+- `capacityPerUnit`
+- `setupTimeMinutes`
+- `notes`
+- `active`
+
+`quantity`, `capacityPerUnit` y `setupTimeMinutes` deben ser enteros no negativos. `name` y `resourceType` son obligatorios al crear. Los dos campos operativos añadidos en Sprint 1 aceptan omision al crear y se inicializan a `0` para mantener compatibilidad con clientes anteriores.
+
+`DELETE` no borra fisicamente el registro: mantiene compatibilidad con el endpoint existente y realiza una desactivacion logica. La UI usa `PATCH` con `active=false` o `active=true` para desactivar y reactivar.
+
+`StorageResource` es solo configuracion de inventario en Sprint 1. Ninguno de estos endpoints lo conecta con reservas, planning o asignacion automatica.
 
 ### 7. Customers
 

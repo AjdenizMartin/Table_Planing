@@ -9,6 +9,7 @@ import com.restaurantplanner.restaurant.domain.Restaurant;
 import com.restaurantplanner.restaurant.domain.RestaurantRepository;
 import com.restaurantplanner.table.domain.RestaurantTable;
 import com.restaurantplanner.table.domain.RestaurantTableRepository;
+import com.restaurantplanner.table.domain.TableType;
 import com.restaurantplanner.tablecombination.api.CreateTableCombinationRequest;
 import com.restaurantplanner.tablecombination.api.TableCombinationMapper;
 import com.restaurantplanner.tablecombination.api.TableCombinationResponse;
@@ -185,6 +186,9 @@ public class TableCombinationService {
         List<RestaurantTable> tables = restaurantTableRepository.findByRestaurantIdAndIdIn(restaurantId, new ArrayList<>(distinctIds));
         if (tables.size() != distinctIds.size()) {
             throw new NotFoundException("One or more tables do not belong to the restaurant");
+        }
+        if (tables.stream().anyMatch(table -> table.getTableType() == TableType.STORAGE)) {
+            throw new IllegalArgumentException("Storage tables cannot be used in standard table combinations");
         }
 
         Map<Long, RestaurantTable> tablesById = tables.stream()

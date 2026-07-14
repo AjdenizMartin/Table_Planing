@@ -12,6 +12,7 @@ import com.restaurantplanner.optimization.service.CandidateFinder;
 import com.restaurantplanner.restaurant.domain.Restaurant;
 import com.restaurantplanner.table.domain.RestaurantTable;
 import com.restaurantplanner.table.domain.RestaurantTableRepository;
+import com.restaurantplanner.table.domain.TableType;
 import com.restaurantplanner.tablecombination.domain.TableCombination;
 import com.restaurantplanner.tablecombination.domain.TableCombinationItem;
 import com.restaurantplanner.tablecombination.domain.TableCombinationRepository;
@@ -49,7 +50,7 @@ class CandidateFinderTest {
     void findsActiveTables() {
         RestaurantTable table1 = createTable(100L, "A1", room, true);
         RestaurantTable table2 = createTable(101L, "B1", room, true);
-        when(tableRepository.findByRestaurantIdOrderByDiningRoomIdAscCodeAsc(1L)).thenReturn(List.of(table1, table2));
+        when(tableRepository.findByRestaurantIdAndTableTypeNotOrderByDiningRoomIdAscCodeAsc(1L, TableType.STORAGE)).thenReturn(List.of(table1, table2));
         when(combinationRepository.findByRestaurantIdAndActiveTrueOrderByNameAscIdAsc(1L)).thenReturn(List.of());
 
         List<AssignmentCandidate> candidates = finder.findCandidates(1L);
@@ -62,7 +63,7 @@ class CandidateFinderTest {
     void doesNotIncludeInactiveTables() {
         RestaurantTable activeTable = createTable(100L, "A1", room, true);
         RestaurantTable inactiveTable = createTable(102L, "Z1", room, false);
-        when(tableRepository.findByRestaurantIdOrderByDiningRoomIdAscCodeAsc(1L)).thenReturn(List.of(activeTable, inactiveTable));
+        when(tableRepository.findByRestaurantIdAndTableTypeNotOrderByDiningRoomIdAscCodeAsc(1L, TableType.STORAGE)).thenReturn(List.of(activeTable, inactiveTable));
         when(combinationRepository.findByRestaurantIdAndActiveTrueOrderByNameAscIdAsc(1L)).thenReturn(List.of());
 
         List<AssignmentCandidate> candidates = finder.findCandidates(1L);
@@ -72,7 +73,7 @@ class CandidateFinderTest {
 
     @Test
     void findsActiveCombinations() {
-        when(tableRepository.findByRestaurantIdOrderByDiningRoomIdAscCodeAsc(1L)).thenReturn(List.of());
+        when(tableRepository.findByRestaurantIdAndTableTypeNotOrderByDiningRoomIdAscCodeAsc(1L, TableType.STORAGE)).thenReturn(List.of());
 
         RestaurantTable tableA = createTable(200L, "T2A", room, true);
         RestaurantTable tableB = createTable(201L, "T2B", room, true);
@@ -87,8 +88,23 @@ class CandidateFinderTest {
     }
 
     @Test
+    void excludesCombinationsContainingStorageTables() {
+        when(tableRepository.findByRestaurantIdAndTableTypeNotOrderByDiningRoomIdAscCodeAsc(1L, TableType.STORAGE)).thenReturn(List.of());
+
+        RestaurantTable normalTable = createTable(200L, "T2A", room, true);
+        RestaurantTable storageTable = createTable(201L, "STORE-1", null, true);
+        storageTable.setTableType(TableType.STORAGE);
+        TableCombination combination = createCombination(300L, "Storage pair", true, normalTable, storageTable);
+        when(combinationRepository.findByRestaurantIdAndActiveTrueOrderByNameAscIdAsc(1L)).thenReturn(List.of(combination));
+
+        List<AssignmentCandidate> candidates = finder.findCandidates(1L);
+
+        assertTrue(candidates.isEmpty());
+    }
+
+    @Test
     void returnsEmptyWhenNoActiveResources() {
-        when(tableRepository.findByRestaurantIdOrderByDiningRoomIdAscCodeAsc(1L)).thenReturn(List.of());
+        when(tableRepository.findByRestaurantIdAndTableTypeNotOrderByDiningRoomIdAscCodeAsc(1L, TableType.STORAGE)).thenReturn(List.of());
         when(combinationRepository.findByRestaurantIdAndActiveTrueOrderByNameAscIdAsc(1L)).thenReturn(List.of());
 
         List<AssignmentCandidate> candidates = finder.findCandidates(1L);
@@ -99,7 +115,7 @@ class CandidateFinderTest {
     @Test
     void returnedTablesHaveCorrectCapacities() {
         RestaurantTable table = createTable(100L, "A1", room, true);
-        when(tableRepository.findByRestaurantIdOrderByDiningRoomIdAscCodeAsc(1L)).thenReturn(List.of(table));
+        when(tableRepository.findByRestaurantIdAndTableTypeNotOrderByDiningRoomIdAscCodeAsc(1L, TableType.STORAGE)).thenReturn(List.of(table));
         when(combinationRepository.findByRestaurantIdAndActiveTrueOrderByNameAscIdAsc(1L)).thenReturn(List.of());
 
         List<AssignmentCandidate> candidates = finder.findCandidates(1L);
@@ -117,7 +133,7 @@ class CandidateFinderTest {
         RestaurantTable tableB1 = createTable(1L, "B1", roomB, true);
         RestaurantTable tableA1 = createTable(2L, "A1", roomA, true);
 
-        when(tableRepository.findByRestaurantIdOrderByDiningRoomIdAscCodeAsc(1L)).thenReturn(List.of(tableA1, tableB1));
+        when(tableRepository.findByRestaurantIdAndTableTypeNotOrderByDiningRoomIdAscCodeAsc(1L, TableType.STORAGE)).thenReturn(List.of(tableA1, tableB1));
         when(combinationRepository.findByRestaurantIdAndActiveTrueOrderByNameAscIdAsc(1L)).thenReturn(List.of());
 
         List<AssignmentCandidate> candidates = finder.findCandidates(1L);
@@ -145,6 +161,7 @@ class CandidateFinderTest {
         table.setMaxCapacity(4);
         table.setActive(active);
         table.setDiningRoom(diningRoom);
+        table.setTableType(TableType.FIXED);
         table.setShape("RECTANGLE");
         table.setX(0);
         table.setY(0);

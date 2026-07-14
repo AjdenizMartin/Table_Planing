@@ -105,6 +105,7 @@ Nota local:
 
 - si Docker CLI responde pero Testcontainers falla con `Could not find a valid Docker environment`, revisar el socket activo de Docker Desktop y la compatibilidad de `docker-java`/Testcontainers con la version de Docker Desktop instalada
 - en macOS con Docker Desktop puede ser necesario exponer correctamente el socket usado por el contexto `desktop-linux`; hasta resolverlo, `mvn test` sigue siendo la suite obligatoria de feedback rapido
+- en JDKs recientes, Mockito inline puede fallar si el runtime no permite auto-attach de agentes; la suite usa `mock-maker-subclass` en tests para evitar depender de ese mecanismo cuando solo se mockean interfaces y colaboradores no finales.
 
 Regla practica:
 
@@ -152,6 +153,24 @@ Casos importantes:
 - devolver planning del dia por restaurante
 - aislar salones correctamente
 - recalculo restringido a roles permitidos
+- no mostrar mesas `STORAGE` como mesas operativas del planning
+
+### Storage Inventory
+
+Casos importantes:
+
+- crear recurso de almacen activo
+- rechazar cantidades negativas
+- rechazar `capacityPerUnit` y `setupTimeMinutes` negativos
+- exigir `name` y `resourceType` al crear
+- filtrar por `resourceType`
+- filtrar por `active`
+- actualizar nombre, tipo, cantidad, capacidad, tiempo, notas y estado
+- desactivar y reactivar sin borrar fisicamente
+- filtrar por restaurante
+- no exponer recursos de otro restaurante
+- no modificar recursos de otro restaurante
+- mantener `StorageResource` fuera de candidatos y planning operativo
 
 ### Notification
 
@@ -191,6 +210,8 @@ Este es uno de los puntos mas importantes del producto.
 - se penaliza bloqueo de mesa grande
 - se detecta hueco muerto relevante
 - recolocacion de un salto mejora el resultado
+- una mesa `STORAGE` no se considera candidata directa
+- una combinacion que contenga una mesa `STORAGE` no se considera candidata basica
 
 ### Enfoque
 

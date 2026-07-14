@@ -12,6 +12,8 @@ public interface RestaurantTableRepository extends JpaRepository<RestaurantTable
 
     List<RestaurantTable> findByRestaurantIdOrderByDiningRoomIdAscCodeAsc(Long restaurantId);
 
+    List<RestaurantTable> findByRestaurantIdAndTableTypeNotOrderByDiningRoomIdAscCodeAsc(Long restaurantId, TableType tableType);
+
     List<RestaurantTable> findByRestaurantIdAndIdIn(Long restaurantId, List<Long> ids);
 
     Optional<RestaurantTable> findByIdAndRestaurantId(Long id, Long restaurantId);
