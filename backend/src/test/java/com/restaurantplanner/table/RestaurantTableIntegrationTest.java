@@ -13,6 +13,7 @@ import com.restaurantplanner.restaurant.domain.RestaurantRepository;
 import com.restaurantplanner.restaurant.domain.RestaurantStatus;
 import com.restaurantplanner.table.domain.RestaurantTable;
 import com.restaurantplanner.table.domain.RestaurantTableRepository;
+import com.restaurantplanner.table.domain.TableType;
 import com.restaurantplanner.user.domain.User;
 import com.restaurantplanner.user.domain.UserRepository;
 import com.restaurantplanner.user.domain.UserStatus;
@@ -287,6 +288,41 @@ class RestaurantTableIntegrationTest {
             .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
     }
 
+    @Test
+    void createStorageTableWithoutDiningRoom() throws Exception {
+        Restaurant restaurant = createRestaurant("Main", "main");
+        User owner = createUser("owner@example.com", "secret123", "Owner");
+        assignRole(owner, restaurant, Role.RESTAURANT_OWNER);
+
+        String accessToken = loginAndExtractAccessToken("owner@example.com", "secret123");
+
+        mockMvc.perform(post("/api/restaurants/{restaurantId}/tables", restaurant.getId())
+                .header(HttpHeaders.AUTHORIZATION, bearer(accessToken))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "tableType": "STORAGE",
+                      "code": "STORE-1",
+                      "label": "Mesa plegable almacen",
+                      "minCapacity": 2,
+                      "maxCapacity": 6,
+                      "shape": "RECTANGLE",
+                      "x": 0,
+                      "y": 0,
+                      "width": 120,
+                      "height": 80,
+                      "active": true
+                    }
+                    """))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.tableType").value("STORAGE"))
+            .andExpect(jsonPath("$.diningRoomId").isEmpty());
+
+        RestaurantTable saved = restaurantTableRepository.findByRestaurantIdOrderByDiningRoomIdAscCodeAsc(restaurant.getId()).get(0);
+        org.junit.jupiter.api.Assertions.assertEquals(TableType.STORAGE, saved.getTableType());
+        org.junit.jupiter.api.Assertions.assertNull(saved.getDiningRoom());
+    }
+
     private String loginAndExtractAccessToken(String email, String password) throws Exception {
         String response = mockMvc.perform(post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -349,6 +385,7 @@ class RestaurantTableIntegrationTest {
         RestaurantTable table = new RestaurantTable();
         table.setRestaurant(restaurant);
         table.setDiningRoom(diningRoom);
+        table.setTableType(TableType.FIXED);
         table.setCode(code);
         table.setLabel("Table " + code);
         table.setMinCapacity(2);

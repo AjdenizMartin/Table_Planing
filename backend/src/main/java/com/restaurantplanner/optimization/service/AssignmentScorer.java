@@ -32,6 +32,8 @@ public class AssignmentScorer {
         double largeTableBlockPenalty = largeTableBlockPenalty(reservation.getPartySize(), candidate.maxCapacity());
         double roomActivationPenalty = Math.max(0, (candidate.primaryRoomPriority() - 1) * 5);
         double combinationComplexityPenalty = Math.max(0, (candidate.tableCount() - 1) * 18);
+        double operationalCostPenalty = candidate.advanced() ? candidate.operationalCostLevel().scorePenalty() : 0;
+        double setupTimePenalty = candidate.advanced() ? Math.min(candidate.setupTimeMinutes() * 0.5, 30) : 0;
 
         Map<String, Double> bonuses = new LinkedHashMap<>();
         bonuses.put("capacity_fit", capacityFit);
@@ -46,6 +48,8 @@ public class AssignmentScorer {
         penalties.put("large_table_block_penalty", largeTableBlockPenalty);
         penalties.put("room_activation_penalty", roomActivationPenalty);
         penalties.put("combination_complexity_penalty", combinationComplexityPenalty);
+        penalties.put("operational_cost_penalty", operationalCostPenalty);
+        penalties.put("setup_time_penalty", setupTimePenalty);
 
         double total = bonuses.values().stream().mapToDouble(Double::doubleValue).sum()
             - penalties.values().stream().mapToDouble(Double::doubleValue).sum();

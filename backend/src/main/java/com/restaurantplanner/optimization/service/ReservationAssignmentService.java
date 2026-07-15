@@ -8,20 +8,31 @@ import com.restaurantplanner.auth.security.AuthenticatedUser;
 import com.restaurantplanner.common.api.ConflictException;
 import com.restaurantplanner.common.api.NotFoundException;
 import com.restaurantplanner.optimization.api.AssignReservationResponse;
+import com.restaurantplanner.optimization.api.AssignedResourceResponse;
+import com.restaurantplanner.optimization.api.AssignmentExplanationResponse;
+import com.restaurantplanner.optimization.api.AssignmentHistoryItemResponse;
+import com.restaurantplanner.optimization.api.AssignmentSelectionRequest;
+import com.restaurantplanner.optimization.api.AssignmentSuggestionResourceResponse;
+import com.restaurantplanner.optimization.api.AssignmentSuggestionResponse;
+import com.restaurantplanner.optimization.api.AssignmentSuggestionsResponse;
 import com.restaurantplanner.optimization.domain.AssignmentCandidate;
 import com.restaurantplanner.optimization.domain.AssignmentCandidateType;
 import com.restaurantplanner.optimization.domain.AssignmentExplanation;
 import com.restaurantplanner.optimization.domain.CandidateAvailability;
+import com.restaurantplanner.optimization.domain.CandidateSearchMode;
 import com.restaurantplanner.optimization.domain.ScoredCandidate;
 import com.restaurantplanner.planning.service.PlanningSnapshotService;
 import com.restaurantplanner.realtime.RestaurantRealtimePublisher;
 import com.restaurantplanner.reservation.domain.Reservation;
 import com.restaurantplanner.reservation.domain.ReservationAssignment;
 import com.restaurantplanner.reservation.domain.ReservationAssignmentRepository;
+import com.restaurantplanner.reservation.domain.ReservationAssignmentResource;
 import com.restaurantplanner.reservation.domain.ReservationRepository;
 import com.restaurantplanner.reservation.domain.ReservationStatus;
 import com.restaurantplanner.restaurant.domain.Restaurant;
 import com.restaurantplanner.restaurant.domain.RestaurantRepository;
+import com.restaurantplanner.storage.domain.StorageResourceRepository;
+import com.restaurantplanner.tablecombination.domain.OperationalCostLevel;
 import com.restaurantplanner.user.domain.User;
 import com.restaurantplanner.user.domain.UserRepository;
 import java.time.Duration;
@@ -44,6 +55,12 @@ public class ReservationAssignmentService {
 
     private static final String TABLE_ASSIGNMENT = "TABLE";
     private static final String TABLE_COMBINATION_ASSIGNMENT = "TABLE_COMBINATION";
+    private static final Set<ReservationStatus> OCCUPYING_STATUSES = EnumSet.of(
+        ReservationStatus.PENDING,
+        ReservationStatus.CONFIRMED,
+        ReservationStatus.ARRIVED,
+        ReservationStatus.SEATED
+    );
 
     private final CandidateFinder candidateFinder;
     private final AvailabilityChecker availabilityChecker;
@@ -58,6 +75,7 @@ public class ReservationAssignmentService {
     private final AuditService auditService;
     private final AiService aiService;
     private final PlanningSnapshotService planningSnapshotService;
+    private final StorageResourceRepository storageResourceRepository;
 
     public ReservationAssignmentService(
         CandidateFinder candidateFinder,
@@ -72,7 +90,8 @@ public class ReservationAssignmentService {
         RestaurantRealtimePublisher realtimePublisher,
         AuditService auditService,
         AiService aiService,
-        PlanningSnapshotService planningSnapshotService
+        PlanningSnapshotService planningSnapshotService,
+        StorageResourceRepository storageResourceRepository
     ) {
         this.candidateFinder = candidateFinder;
         this.availabilityChecker = availabilityChecker;
@@ -87,6 +106,7 @@ public class ReservationAssignmentService {
         this.auditService = auditService;
         this.aiService = aiService;
         this.planningSnapshotService = planningSnapshotService;
+        this.storageResourceRepository = storageResourceRepository;
     }
 
     @Transactional
@@ -113,7 +133,7 @@ public class ReservationAssignmentService {
             .findByActiveTrueAndReservationRestaurantIdAndReservationReservationDateAndReservationStatusIn(
                 restaurantId,
                 reservation.getReservationDate(),
-                EnumSet.of(ReservationStatus.PENDING, ReservationStatus.CONFIRMED, ReservationStatus.SEATED)
+                OCCUPYING_STATUSES
             );
 
         Map<String, Integer> rejectionCounts = new LinkedHashMap<>();
@@ -149,23 +169,13 @@ public class ReservationAssignmentService {
         ScoredCandidate best = scoredCandidates.get(0);
         AssignmentExplanation explanation = assignmentExplainer.explain(best, reservation);
 
-        deactivateCurrentAssignments(reservation.getId());
-
-        ReservationAssignment assignment = new ReservationAssignment();
-        assignment.setReservation(reservation);
-        assignment.setAssignmentType(best.candidate().type() == AssignmentCandidateType.TABLE
-            ? TABLE_ASSIGNMENT
-            : TABLE_COMBINATION_ASSIGNMENT);
-        assignment.setDiningRoom(best.candidate().diningRooms().size() == 1 ? best.candidate().diningRooms().get(0) : null);
-        assignment.setTable(best.candidate().table());
-        assignment.setTableCombination(best.candidate().tableCombination());
-        assignment.setScore(best.totalScore());
-        assignment.setExplanationJson(explanation.explanationJson());
-        assignment.setAssignedBy(findUserOrNull(authenticatedUser.userId()));
-        assignment.setAssignedAt(Instant.now());
-        assignment.setActive(true);
-
-        ReservationAssignment saved = reservationAssignmentRepository.save(assignment);
+        ReservationAssignment saved = persistAssignment(
+            reservation,
+            best,
+            explanation,
+            authenticatedUser,
+            false
+        );
         aiService.generateInsightsForDate(
             restaurantId,
             reservation.getReservationDate(),
@@ -180,9 +190,224 @@ public class ReservationAssignmentService {
             "Reservation assigned automatically"
         );
 
+        return toAssignResponse(saved, explanation);
+    }
+
+    @Transactional(readOnly = true)
+    public AssignmentSuggestionsResponse suggest(
+        Long restaurantId,
+        Long reservationId,
+        AuthenticatedUser authenticatedUser
+    ) {
+        findAccessibleRestaurantOrThrow(restaurantId, authenticatedUser);
+        requireOwnerManagerOrAdmin(authenticatedUser, restaurantId);
+        Reservation reservation = findReservationOrThrow(restaurantId, reservationId);
+        if (isTerminalStatus(reservation.getStatus())) {
+            throw new ConflictException("Terminal reservations cannot be assigned");
+        }
+
+        CandidateEvaluation evaluation = evaluateCandidates(
+            restaurantId,
+            reservation,
+            CandidateSearchMode.MANUAL_SUGGESTION
+        );
+        List<AssignmentSuggestionResponse> suggestions = evaluation.scoredCandidates().stream()
+            .limit(3)
+            .map(scored -> toSuggestionResponse(scored, reservation))
+            .toList();
+
+        return new AssignmentSuggestionsResponse(
+            reservationId,
+            suggestions,
+            evaluation.rejectionCounts().isEmpty()
+                ? List.of()
+                : buildNoCandidateReasons(evaluation.rejectionCounts())
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public List<AssignmentHistoryItemResponse> history(
+        Long restaurantId,
+        Long reservationId,
+        AuthenticatedUser authenticatedUser
+    ) {
+        findAccessibleRestaurantOrThrow(restaurantId, authenticatedUser);
+        findReservationOrThrow(restaurantId, reservationId);
+        return reservationAssignmentRepository
+            .findByReservationIdAndReservationRestaurantIdOrderByAssignedAtDescIdDesc(reservationId, restaurantId)
+            .stream()
+            .map(assignment -> new AssignmentHistoryItemResponse(
+                assignment.getId(),
+                assignment.isActive(),
+                assignment.getAssignmentType(),
+                assignment.getTable() == null ? null : assignment.getTable().getId(),
+                assignment.getTable() == null ? null : assignment.getTable().getCode(),
+                assignment.getTableCombination() == null ? null : assignment.getTableCombination().getId(),
+                assignment.getTableCombination() == null ? null : assignment.getTableCombination().getName(),
+                assignment.getScore(),
+                assignment.getOperationalCostLevel().name(),
+                assignment.getSetupTimeMinutes(),
+                assignment.getAssignedBy() == null ? null : assignment.getAssignedBy().getId(),
+                assignment.getAssignedBy() == null ? null : assignment.getAssignedBy().getName(),
+                assignment.getAssignedAt(),
+                assignment.getExplanationJson(),
+                assignment.getResources().stream().map(resource -> new AssignedResourceResponse(
+                    resource.getStorageResource().getId(),
+                    resource.getResourceTypeSnapshot(),
+                    resource.getResourceNameSnapshot(),
+                    resource.getQuantity(),
+                    resource.getCapacityPerUnitSnapshot(),
+                    resource.getSetupTimeMinutesSnapshot()
+                )).toList()
+            ))
+            .toList();
+    }
+
+    @Transactional
+    public AssignReservationResponse select(
+        Long restaurantId,
+        Long reservationId,
+        AssignmentSelectionRequest request,
+        AuthenticatedUser authenticatedUser
+    ) {
+        findAccessibleRestaurantOrThrow(restaurantId, authenticatedUser);
+        requireOwnerManagerOrAdmin(authenticatedUser, restaurantId);
+        Reservation reservation = findReservationOrThrow(restaurantId, reservationId);
+        if (isTerminalStatus(reservation.getStatus())) {
+            throw new ConflictException("Terminal reservations cannot be assigned");
+        }
+
+        AssignmentCandidateType candidateType = parseCandidateType(request.candidateType());
+        List<AssignmentCandidate> candidates = candidateFinder.findCandidates(
+            restaurantId,
+            CandidateSearchMode.MANUAL_SUGGESTION
+        );
+        AssignmentCandidate selectedCandidate = candidates.stream()
+            .filter(candidate -> candidate.type() == candidateType)
+            .filter(candidate -> candidateId(candidate).equals(request.candidateId()))
+            .findFirst()
+            .orElseThrow(() -> new NotFoundException("Assignment candidate not found"));
+
+        selectedCandidate.resourceRequirements().stream()
+            .map(requirement -> requirement.resource().getId())
+            .sorted()
+            .forEach(resourceId -> storageResourceRepository
+                .findByIdAndRestaurantIdForUpdate(resourceId, restaurantId)
+                .orElseThrow(() -> new NotFoundException("Storage resource not found")));
+
+        List<ReservationAssignment> occupiedAssignments = findOccupiedAssignments(restaurantId, reservation);
+        CandidateAvailability selectedAvailability = availabilityChecker.evaluate(
+            selectedCandidate,
+            reservation,
+            occupiedAssignments
+        );
+        if (!selectedAvailability.available()) {
+            throw new ConflictException(
+                "Selected assignment is no longer available: "
+                    + String.join(", ", selectedAvailability.rejectionReasons())
+            );
+        }
+
+        List<AssignmentCandidate> validCandidates = new ArrayList<>();
+        Map<AssignmentCandidate, CandidateAvailability> availabilityByCandidate = new LinkedHashMap<>();
+        for (AssignmentCandidate candidate : candidates) {
+            CandidateAvailability availability = availabilityChecker.evaluate(candidate, reservation, occupiedAssignments);
+            if (availability.available()) {
+                validCandidates.add(candidate);
+                availabilityByCandidate.put(candidate, availability);
+            }
+        }
+
+        ScoredCandidate selected = assignmentScorer.score(
+            selectedCandidate,
+            reservation,
+            selectedAvailability,
+            validCandidates
+        );
+        AssignmentExplanation explanation = assignmentExplainer.explain(selected, reservation);
+        ReservationAssignment saved = persistAssignment(
+            reservation,
+            selected,
+            explanation,
+            authenticatedUser,
+            true
+        );
+
+        aiService.generateInsightsForDate(
+            restaurantId,
+            reservation.getReservationDate(),
+            planningSnapshotService.build(restaurantId, reservation.getReservationDate())
+        );
+        auditService.record(
+            restaurantId,
+            "Reservation",
+            reservation.getId(),
+            "reservation.assignment_selected",
+            authenticatedUser.userId(),
+            explanation.explanationJson()
+        );
+        realtimePublisher.publishReservationEvent(
+            "reservation.assigned",
+            restaurantId,
+            reservation.getId(),
+            reservation.getReservationDate(),
+            "Reservation assignment selected"
+        );
+
+        return toAssignResponse(saved, explanation);
+    }
+
+    private ReservationAssignment persistAssignment(
+        Reservation reservation,
+        ScoredCandidate scored,
+        AssignmentExplanation explanation,
+        AuthenticatedUser authenticatedUser,
+        boolean manualSelection
+    ) {
+        deactivateCurrentAssignments(reservation.getId());
+
+        AssignmentCandidate candidate = scored.candidate();
+        ReservationAssignment assignment = new ReservationAssignment();
+        assignment.setReservation(reservation);
+        assignment.setAssignmentType(manualSelection
+            ? (candidate.type() == AssignmentCandidateType.TABLE ? "MANUAL_TABLE" : "MANUAL_TABLE_COMBINATION")
+            : (candidate.type() == AssignmentCandidateType.TABLE ? TABLE_ASSIGNMENT : TABLE_COMBINATION_ASSIGNMENT));
+        assignment.setDiningRoom(candidate.diningRooms().size() == 1 ? candidate.diningRooms().get(0) : null);
+        assignment.setTable(candidate.table());
+        assignment.setTableCombination(candidate.tableCombination());
+        assignment.setScore(scored.totalScore());
+        assignment.setExplanationJson(explanation.explanationJson());
+        assignment.setAssignedBy(findUserOrNull(authenticatedUser.userId()));
+        assignment.setAssignedAt(Instant.now());
+        assignment.setActive(true);
+        assignment.setOperationalCostLevel(candidate.advanced()
+            ? candidate.operationalCostLevel()
+            : OperationalCostLevel.LOW);
+        assignment.setSetupTimeMinutes(candidate.advanced() ? candidate.setupTimeMinutes() : 0);
+
+        for (var requirement : candidate.resourceRequirements()) {
+            ReservationAssignmentResource allocation = new ReservationAssignmentResource();
+            allocation.setRestaurant(reservation.getRestaurant());
+            allocation.setReservationAssignment(assignment);
+            allocation.setStorageResource(requirement.resource());
+            allocation.setResourceNameSnapshot(requirement.resource().getName());
+            allocation.setResourceTypeSnapshot(requirement.resource().getResourceType().name());
+            allocation.setQuantity(requirement.quantity());
+            allocation.setCapacityPerUnitSnapshot(requirement.resource().getCapacityPerUnit());
+            allocation.setSetupTimeMinutesSnapshot(requirement.resource().getSetupTimeMinutes());
+            assignment.getResources().add(allocation);
+        }
+
+        return reservationAssignmentRepository.save(assignment);
+    }
+
+    private AssignReservationResponse toAssignResponse(
+        ReservationAssignment saved,
+        AssignmentExplanation explanation
+    ) {
         return new AssignReservationResponse(
             true,
-            reservation.getId(),
+            saved.getReservation().getId(),
             saved.getId(),
             saved.getAssignmentType(),
             saved.getDiningRoom() == null ? null : saved.getDiningRoom().getId(),
@@ -195,8 +420,109 @@ public class ReservationAssignmentService {
             explanation.explanationJson(),
             List.of(),
             null,
-            null
+            null,
+            saved.getOperationalCostLevel().name(),
+            saved.getSetupTimeMinutes(),
+            saved.getResources().stream().map(resource -> new AssignedResourceResponse(
+                resource.getStorageResource().getId(),
+                resource.getResourceTypeSnapshot(),
+                resource.getResourceNameSnapshot(),
+                resource.getQuantity(),
+                resource.getCapacityPerUnitSnapshot(),
+                resource.getSetupTimeMinutesSnapshot()
+            )).toList()
         );
+    }
+
+    private CandidateEvaluation evaluateCandidates(
+        Long restaurantId,
+        Reservation reservation,
+        CandidateSearchMode mode
+    ) {
+        List<AssignmentCandidate> candidates = candidateFinder.findCandidates(restaurantId, mode);
+        List<ReservationAssignment> occupiedAssignments = findOccupiedAssignments(restaurantId, reservation);
+        Map<String, Integer> rejectionCounts = new LinkedHashMap<>();
+        List<AssignmentCandidate> validCandidates = new ArrayList<>();
+        Map<AssignmentCandidate, CandidateAvailability> availabilityByCandidate = new LinkedHashMap<>();
+
+        for (AssignmentCandidate candidate : candidates) {
+            CandidateAvailability availability = availabilityChecker.evaluate(candidate, reservation, occupiedAssignments);
+            if (availability.available()) {
+                validCandidates.add(candidate);
+                availabilityByCandidate.put(candidate, availability);
+            } else {
+                availability.rejectionReasons().forEach(reason -> rejectionCounts.merge(reason, 1, Integer::sum));
+            }
+        }
+
+        List<ScoredCandidate> scoredCandidates = validCandidates.stream()
+            .map(candidate -> assignmentScorer.score(
+                candidate,
+                reservation,
+                availabilityByCandidate.get(candidate),
+                validCandidates
+            ))
+            .sorted(candidateComparator())
+            .toList();
+        return new CandidateEvaluation(scoredCandidates, rejectionCounts);
+    }
+
+    private List<ReservationAssignment> findOccupiedAssignments(Long restaurantId, Reservation reservation) {
+        return reservationAssignmentRepository
+            .findByActiveTrueAndReservationRestaurantIdAndReservationReservationDateAndReservationStatusIn(
+                restaurantId,
+                reservation.getReservationDate(),
+                OCCUPYING_STATUSES
+            );
+    }
+
+    private AssignmentSuggestionResponse toSuggestionResponse(ScoredCandidate scored, Reservation reservation) {
+        AssignmentCandidate candidate = scored.candidate();
+        AssignmentExplanation explanation = assignmentExplainer.explain(scored, reservation);
+        return new AssignmentSuggestionResponse(
+            candidate.type().name(),
+            candidateId(candidate),
+            candidate.displayName(),
+            candidate.tableIds(),
+            candidate.minCapacity(),
+            candidate.maxCapacity(),
+            scored.totalScore(),
+            candidate.advanced(),
+            candidate.operationalCostLevel().name(),
+            candidate.setupTimeMinutes(),
+            candidate.resourceRequirements().stream().map(requirement ->
+                new AssignmentSuggestionResourceResponse(
+                    requirement.resource().getId(),
+                    requirement.resource().getResourceType().name(),
+                    requirement.resource().getName(),
+                    requirement.quantity(),
+                    scored.availability().availableResourceQuantities()
+                        .getOrDefault(requirement.resource().getId(), requirement.resource().getQuantity()),
+                    requirement.resource().getCapacityPerUnit(),
+                    requirement.capacityContribution()
+                )
+            ).toList(),
+            new AssignmentExplanationResponse(
+                explanation.summary(),
+                explanation.reasons(),
+                scored.bonuses(),
+                scored.penalties()
+            )
+        );
+    }
+
+    private Long candidateId(AssignmentCandidate candidate) {
+        return candidate.type() == AssignmentCandidateType.TABLE
+            ? candidate.table().getId()
+            : candidate.tableCombination().getId();
+    }
+
+    private AssignmentCandidateType parseCandidateType(String value) {
+        try {
+            return AssignmentCandidateType.valueOf(value.trim().toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException("Unsupported candidateType: " + value);
+        }
     }
 
     private Comparator<ScoredCandidate> candidateComparator() {
@@ -292,7 +618,10 @@ public class ReservationAssignmentService {
             null,
             reasons,
             recommendedStart == null ? null : recommendedStart.toString(),
-            recommendationSummary
+            recommendationSummary,
+            null,
+            null,
+            List.of()
         );
     }
 
@@ -401,5 +730,11 @@ public class ReservationAssignmentService {
         }
 
         return Set.of();
+    }
+
+    private record CandidateEvaluation(
+        List<ScoredCandidate> scoredCandidates,
+        Map<String, Integer> rejectionCounts
+    ) {
     }
 }

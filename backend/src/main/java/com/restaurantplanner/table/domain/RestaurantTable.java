@@ -5,6 +5,8 @@ import com.restaurantplanner.diningroom.domain.DiningRoom;
 import com.restaurantplanner.restaurant.domain.Restaurant;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -18,9 +20,13 @@ public class RestaurantTable extends BaseEntity {
     @JoinColumn(name = "restaurant_id", nullable = false)
     private Restaurant restaurant;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "dining_room_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "dining_room_id")
     private DiningRoom diningRoom;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "table_type", nullable = false, length = 40)
+    private TableType tableType = TableType.FIXED;
 
     @Column(nullable = false, length = 80)
     private String code;
@@ -66,6 +72,14 @@ public class RestaurantTable extends BaseEntity {
 
     public void setDiningRoom(DiningRoom diningRoom) {
         this.diningRoom = diningRoom;
+    }
+
+    public TableType getTableType() {
+        return tableType;
+    }
+
+    public void setTableType(TableType tableType) {
+        this.tableType = tableType;
     }
 
     public String getCode() {
@@ -148,4 +162,3 @@ public class RestaurantTable extends BaseEntity {
         this.active = active;
     }
 }
-

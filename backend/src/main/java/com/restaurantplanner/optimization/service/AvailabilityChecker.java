@@ -9,6 +9,8 @@ import java.time.Duration;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
 import org.springframework.stereotype.Service;
 
@@ -52,6 +54,7 @@ public class AvailabilityChecker {
         }
 
         LocalTime requestedStart = reservation.getStartTime();
+        LocalTime requestedResourceStart = requestedStart.minusMinutes(candidate.setupTimeMinutes());
         LocalTime requestedEffectiveEnd = reservation.getEndTime().plusMinutes(reservation.getCleaningBufferMin());
         Set<Long> candidateTableIds = Set.copyOf(candidate.tableIds());
 
@@ -89,7 +92,48 @@ public class AvailabilityChecker {
             }
         }
 
-        return new CandidateAvailability(reasons.isEmpty(), reasons, gapBeforeMin, gapAfterMin);
+        Map<Long, Integer> availableResourceQuantities = new LinkedHashMap<>();
+        for (var requirement : candidate.resourceRequirements()) {
+            var resource = requirement.resource();
+            int allocatedQuantity = occupiedAssignments.stream()
+                .filter(assignment -> !assignment.getReservation().getId().equals(reservation.getId()))
+                .filter(assignment -> resourceWindowsOverlap(
+                    requestedResourceStart,
+                    requestedEffectiveEnd,
+                    assignment
+                ))
+                .flatMap(assignment -> assignment.getResources().stream())
+                .filter(allocation -> allocation.getStorageResource().getId().equals(resource.getId()))
+                .mapToInt(allocation -> allocation.getQuantity())
+                .sum();
+            int availableQuantity = Math.max(0, resource.getQuantity() - allocatedQuantity);
+            availableResourceQuantities.put(resource.getId(), availableQuantity);
+            if (!resource.isActive()) {
+                reasons.add("inactive_inventory");
+            } else if (requirement.quantity() > availableQuantity) {
+                reasons.add("insufficient_inventory");
+            }
+        }
+
+        return new CandidateAvailability(
+            reasons.isEmpty(),
+            reasons.stream().distinct().toList(),
+            gapBeforeMin,
+            gapAfterMin,
+            availableResourceQuantities
+        );
+    }
+
+    private boolean resourceWindowsOverlap(
+        LocalTime requestedStart,
+        LocalTime requestedEnd,
+        ReservationAssignment occupiedAssignment
+    ) {
+        LocalTime occupiedStart = occupiedAssignment.getReservation().getStartTime()
+            .minusMinutes(occupiedAssignment.getSetupTimeMinutes());
+        LocalTime occupiedEnd = occupiedAssignment.getReservation().getEndTime()
+            .plusMinutes(occupiedAssignment.getReservation().getCleaningBufferMin());
+        return requestedStart.isBefore(occupiedEnd) && requestedEnd.isAfter(occupiedStart);
     }
 
     private Set<Long> extractOccupiedTableIds(ReservationAssignment assignment) {

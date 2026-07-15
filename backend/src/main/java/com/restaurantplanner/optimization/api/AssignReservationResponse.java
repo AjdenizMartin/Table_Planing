@@ -17,6 +17,9 @@ public record AssignReservationResponse(
     String explanationJson,
     List<String> reasons,
     String recommendedStartTime,
-    String recommendationSummary
+    String recommendationSummary,
+    String operationalCostLevel,
+    Integer setupTimeMinutes,
+    List<AssignedResourceResponse> resources
 ) {
 }

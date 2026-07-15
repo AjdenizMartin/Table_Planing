@@ -41,6 +41,13 @@ public class AssignmentExplainer {
         if (reservation.isAccessibilityRequired()) {
             reasons.add("Cumple el requisito de accesibilidad de la reserva.");
         }
+        if (scoredCandidate.candidate().advanced()) {
+            reasons.add(
+                "Requiere preparacion de " + scoredCandidate.candidate().setupTimeMinutes()
+                    + " minutos y coste operativo "
+                    + scoredCandidate.candidate().operationalCostLevel().name().toLowerCase() + "."
+            );
+        }
 
         String summary = "Seleccionada " + scoredCandidate.candidate().displayName()
             + " con score " + String.format(java.util.Locale.US, "%.2f", scoredCandidate.totalScore()) + ".";
@@ -48,14 +55,31 @@ public class AssignmentExplainer {
         Map<String, Object> explanation = new LinkedHashMap<>();
         explanation.put("summary", summary);
         explanation.put("candidateType", scoredCandidate.candidate().type().name());
+        explanation.put(
+            "candidateId",
+            scoredCandidate.candidate().table() != null
+                ? scoredCandidate.candidate().table().getId()
+                : scoredCandidate.candidate().tableCombination().getId()
+        );
         explanation.put("displayName", scoredCandidate.candidate().displayName());
         explanation.put("tableIds", scoredCandidate.candidate().tableIds());
+        explanation.put("advanced", scoredCandidate.candidate().advanced());
+        explanation.put("operationalCostLevel", scoredCandidate.candidate().operationalCostLevel().name());
+        explanation.put("setupTimeMinutes", scoredCandidate.candidate().setupTimeMinutes());
+        explanation.put("score", scoredCandidate.totalScore());
+        explanation.put("resources", scoredCandidate.candidate().resourceRequirements().stream().map(requirement -> Map.of(
+            "storageResourceId", requirement.resource().getId(),
+            "resourceName", requirement.resource().getName(),
+            "resourceType", requirement.resource().getResourceType().name(),
+            "quantity", requirement.quantity(),
+            "capacityPerUnit", requirement.resource().getCapacityPerUnit()
+        )).toList());
         explanation.put("bonuses", scoredCandidate.bonuses());
         explanation.put("penalties", scoredCandidate.penalties());
         explanation.put("reasons", reasons);
 
         try {
-            return new AssignmentExplanation(summary, objectMapper.writeValueAsString(explanation));
+            return new AssignmentExplanation(summary, objectMapper.writeValueAsString(explanation), reasons);
         } catch (JsonProcessingException ex) {
             throw new IllegalArgumentException("Could not serialize assignment explanation");
         }

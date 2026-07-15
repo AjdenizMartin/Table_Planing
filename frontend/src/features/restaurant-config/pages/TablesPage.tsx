@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as configApi from "@/features/restaurant-config/api/configApi";
 import { ConfigCard } from "@/features/restaurant-config/components/ConfigCard";
 import { ConfigShell } from "@/features/restaurant-config/components/ConfigShell";
+import { StorageInventory } from "@/features/restaurant-config/components/StorageInventory";
 import {
   CheckboxField,
   SelectField,
@@ -15,6 +16,7 @@ import { getErrorMessage } from "@/features/restaurant-config/utils/errorMessage
 
 const emptyForm = {
   diningRoomId: "",
+  tableType: "FIXED" as RestaurantTableResponse["tableType"],
   code: "",
   label: "",
   minCapacity: "2",
@@ -59,7 +61,8 @@ export function TablesPage() {
     }
 
     setForm({
-      diningRoomId: String(selected.diningRoomId),
+      diningRoomId: selected.diningRoomId === null ? "" : String(selected.diningRoomId),
+      tableType: selected.tableType,
       code: selected.code,
       label: selected.label ?? "",
       minCapacity: String(selected.minCapacity),
@@ -89,7 +92,8 @@ export function TablesPage() {
   const createMutation = useMutation({
     mutationFn: () =>
       configApi.createTable(activeRestaurantId!, {
-        diningRoomId: Number(form.diningRoomId),
+        diningRoomId: form.tableType === "STORAGE" ? null : Number(form.diningRoomId),
+        tableType: form.tableType,
         code: form.code,
         label: form.label || null,
         minCapacity: Number(form.minCapacity),
@@ -110,7 +114,8 @@ export function TablesPage() {
   const updateMutation = useMutation({
     mutationFn: () =>
       configApi.updateTable(activeRestaurantId!, selected!.id, {
-        diningRoomId: Number(form.diningRoomId),
+        diningRoomId: form.tableType === "STORAGE" ? null : Number(form.diningRoomId),
+        tableType: form.tableType,
         code: form.code,
         label: form.label || null,
         minCapacity: Number(form.minCapacity),
@@ -123,12 +128,14 @@ export function TablesPage() {
         return;
       }
 
-      await configApi.updateTableLayout(activeRestaurantId!, selected.id, {
-        x: Number(form.x),
-        y: Number(form.y),
-        width: Number(form.width),
-        height: Number(form.height),
-      });
+      if (form.tableType !== "STORAGE") {
+        await configApi.updateTableLayout(activeRestaurantId!, selected.id, {
+          x: Number(form.x),
+          y: Number(form.y),
+          width: Number(form.width),
+          height: Number(form.height),
+        });
+      }
       setSelected(null);
       await refresh();
     },
@@ -146,7 +153,7 @@ export function TablesPage() {
     createMutation.error ?? updateMutation.error ?? deactivateMutation.error;
 
   function validateForm() {
-    if (!form.diningRoomId) {
+    if (form.tableType !== "STORAGE" && !form.diningRoomId) {
       return "Selecciona un salon para la mesa.";
     }
 
@@ -171,8 +178,14 @@ export function TablesPage() {
       return "Revisa posicion y tamaño de la mesa antes de guardar.";
     }
 
+    if (form.tableType === "STORAGE" && form.active) {
+      return null;
+    }
+
     return null;
   }
+
+  const storageTables = tablesQuery.data?.filter((table) => table.tableType === "STORAGE") ?? [];
 
   return (
     <ConfigShell
@@ -206,11 +219,13 @@ export function TablesPage() {
                       {table.label ? ` · ${table.label}` : ""}
                     </h3>
                     <p className="mt-2 text-sm text-slate-400">
-                      Salon {roomsById.get(table.diningRoomId) ?? table.diningRoomId} ·{" "}
+                      {table.tableType === "STORAGE"
+                        ? "Almacen"
+                        : `Salon ${roomsById.get(table.diningRoomId ?? 0) ?? table.diningRoomId}`} ·{" "}
                       {table.minCapacity}-{table.maxCapacity} pax · {table.shape}
                     </p>
                     <p className="mt-1 text-sm text-slate-500">
-                      Posicion {table.x},{table.y} · {table.width} × {table.height} ·{" "}
+                      Tipo {table.tableType} · Posicion {table.x},{table.y} · {table.width} × {table.height} ·{" "}
                       {table.active ? "Activa" : "Inactiva"}
                     </p>
                   </div>
@@ -274,6 +289,7 @@ export function TablesPage() {
             <SelectField
               label="Salon"
               value={form.diningRoomId}
+              disabled={form.tableType === "STORAGE"}
               onChange={(event) =>
                 setForm((current) => ({ ...current, diningRoomId: event.target.value }))
               }
@@ -287,6 +303,27 @@ export function TablesPage() {
                 </option>
               ))}
             </SelectField>
+            <SelectField
+              label="Tipo de mesa"
+              value={form.tableType}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  tableType: event.target.value as RestaurantTableResponse["tableType"],
+                  diningRoomId: event.target.value === "STORAGE" ? "" : current.diningRoomId,
+                }))
+              }
+            >
+              <option value="FIXED">FIXED</option>
+              <option value="MOVABLE">MOVABLE</option>
+              <option value="STORAGE">STORAGE</option>
+              <option value="TEMPORARY">TEMPORARY</option>
+            </SelectField>
+            {form.tableType === "STORAGE" ? (
+              <StatusMessage tone="info">
+                Las mesas STORAGE quedan registradas en inventario y no aparecen como mesas normales del planning.
+              </StatusMessage>
+            ) : null}
             <div className="grid gap-4 sm:grid-cols-2">
               <TextField
                 label="Codigo"
@@ -424,6 +461,11 @@ export function TablesPage() {
             </div>
           </form>
         </ConfigCard>
+
+        <StorageInventory
+          activeRestaurantId={activeRestaurantId}
+          storageTableCodes={storageTables.map((table) => table.code)}
+        />
       </div>
     </ConfigShell>
   );

@@ -18,6 +18,7 @@ import com.restaurantplanner.table.api.UpdateRestaurantTableLayoutRequest;
 import com.restaurantplanner.table.api.UpdateRestaurantTableRequest;
 import com.restaurantplanner.table.domain.RestaurantTable;
 import com.restaurantplanner.table.domain.RestaurantTableRepository;
+import com.restaurantplanner.table.domain.TableType;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -70,11 +71,13 @@ public class RestaurantTableService {
         }
 
         validateCapacityRange(request.minCapacity(), request.maxCapacity());
-        DiningRoom diningRoom = findDiningRoomForRestaurantOrThrow(request.diningRoomId(), restaurantId);
+        TableType tableType = parseTableTypeOrDefault(request.tableType());
+        DiningRoom diningRoom = resolveDiningRoomForTableType(request.diningRoomId(), tableType, restaurantId);
 
         RestaurantTable table = new RestaurantTable();
         table.setRestaurant(restaurant);
         table.setDiningRoom(diningRoom);
+        table.setTableType(tableType);
         table.setCode(normalizedCode);
         table.setLabel(normalizeOptional(request.label()));
         table.setMinCapacity(request.minCapacity());
@@ -91,7 +94,7 @@ public class RestaurantTableService {
         realtimePublisher.publishTableUpdated(
             restaurantId,
             saved.getId(),
-            saved.getDiningRoom().getId(),
+            saved.getDiningRoom() == null ? null : saved.getDiningRoom().getId(),
             "Table created"
         );
         return restaurantTableMapper.toResponse(saved);
@@ -127,6 +130,10 @@ public class RestaurantTableService {
             table.setDiningRoom(findDiningRoomForRestaurantOrThrow(request.diningRoomId(), restaurantId));
         }
 
+        if (request.tableType() != null) {
+            table.setTableType(parseTableTypeOrDefault(request.tableType()));
+        }
+
         if (request.code() != null) {
             String normalizedCode = normalizeRequired(request.code(), "code");
             if (restaurantTableRepository.existsByRestaurantIdAndCodeIgnoreCaseAndIdNot(restaurantId, normalizedCode, tableId)) {
@@ -150,12 +157,17 @@ public class RestaurantTableService {
             table.setLabel(normalizeOptional(request.label()));
         }
         applyIfPresent(request.active(), table::setActive);
+        table.setDiningRoom(resolveDiningRoomForTableType(
+            table.getDiningRoom() == null ? null : table.getDiningRoom().getId(),
+            table.getTableType(),
+            restaurantId
+        ));
 
         auditService.record(restaurantId, "RestaurantTable", tableId, "table.updated", authenticatedUser.userId(), null);
         realtimePublisher.publishTableUpdated(
             restaurantId,
             table.getId(),
-            table.getDiningRoom().getId(),
+            table.getDiningRoom() == null ? null : table.getDiningRoom().getId(),
             "Table updated"
         );
         return restaurantTableMapper.toResponse(table);
@@ -182,7 +194,7 @@ public class RestaurantTableService {
         realtimePublisher.publishTableUpdated(
             restaurantId,
             table.getId(),
-            table.getDiningRoom().getId(),
+            table.getDiningRoom() == null ? null : table.getDiningRoom().getId(),
             "Table layout updated"
         );
         return restaurantTableMapper.toResponse(table);
@@ -198,7 +210,7 @@ public class RestaurantTableService {
         realtimePublisher.publishTableUpdated(
             restaurantId,
             table.getId(),
-            table.getDiningRoom().getId(),
+            table.getDiningRoom() == null ? null : table.getDiningRoom().getId(),
             "Table deactivated"
         );
     }
@@ -216,6 +228,27 @@ public class RestaurantTableService {
     private DiningRoom findDiningRoomForRestaurantOrThrow(Long diningRoomId, Long restaurantId) {
         return diningRoomRepository.findByIdAndRestaurantId(diningRoomId, restaurantId)
             .orElseThrow(() -> new NotFoundException("Dining room not found for restaurant"));
+    }
+
+    private DiningRoom resolveDiningRoomForTableType(Long diningRoomId, TableType tableType, Long restaurantId) {
+        if (tableType == TableType.STORAGE) {
+            return null;
+        }
+        if (diningRoomId == null) {
+            throw new IllegalArgumentException("diningRoomId is required for non-storage tables");
+        }
+        return findDiningRoomForRestaurantOrThrow(diningRoomId, restaurantId);
+    }
+
+    private TableType parseTableTypeOrDefault(String value) {
+        if (!StringUtils.hasText(value)) {
+            return TableType.FIXED;
+        }
+        try {
+            return TableType.valueOf(value.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Unsupported tableType: " + value);
+        }
     }
 
     private RestaurantTable findTableOrThrow(Long restaurantId, Long tableId) {
@@ -249,6 +282,10 @@ public class RestaurantTableService {
         RestaurantTable table,
         UpdateRestaurantTableLayoutRequest request
     ) {
+        if (table.getDiningRoom() == null) {
+            throw new IllegalArgumentException("Storage tables do not have a dining room layout");
+        }
+
         int layoutWidth = table.getDiningRoom().getLayoutWidth();
         int layoutHeight = table.getDiningRoom().getLayoutHeight();
 

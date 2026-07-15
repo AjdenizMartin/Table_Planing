@@ -6,6 +6,7 @@ public record RestaurantTableResponse(
     Long id,
     Long restaurantId,
     Long diningRoomId,
+    String tableType,
     String code,
     String label,
     Integer minCapacity,
@@ -20,4 +21,3 @@ public record RestaurantTableResponse(
     Instant updatedAt
 ) {
 }
-
