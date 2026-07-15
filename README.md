@@ -82,9 +82,11 @@ El proyecto ya no esta solo en fase documental. Actualmente incluye una primera 
 - backend `Spring Boot` con autenticacion JWT, multi-tenant y modulos iniciales
 - configuracion de restaurante, salones, mesas y combinaciones
 - clientes, reservas manuales y asignacion automatica inicial
+- combinaciones avanzadas con inventario, top 3 manual y aplicacion transaccional
 - planning diario, tiempo real por `WebSocket` e insights operativos deterministas
 - frontend `React + TypeScript` con login, configuracion, reservas y planning visual
-- `docker-compose.yml` para levantar `PostgreSQL`, backend y frontend
+- CI con tests backend, PostgreSQL, frontend, Playwright e imagenes Docker
+- Compose local y productivo con Nginx, HTTPS, secretos, backups y health checks
 
 ## Documentacion clave
 
@@ -101,6 +103,8 @@ El proyecto ya no esta solo en fase documental. Actualmente incluye una primera 
 - [docs/TECHNICAL_TODO.md](./docs/TECHNICAL_TODO.md)
 - [docs/PLANNING_PANEL_VISION.md](./docs/PLANNING_PANEL_VISION.md)
 - [docs/PLANNING_PANEL_IMPLEMENTATION_PLAN.md](./docs/PLANNING_PANEL_IMPLEMENTATION_PLAN.md)
+- [docs/PILOT_RUNBOOK.md](./docs/PILOT_RUNBOOK.md)
+- [docs/PILOT_UAT_CHECKLIST.md](./docs/PILOT_UAT_CHECKLIST.md)
 
 ## Principios de construccion
 
@@ -111,7 +115,7 @@ El proyecto ya no esta solo en fase documental. Actualmente incluye una primera 
 - Trazabilidad de decisiones y cambios.
 - UX pensada para tablet y operacion real en sala.
 
-## MVP implementado parcialmente
+## MVP operativo implementado
 
 La base actual ya cubre una parte relevante del MVP:
 
@@ -122,12 +126,15 @@ La base actual ya cubre una parte relevante del MVP:
 - asignacion automatica inicial
 - planning visual diario
 - confirmaciones basicas por SMS
+- sugerencias avanzadas aprobadas por manager con inventario reservado
+- historial y explicacion de asignaciones
 
 Pendiente para una fase mas madura:
 
 - automatizaciones operativas mas profundas
 - integraciones externas adicionales
 - refinamiento del algoritmo y analitica avanzada
+- carga de datos y UAT en el VPS real del piloto
 
 ## Arranque rapido
 
@@ -148,6 +155,8 @@ Implementado actualmente:
 - eventos realtime
 - notificaciones internas y SMS basicos
 - insights explicativos de planning
+- top 3 manual con recursos, coste y preparacion
+- tests Vitest/Testing Library y Playwright a 768/1024 px
 
 Planificado o parcial:
 
