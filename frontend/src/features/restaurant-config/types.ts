@@ -77,6 +77,20 @@ export interface TableCombinationItemResponse {
   orderIndex: number;
 }
 
+export type CombinationType = "STANDARD" | "ADVANCED";
+export type OperationalCostLevel = "LOW" | "MEDIUM" | "HIGH";
+
+export interface TableCombinationResourceRequirementResponse {
+  id: number;
+  storageResourceId: number;
+  resourceType: StorageResourceType;
+  resourceName: string;
+  quantity: number;
+  capacityPerUnit: number;
+  capacityContribution: number;
+  resourceSetupTimeMinutes: number;
+}
+
 export interface TableCombinationResponse {
   id: number;
   restaurantId: number;
@@ -84,7 +98,11 @@ export interface TableCombinationResponse {
   minCapacity: number;
   maxCapacity: number;
   active: boolean;
+  combinationType: CombinationType;
+  operationalCostLevel: OperationalCostLevel;
+  setupTimeMinutes: number;
   items: TableCombinationItemResponse[];
+  resourceRequirements: TableCombinationResourceRequirementResponse[];
   createdAt: string;
   updatedAt: string;
 }

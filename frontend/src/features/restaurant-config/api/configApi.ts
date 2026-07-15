@@ -230,6 +230,10 @@ export function createTableCombination(
     maxCapacity: number;
     active: boolean;
     tableIds: number[];
+    combinationType: TableCombinationResponse["combinationType"];
+    operationalCostLevel: TableCombinationResponse["operationalCostLevel"];
+    setupTimeMinutes: number;
+    resourceRequirements: Array<{ storageResourceId: number; quantity: number }>;
   },
 ) {
   return apiClient.request<TableCombinationResponse>(
@@ -250,6 +254,10 @@ export function updateTableCombination(
     maxCapacity: number;
     active: boolean;
     tableIds: number[];
+    combinationType: TableCombinationResponse["combinationType"];
+    operationalCostLevel: TableCombinationResponse["operationalCostLevel"];
+    setupTimeMinutes: number;
+    resourceRequirements: Array<{ storageResourceId: number; quantity: number }>;
   }>,
 ) {
   return apiClient.request<TableCombinationResponse>(

@@ -22,7 +22,7 @@ interface RealtimeContextValue {
 const RealtimeContext = createContext<RealtimeContextValue | undefined>(undefined);
 
 function buildWebSocketUrl(apiBaseUrl: string, accessToken: string) {
-  const url = new URL(apiBaseUrl);
+  const url = new URL(apiBaseUrl || window.location.origin);
   url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
   url.pathname = "/ws";
   url.searchParams.set("access_token", accessToken);
