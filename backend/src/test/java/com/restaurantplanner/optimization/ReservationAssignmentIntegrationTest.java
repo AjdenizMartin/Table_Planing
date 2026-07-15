@@ -6,11 +6,15 @@ import com.restaurantplanner.auth.domain.RefreshTokenRepository;
 import com.restaurantplanner.auth.domain.Role;
 import com.restaurantplanner.auth.domain.RoleAssignment;
 import com.restaurantplanner.auth.domain.RoleAssignmentRepository;
+import com.restaurantplanner.auth.security.AuthenticatedUser;
+import com.restaurantplanner.common.api.ConflictException;
 import com.restaurantplanner.customer.domain.Customer;
 import com.restaurantplanner.customer.domain.CustomerRepository;
 import com.restaurantplanner.diningroom.domain.DiningRoom;
 import com.restaurantplanner.diningroom.domain.DiningRoomRepository;
 import com.restaurantplanner.optimization.api.AssignReservationResponse;
+import com.restaurantplanner.optimization.api.AssignmentSelectionRequest;
+import com.restaurantplanner.optimization.service.ReservationAssignmentService;
 import com.restaurantplanner.reservation.domain.Reservation;
 import com.restaurantplanner.reservation.domain.ReservationAssignment;
 import com.restaurantplanner.reservation.domain.ReservationAssignmentRepository;
@@ -20,16 +24,29 @@ import com.restaurantplanner.reservation.domain.ReservationStatus;
 import com.restaurantplanner.restaurant.domain.Restaurant;
 import com.restaurantplanner.restaurant.domain.RestaurantRepository;
 import com.restaurantplanner.restaurant.domain.RestaurantStatus;
+import com.restaurantplanner.storage.domain.StorageResource;
+import com.restaurantplanner.storage.domain.StorageResourceRepository;
+import com.restaurantplanner.storage.domain.StorageResourceType;
 import com.restaurantplanner.table.domain.RestaurantTable;
 import com.restaurantplanner.table.domain.RestaurantTableRepository;
 import com.restaurantplanner.tablecombination.domain.TableCombination;
 import com.restaurantplanner.tablecombination.domain.TableCombinationItem;
 import com.restaurantplanner.tablecombination.domain.TableCombinationRepository;
+import com.restaurantplanner.tablecombination.domain.TableCombinationResourceRequirement;
+import com.restaurantplanner.tablecombination.domain.CombinationType;
+import com.restaurantplanner.tablecombination.domain.OperationalCostLevel;
 import com.restaurantplanner.user.domain.User;
 import com.restaurantplanner.user.domain.UserRepository;
 import com.restaurantplanner.user.domain.UserStatus;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +63,8 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -97,6 +116,12 @@ class ReservationAssignmentIntegrationTest {
     @Autowired
     private ReservationAssignmentRepository reservationAssignmentRepository;
 
+    @Autowired
+    private StorageResourceRepository storageResourceRepository;
+
+    @Autowired
+    private ReservationAssignmentService reservationAssignmentService;
+
     @BeforeEach
     void setUp() {
         refreshTokenRepository.deleteAll();
@@ -104,6 +129,7 @@ class ReservationAssignmentIntegrationTest {
         reservationAssignmentRepository.deleteAll();
         reservationRepository.deleteAll();
         tableCombinationRepository.deleteAll();
+        storageResourceRepository.deleteAll();
         restaurantTableRepository.deleteAll();
         diningRoomRepository.deleteAll();
         customerRepository.deleteAll();
@@ -291,6 +317,248 @@ class ReservationAssignmentIntegrationTest {
             .andExpect(jsonPath("$.tableId").value(tableA.getId()));
     }
 
+    @Test
+    void advancedSuggestionDoesNotMutateAndAutomaticAssignmentIgnoresIt() throws Exception {
+        Restaurant restaurant = createRestaurant("Main", "main");
+        DiningRoom room = createDiningRoom(restaurant, "Main Room", 1, true, true);
+        RestaurantTable tableA = createTable(restaurant, room, "A1", 2, 2, true);
+        RestaurantTable tableB = createTable(restaurant, room, "A2", 2, 2, true);
+        StorageResource chairs = createStorageResource(restaurant, "Extra chairs", 1, 2);
+        TableCombination advanced = createAdvancedCombination(
+            restaurant,
+            "Six seat setup",
+            chairs,
+            1,
+            tableA,
+            tableB
+        );
+        Customer customer = createCustomer(restaurant, "Ana", "Lopez", "+34600111222");
+        Reservation reservation = createReservation(
+            restaurant,
+            customer,
+            6,
+            LocalDate.of(2026, 8, 26),
+            LocalTime.of(20, 0),
+            60,
+            15,
+            false
+        );
+        String token = loginWithRole(restaurant, "manager@example.com", Role.MANAGER);
+
+        mockMvc.perform(get(
+                "/api/restaurants/{restaurantId}/reservations/{reservationId}/assignment-suggestions",
+                restaurant.getId(),
+                reservation.getId()
+            ).header(HttpHeaders.AUTHORIZATION, bearer(token)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.suggestions.length()").value(1))
+            .andExpect(jsonPath("$.suggestions[0].candidateId").value(advanced.getId()))
+            .andExpect(jsonPath("$.suggestions[0].advanced").value(true))
+            .andExpect(jsonPath("$.suggestions[0].resources[0].requiredQuantity").value(1));
+
+        org.junit.jupiter.api.Assertions.assertEquals(0, reservationAssignmentRepository.count());
+
+        mockMvc.perform(post(
+                "/api/restaurants/{restaurantId}/reservations/{reservationId}/assign",
+                restaurant.getId(),
+                reservation.getId()
+            ).header(HttpHeaders.AUTHORIZATION, bearer(token)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.assigned").value(false));
+
+        org.junit.jupiter.api.Assertions.assertEquals(0, reservationAssignmentRepository.count());
+    }
+
+    @Test
+    void selectingAdvancedSuggestionPersistsResourcesAndHistory() throws Exception {
+        Restaurant restaurant = createRestaurant("Main", "main");
+        DiningRoom room = createDiningRoom(restaurant, "Main Room", 1, true, true);
+        RestaurantTable tableA = createTable(restaurant, room, "A1", 2, 2, true);
+        RestaurantTable tableB = createTable(restaurant, room, "A2", 2, 2, true);
+        StorageResource chairs = createStorageResource(restaurant, "Extra chairs", 2, 1);
+        TableCombination advanced = createAdvancedCombination(
+            restaurant,
+            "Six seat setup",
+            chairs,
+            2,
+            tableA,
+            tableB
+        );
+        Customer customer = createCustomer(restaurant, "Ana", "Lopez", "+34600111222");
+        Reservation reservation = createReservation(
+            restaurant,
+            customer,
+            6,
+            LocalDate.of(2026, 8, 26),
+            LocalTime.of(20, 0),
+            60,
+            15,
+            false
+        );
+        String token = loginWithRole(restaurant, "manager@example.com", Role.MANAGER);
+
+        mockMvc.perform(post(
+                "/api/restaurants/{restaurantId}/reservations/{reservationId}/assignment-selection",
+                restaurant.getId(),
+                reservation.getId()
+            )
+                .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"candidateType":"TABLE_COMBINATION","candidateId":%d}
+                    """.formatted(advanced.getId())))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.assigned").value(true))
+            .andExpect(jsonPath("$.operationalCostLevel").value("MEDIUM"))
+            .andExpect(jsonPath("$.setupTimeMinutes").value(20))
+            .andExpect(jsonPath("$.resources[0].quantity").value(2));
+
+        mockMvc.perform(get(
+                "/api/restaurants/{restaurantId}/reservations/{reservationId}/assignment-history",
+                restaurant.getId(),
+                reservation.getId()
+            ).header(HttpHeaders.AUTHORIZATION, bearer(token)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].active").value(true))
+            .andExpect(jsonPath("$[0].resources[0].resourceName").value("Extra chairs"));
+
+        mockMvc.perform(patch(
+                "/api/restaurants/{restaurantId}/storage-resources/{resourceId}",
+                restaurant.getId(),
+                chairs.getId()
+            )
+                .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"quantity":1}
+                    """))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.details.committedPeak").value(2));
+
+        mockMvc.perform(patch(
+                "/api/restaurants/{restaurantId}/storage-resources/{resourceId}",
+                restaurant.getId(),
+                chairs.getId()
+            )
+                .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"active":false}
+                    """))
+            .andExpect(status().isConflict());
+    }
+
+    @Test
+    void selectionRevalidatesOverlappingInventory() throws Exception {
+        Restaurant restaurant = createRestaurant("Main", "main");
+        DiningRoom room = createDiningRoom(restaurant, "Main Room", 1, true, true);
+        RestaurantTable tableA1 = createTable(restaurant, room, "A1", 2, 2, true);
+        RestaurantTable tableA2 = createTable(restaurant, room, "A2", 2, 2, true);
+        RestaurantTable tableB1 = createTable(restaurant, room, "B1", 2, 2, true);
+        RestaurantTable tableB2 = createTable(restaurant, room, "B2", 2, 2, true);
+        StorageResource extension = createStorageResource(restaurant, "Extension", 1, 2);
+        TableCombination firstCombination = createAdvancedCombination(
+            restaurant, "First setup", extension, 1, tableA1, tableA2
+        );
+        TableCombination secondCombination = createAdvancedCombination(
+            restaurant, "Second setup", extension, 1, tableB1, tableB2
+        );
+        Customer firstCustomer = createCustomer(restaurant, "Ana", "Lopez", "+34600111222");
+        Customer secondCustomer = createCustomer(restaurant, "Eva", "Santos", "+34600999888");
+        Reservation first = createReservation(
+            restaurant, firstCustomer, 6, LocalDate.of(2026, 8, 26), LocalTime.of(20, 0), 60, 15, false
+        );
+        Reservation second = createReservation(
+            restaurant, secondCustomer, 6, LocalDate.of(2026, 8, 26), LocalTime.of(20, 15), 60, 15, false
+        );
+        String token = loginWithRole(restaurant, "manager@example.com", Role.MANAGER);
+
+        selectCombination(restaurant, first, firstCombination, token, status().isOk());
+        selectCombination(restaurant, second, secondCombination, token, status().isConflict());
+    }
+
+    @Test
+    void concurrentSelectionsCannotOversellInventory() throws Exception {
+        Restaurant restaurant = createRestaurant("Main", "main");
+        DiningRoom room = createDiningRoom(restaurant, "Main Room", 1, true, true);
+        RestaurantTable tableA1 = createTable(restaurant, room, "A1", 2, 2, true);
+        RestaurantTable tableA2 = createTable(restaurant, room, "A2", 2, 2, true);
+        RestaurantTable tableB1 = createTable(restaurant, room, "B1", 2, 2, true);
+        RestaurantTable tableB2 = createTable(restaurant, room, "B2", 2, 2, true);
+        StorageResource extension = createStorageResource(restaurant, "Extension", 1, 2);
+        TableCombination firstCombination = createAdvancedCombination(
+            restaurant, "First setup", extension, 1, tableA1, tableA2
+        );
+        TableCombination secondCombination = createAdvancedCombination(
+            restaurant, "Second setup", extension, 1, tableB1, tableB2
+        );
+        Customer firstCustomer = createCustomer(restaurant, "Ana", "Lopez", "+34600111222");
+        Customer secondCustomer = createCustomer(restaurant, "Eva", "Santos", "+34600999888");
+        Reservation first = createReservation(
+            restaurant, firstCustomer, 6, LocalDate.of(2026, 8, 26), LocalTime.of(20, 0), 60, 15, false
+        );
+        Reservation second = createReservation(
+            restaurant, secondCustomer, 6, LocalDate.of(2026, 8, 26), LocalTime.of(20, 15), 60, 15, false
+        );
+        User manager = createUser("manager@example.com", "secret123", "Manager");
+        assignRole(manager, restaurant, Role.MANAGER);
+        AuthenticatedUser authenticatedUser = new AuthenticatedUser(
+            manager.getId(),
+            manager.getEmail(),
+            manager.getName(),
+            Set.of(Role.MANAGER),
+            Set.of(restaurant.getId())
+        );
+
+        CountDownLatch start = new CountDownLatch(1);
+        try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
+            Future<String> firstResult = executor.submit(() -> selectConcurrently(
+                start, restaurant, first, firstCombination, authenticatedUser
+            ));
+            Future<String> secondResult = executor.submit(() -> selectConcurrently(
+                start, restaurant, second, secondCombination, authenticatedUser
+            ));
+
+            start.countDown();
+            List<String> results = List.of(
+                firstResult.get(15, TimeUnit.SECONDS),
+                secondResult.get(15, TimeUnit.SECONDS)
+            );
+            org.junit.jupiter.api.Assertions.assertEquals(1, results.stream().filter("assigned"::equals).count());
+            org.junit.jupiter.api.Assertions.assertEquals(1, results.stream().filter("conflict"::equals).count());
+        }
+
+        List<ReservationAssignment> activeAssignments = reservationAssignmentRepository
+            .findByActiveTrueAndReservationRestaurantIdAndReservationReservationDateAndReservationStatusIn(
+                restaurant.getId(),
+                first.getReservationDate(),
+                Set.of(ReservationStatus.PENDING)
+            );
+        org.junit.jupiter.api.Assertions.assertEquals(1, activeAssignments.size());
+        org.junit.jupiter.api.Assertions.assertEquals(1, activeAssignments.get(0).getResources().size());
+    }
+
+    private String selectConcurrently(
+        CountDownLatch start,
+        Restaurant restaurant,
+        Reservation reservation,
+        TableCombination combination,
+        AuthenticatedUser authenticatedUser
+    ) throws InterruptedException {
+        start.await();
+        try {
+            reservationAssignmentService.select(
+                restaurant.getId(),
+                reservation.getId(),
+                new AssignmentSelectionRequest("TABLE_COMBINATION", combination.getId()),
+                authenticatedUser
+            );
+            return "assigned";
+        } catch (ConflictException exception) {
+            return "conflict";
+        }
+    }
+
     private String loginWithRole(Restaurant restaurant, String email, Role role) throws Exception {
         User user = createUser(email, "secret123", role.name());
         assignRole(user, restaurant, role);
@@ -402,6 +670,80 @@ class ReservationAssignmentIntegrationTest {
         }
 
         return tableCombinationRepository.save(combination);
+    }
+
+    private StorageResource createStorageResource(
+        Restaurant restaurant,
+        String name,
+        int quantity,
+        int capacityPerUnit
+    ) {
+        StorageResource resource = new StorageResource();
+        resource.setRestaurant(restaurant);
+        resource.setResourceType(StorageResourceType.EXTRA_CHAIR);
+        resource.setName(name);
+        resource.setQuantity(quantity);
+        resource.setCapacityPerUnit(capacityPerUnit);
+        resource.setSetupTimeMinutes(5);
+        resource.setActive(true);
+        return storageResourceRepository.save(resource);
+    }
+
+    private TableCombination createAdvancedCombination(
+        Restaurant restaurant,
+        String name,
+        StorageResource resource,
+        int quantity,
+        RestaurantTable... tables
+    ) {
+        TableCombination combination = new TableCombination();
+        combination.setRestaurant(restaurant);
+        combination.setName(name);
+        combination.setMinCapacity(2);
+        combination.setMaxCapacity(
+            java.util.Arrays.stream(tables).mapToInt(RestaurantTable::getMaxCapacity).sum()
+                + quantity * resource.getCapacityPerUnit()
+        );
+        combination.setActive(true);
+        combination.setCombinationType(CombinationType.ADVANCED);
+        combination.setOperationalCostLevel(OperationalCostLevel.MEDIUM);
+        combination.setSetupTimeMinutes(20);
+
+        for (int index = 0; index < tables.length; index++) {
+            TableCombinationItem item = new TableCombinationItem();
+            item.setTableCombination(combination);
+            item.setTable(tables[index]);
+            item.setOrderIndex(index);
+            combination.getItems().add(item);
+        }
+
+        TableCombinationResourceRequirement requirement = new TableCombinationResourceRequirement();
+        requirement.setRestaurant(restaurant);
+        requirement.setTableCombination(combination);
+        requirement.setStorageResource(resource);
+        requirement.setQuantity(quantity);
+        combination.getResourceRequirements().add(requirement);
+        return tableCombinationRepository.save(combination);
+    }
+
+    private void selectCombination(
+        Restaurant restaurant,
+        Reservation reservation,
+        TableCombination combination,
+        String token,
+        org.springframework.test.web.servlet.ResultMatcher expectedStatus
+    ) throws Exception {
+        mockMvc.perform(post(
+                "/api/restaurants/{restaurantId}/reservations/{reservationId}/assignment-selection",
+                restaurant.getId(),
+                reservation.getId()
+            )
+                .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"candidateType":"TABLE_COMBINATION","candidateId":%d}
+                    """.formatted(combination.getId())))
+            .andExpect(expectedStatus);
     }
 
     private Customer createCustomer(Restaurant restaurant, String firstName, String lastName, String phone) {

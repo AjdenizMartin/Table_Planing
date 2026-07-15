@@ -25,6 +25,17 @@ export interface PlanningReservationSummaryResponse {
   tableCode: string | null;
   tableCombinationId: number | null;
   tableCombinationName: string | null;
+  operationalCostLevel: "LOW" | "MEDIUM" | "HIGH" | null;
+  setupTimeMinutes: number;
+  assignedResources: PlanningAssignedResourceResponse[];
+}
+
+export interface PlanningAssignedResourceResponse {
+  storageResourceId: number;
+  resourceType: string;
+  resourceName: string;
+  quantity: number;
+  capacityPerUnit: number;
 }
 
 export interface PlanningTableResponse {
@@ -95,6 +106,70 @@ export interface AssignReservationResponse {
   reasons: string[];
   recommendedStartTime: string | null;
   recommendationSummary: string | null;
+  operationalCostLevel: "LOW" | "MEDIUM" | "HIGH" | null;
+  setupTimeMinutes: number | null;
+  resources: AssignedResourceResponse[];
+}
+
+export interface AssignedResourceResponse {
+  storageResourceId: number;
+  resourceType: string;
+  resourceName: string;
+  quantity: number;
+  capacityPerUnit: number;
+  setupTimeMinutes: number;
+}
+
+export interface AssignmentSuggestionResponse {
+  candidateType: "TABLE" | "TABLE_COMBINATION";
+  candidateId: number;
+  displayName: string;
+  tableIds: number[];
+  minCapacity: number;
+  maxCapacity: number;
+  score: number;
+  advanced: boolean;
+  operationalCostLevel: "LOW" | "MEDIUM" | "HIGH";
+  setupTimeMinutes: number;
+  resources: Array<{
+    storageResourceId: number;
+    resourceType: string;
+    resourceName: string;
+    requiredQuantity: number;
+    availableQuantity: number;
+    capacityPerUnit: number;
+    capacityContribution: number;
+  }>;
+  explanation: {
+    summary: string;
+    reasons: string[];
+    bonuses: Record<string, number>;
+    penalties: Record<string, number>;
+  };
+}
+
+export interface AssignmentSuggestionsResponse {
+  reservationId: number;
+  suggestions: AssignmentSuggestionResponse[];
+  rejectionReasons: string[];
+}
+
+export interface AssignmentHistoryItemResponse {
+  assignmentId: number;
+  active: boolean;
+  assignmentType: string;
+  tableId: number | null;
+  tableCode: string | null;
+  tableCombinationId: number | null;
+  tableCombinationName: string | null;
+  score: number | null;
+  operationalCostLevel: "LOW" | "MEDIUM" | "HIGH";
+  setupTimeMinutes: number;
+  assignedByUserId: number | null;
+  assignedByName: string | null;
+  assignedAt: string | null;
+  explanationJson: string | null;
+  resources: AssignedResourceResponse[];
 }
 
 export interface PlanningMoveOption {

@@ -2,316 +2,98 @@
 
 ## Objetivo
 
-Definir como levantar y desplegar la plataforma en su fase inicial, manteniendo coherencia con la arquitectura de monolito modular, PostgreSQL y frontend desacoplado.
+Desplegar el monolito modular en un unico VPS para el piloto, con PostgreSQL persistente, frontend estatico, HTTPS y recuperacion documentada.
 
-## Principios
+## Entornos
 
-- despliegue simple primero
-- contenedores como camino principal de consistencia
-- separar configuracion por entorno
-- no introducir infraestructura excesiva antes del piloto
+### Desarrollo
 
-## Entornos previstos
-
-### Local
-
-Uso principal:
-
-- desarrollo diario
-- validacion de arranque
-- pruebas tecnicas iniciales
-
-Componentes:
-
-- PostgreSQL
-- backend Spring Boot
-- frontend React/Vite
-
-### Produccion inicial
-
-Uso principal:
-
-- piloto con uno o pocos restaurantes
-
-Componentes:
-
-- Nginx
-- backend en contenedor
-- frontend servido como assets estaticos o contenedor de desarrollo temporal
-- PostgreSQL
-
-## Estructura actual del repositorio
-
-```text
-.
-├── backend/
-├── frontend/
-├── docker/
-└── docker-compose.yml
-```
-
-## Docker Compose
-
-El proyecto ya incluye [docker-compose.yml](/Users/angel/Desktop/Table_Planing/docker-compose.yml) con:
-
-- `postgres`
-- `backend`
-- `frontend`
-
-Objetivo del compose inicial:
-
-- levantar el stack base sin depender del entorno local
-- facilitar desarrollo y validacion
-
-## Variables de entorno
-
-Referencia actual en [/.env.example](/Users/angel/Desktop/Table_Planing/.env.example).
-
-Variables principales:
-
-- `POSTGRES_DB`
-- `POSTGRES_USER`
-- `POSTGRES_PASSWORD`
-- `POSTGRES_PORT`
-- `BACKEND_PORT`
-- `FRONTEND_PORT`
-- `SPRING_PROFILES_ACTIVE`
-- `SPRING_DATASOURCE_URL`
-- `SPRING_DATASOURCE_USERNAME`
-- `SPRING_DATASOURCE_PASSWORD`
-- `VITE_API_BASE_URL`
-- `VITE_WS_BASE_URL`
-
-## Entorno local
-
-### Requisitos
-
-- Docker
-- Docker Compose
-- Node.js para frontend si se quiere desarrollo local fuera de contenedores
-- Java 21 y Maven si se quiere ejecutar backend fuera de Docker
-
-Nota actual:
-
-- en este entorno se valido mejor el backend mediante Docker porque localmente no hay `Maven` y la JVM disponible no es `Java 21`
-
-### Arranque rapido con Docker
-
-Base de datos solo:
-
-```bash
-docker compose up postgres
-```
-
-Stack completo:
+`docker-compose.yml` levanta PostgreSQL, backend con perfil `dev` y Vite. Expone frontend en `5173` y backend en `8080`. El bootstrap demo solo existe en este perfil.
 
 ```bash
 docker compose up --build
 ```
 
-### Desarrollo mixto
+### Piloto
 
-Base de datos:
+`docker-compose.prod.yml` contiene:
+
+- PostgreSQL 16 sin puerto publico y volumen persistente.
+- backend Spring Boot con perfil `prod`, health check y secretos montados.
+- frontend compilado con Node y servido por Nginx.
+- proxy de mismo origen para `/api` y `/ws`.
+- HTTP redirigido a HTTPS, TLS 1.2/1.3 y HSTS.
+- limitacion de login y registro publico deshabilitado.
+- red Docker interna y reinicio `unless-stopped`.
+
+## Configuracion
+
+- `.env.production.example`: nombres de variables sin secretos.
+- `secrets/postgres_password.txt`: password PostgreSQL, ignorado por Git.
+- `secrets/jwt_secret.txt`: secreto JWT aleatorio largo, ignorado por Git.
+- `frontend/nginx/default.conf.template`: TLS y proxy.
+- `frontend/Dockerfile.prod`: build estatico multi-stage.
+
+No usar los valores demo ni el compose de desarrollo en el VPS.
+
+## Primer despliegue
+
+1. Instalar Docker Engine, Compose plugin y configurar firewall para SSH, 80 y 443.
+2. Crear DNS para el dominio del piloto.
+3. Preparar `.env.production` y los dos archivos de secretos.
+4. Obtener certificado con `scripts/bootstrap-tls.sh`.
+5. Validar configuracion:
 
 ```bash
-docker compose up postgres
+docker compose --env-file .env.production -f docker-compose.prod.yml config --quiet
 ```
 
-Backend:
+6. Construir y arrancar:
 
 ```bash
-cd backend
-mvn spring-boot:run
+docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build
 ```
 
-Frontend:
+7. Verificar estado:
 
 ```bash
-cd frontend
-npm install
-npm run dev
+docker compose --env-file .env.production -f docker-compose.prod.yml ps
+curl --fail https://reservas.example.com/api/system/ping
 ```
 
-## PostgreSQL
+Flyway aplica V1-V17 al arrancar el backend. El backend no se considera saludable hasta terminar migraciones y responder `/actuator/health` dentro de la red.
 
-### Rol
+## Actualizacion
 
-PostgreSQL es la fuente principal de verdad para:
+1. Crear backup previo.
+2. Descargar la revision aprobada por CI.
+3. Construir las nuevas imagenes.
+4. Reiniciar backend y verificar health/migraciones.
+5. Reiniciar frontend.
+6. Ejecutar smoke manager/staff y rendimiento.
 
-- configuracion del restaurante
-- clientes
-- reservas
-- asignaciones
-- reglas
-- auditoria
+No mezclar una actualizacion de imagen con cambios manuales de esquema.
 
-### Inicializacion
+## Backup y restauracion
 
-Existe un script base en [docker/postgres/init.sql](/Users/angel/Desktop/Table_Planing/docker/postgres/init.sql).
+`scripts/backup-postgres.sh` genera un dump custom, elimina copias locales vencidas y se puede ejecutar por cron. Los dumps deben replicarse fuera del VPS.
 
-### Migraciones
+`scripts/restore-postgres.sh <backup.dump>` detiene backend, restaura con `pg_restore --clean --if-exists` y vuelve a arrancarlo. Toda restauracion requiere ventana de mantenimiento y comprobacion funcional posterior.
 
-Las migraciones deben gestionarse con Flyway desde el backend:
-
-- ubicacion actual: [backend/src/main/resources/db/migration](/Users/angel/Desktop/Table_Planing/backend/src/main/resources/db/migration)
-- convencion: `V<number>__description.sql`
-
-## Backend
-
-### Tecnologia
-
-- Java 21
-- Spring Boot
-- Flyway
-- Spring Security
-- Spring WebSocket
-
-### Imagen
-
-El backend dispone de [backend/Dockerfile](/Users/angel/Desktop/Table_Planing/backend/Dockerfile), que:
-
-- compila con Maven y Java 21
-- genera un jar
-- ejecuta el servicio sobre JRE 21
-
-### Configuracion
-
-Archivos actuales:
-
-- [backend/src/main/resources/application.yml](/Users/angel/Desktop/Table_Planing/backend/src/main/resources/application.yml)
-- [backend/src/main/resources/application-dev.yml](/Users/angel/Desktop/Table_Planing/backend/src/main/resources/application-dev.yml)
-- [backend/src/main/resources/application-prod.yml](/Users/angel/Desktop/Table_Planing/backend/src/main/resources/application-prod.yml)
-
-Objetivos de configuracion:
-
-- perfiles `dev` y `prod`
-- datasource externo por variables
-- Flyway activo
-- logs diferenciados por entorno
-
-## Frontend
-
-### Tecnologia
-
-- React
-- TypeScript
-- Vite
-- Tailwind CSS
-
-### Imagen
-
-Existe [frontend/Dockerfile](/Users/angel/Desktop/Table_Planing/frontend/Dockerfile) para levantar el entorno base del frontend.
-
-### Variables
-
-El frontend consume:
-
-- `VITE_API_BASE_URL`
-- `VITE_WS_BASE_URL`
-
-En la fase inicial esto permite desacoplar entorno local y despliegue futuro.
-
-## Nginx
-
-### Rol previsto
-
-Nginx se recomienda para produccion inicial como:
-
-- reverse proxy
-- terminacion TLS
-- encaminamiento hacia backend
-- entrega de assets del frontend
-
-### En esta fase
-
-No es obligatorio configurar Nginx completo todavia si el objetivo es solo desarrollo y validacion tecnica, pero debe considerarse parte del despliegue inicial hacia piloto.
-
-## Despliegue inicial recomendado
-
-### Opcion A. VPS sencillo
-
-Adecuado para piloto controlado:
-
-- Docker instalado
-- contenedores para backend y frontend
-- PostgreSQL local o gestionado
-- Nginx delante
-
-Ventajas:
-
-- control completo
-- coste moderado
-
-### Opcion B. Plataforma gestionada
-
-Ejemplos:
-
-- Render
-- Railway
-- Fly.io
-
-Ventajas:
-
-- menos carga operativa
-- despliegue rapido
-
-Consideraciones:
-
-- revisar soporte de PostgreSQL
-- revisar persistencia
-- revisar networking y WebSocket
-
-## Flujo de despliegue sugerido
-
-1. construir imagen backend
-2. construir frontend o servirlo en contenedor
-3. aplicar variables de entorno
-4. levantar PostgreSQL
-5. arrancar backend
-6. verificar migraciones Flyway
-7. exponer frontend y backend via Nginx
-8. comprobar health checks
-
-## Health checks iniciales
-
-- `GET /actuator/health`
-- `GET /api/system/ping`
-
-## Seguridad operativa basica
-
-- no commitear secretos reales
-- usar `.env` local fuera de git
-- activar HTTPS en produccion
-- restringir acceso a la base de datos
-- hacer backups de PostgreSQL
-
-## Backups y persistencia
-
-Para piloto inicial se recomienda:
-
-- volumen persistente para PostgreSQL
-- backup diario
-- prueba periodica de restauracion
+El procedimiento completo, renovacion TLS, incidencias y rollback vive en [docs/PILOT_RUNBOOK.md](./docs/PILOT_RUNBOOK.md).
 
 ## Observabilidad minima
 
-- logs del backend
-- logs de Nginx en produccion
-- seguimiento de errores de arranque
-- health checks
+- health checks Docker de base de datos, backend y frontend
+- logs de Spring Boot y Nginx mediante `docker compose logs`
+- monitor externo de HTTPS y expiracion del certificado
+- alerta de espacio en disco y resultado del backup diario
 
-## Alcance de la primera fase tecnica
+Actuator externo no se publica; el health del backend se consulta dentro de Compose.
 
-La primera fase debe dejar claro como:
+## Limites del piloto
 
-- arrancar localmente
-- levantar PostgreSQL
-- ejecutar backend y frontend
-- usar variables de entorno
-- preparar el camino a un piloto con Nginx
-
-No hace falta todavia:
-
-- orquestacion Kubernetes
-- autoescalado
-- despliegue multi-region
+- un VPS y un PostgreSQL persistente
+- sin Kubernetes, Redis, microservicios ni multi-region
+- recuperacion mediante backup/restore, no alta disponibilidad
+- SMS real deshabilitado hasta configurar proveedor y secretos propios

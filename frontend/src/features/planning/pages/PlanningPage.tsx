@@ -597,6 +597,7 @@ export function PlanningPage() {
         diningRoomName={diningRoomName}
         restaurantId={activeRestaurantId!}
         selectedDate={selectedDate}
+        canManageAssignments={canDismissInsights}
         onClose={() => {
           setSelectedReservationId(null);
           setSelectedTableId(null);

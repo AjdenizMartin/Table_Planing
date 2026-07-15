@@ -3,6 +3,8 @@ import type {
   DiningRoomResponse,
   RestaurantResponse,
   RestaurantTableResponse,
+  StorageResourceResponse,
+  StorageResourceType,
   TableCombinationResponse,
 } from "@/features/restaurant-config/types";
 
@@ -85,7 +87,8 @@ export function getTables(restaurantId: number) {
 export function createTable(
   restaurantId: number,
   payload: {
-    diningRoomId: number;
+    diningRoomId: number | null;
+    tableType: RestaurantTableResponse["tableType"];
     code: string;
     label: string | null;
     minCapacity: number;
@@ -108,7 +111,8 @@ export function updateTable(
   restaurantId: number,
   tableId: number,
   payload: Partial<{
-    diningRoomId: number;
+    diningRoomId: number | null;
+    tableType: RestaurantTableResponse["tableType"];
     code: string;
     label: string | null;
     minCapacity: number;
@@ -151,6 +155,67 @@ export function deactivateTable(restaurantId: number, tableId: number) {
   });
 }
 
+export function getStorageResources(
+  restaurantId: number,
+  filters: { resourceType?: StorageResourceType; active?: boolean } = {},
+) {
+  const searchParams = new URLSearchParams();
+  if (filters.resourceType) {
+    searchParams.set("resourceType", filters.resourceType);
+  }
+  if (filters.active !== undefined) {
+    searchParams.set("active", String(filters.active));
+  }
+  const query = searchParams.size > 0 ? `?${searchParams.toString()}` : "";
+
+  return apiClient.request<StorageResourceResponse[]>(
+    `/api/restaurants/${restaurantId}/storage-resources${query}`,
+  );
+}
+
+export function createStorageResource(
+  restaurantId: number,
+  payload: {
+    resourceType: StorageResourceResponse["resourceType"];
+    name: string;
+    quantity: number;
+    capacityPerUnit: number;
+    setupTimeMinutes: number;
+    active: boolean;
+    notes: string | null;
+  },
+) {
+  return apiClient.request<StorageResourceResponse>(
+    `/api/restaurants/${restaurantId}/storage-resources`,
+    {
+      method: "POST",
+      body: payload,
+    },
+  );
+}
+
+export function updateStorageResource(
+  restaurantId: number,
+  resourceId: number,
+  payload: Partial<{
+    resourceType: StorageResourceResponse["resourceType"];
+    name: string;
+    quantity: number;
+    capacityPerUnit: number;
+    setupTimeMinutes: number;
+    active: boolean;
+    notes: string | null;
+  }>,
+) {
+  return apiClient.request<StorageResourceResponse>(
+    `/api/restaurants/${restaurantId}/storage-resources/${resourceId}`,
+    {
+      method: "PATCH",
+      body: payload,
+    },
+  );
+}
+
 export function getTableCombinations(restaurantId: number) {
   return apiClient.request<TableCombinationResponse[]>(
     `/api/restaurants/${restaurantId}/table-combinations`,
@@ -165,6 +230,10 @@ export function createTableCombination(
     maxCapacity: number;
     active: boolean;
     tableIds: number[];
+    combinationType: TableCombinationResponse["combinationType"];
+    operationalCostLevel: TableCombinationResponse["operationalCostLevel"];
+    setupTimeMinutes: number;
+    resourceRequirements: Array<{ storageResourceId: number; quantity: number }>;
   },
 ) {
   return apiClient.request<TableCombinationResponse>(
@@ -185,6 +254,10 @@ export function updateTableCombination(
     maxCapacity: number;
     active: boolean;
     tableIds: number[];
+    combinationType: TableCombinationResponse["combinationType"];
+    operationalCostLevel: TableCombinationResponse["operationalCostLevel"];
+    setupTimeMinutes: number;
+    resourceRequirements: Array<{ storageResourceId: number; quantity: number }>;
   }>,
 ) {
   return apiClient.request<TableCombinationResponse>(
@@ -207,4 +280,3 @@ export function deactivateTableCombination(
     },
   );
 }
-

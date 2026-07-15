@@ -15,7 +15,9 @@ public interface ReservationAssignmentRepository extends JpaRepository<Reservati
         "tableCombination",
         "tableCombination.items",
         "tableCombination.items.table",
-        "tableCombination.items.table.diningRoom"
+        "tableCombination.items.table.diningRoom",
+        "resources",
+        "resources.storageResource"
     })
     List<ReservationAssignment> findByActiveTrueAndReservationRestaurantIdAndReservationReservationDateAndReservationStatusIn(
         Long restaurantId,
@@ -24,4 +26,20 @@ public interface ReservationAssignmentRepository extends JpaRepository<Reservati
     );
 
     List<ReservationAssignment> findByReservationIdAndActiveTrue(Long reservationId);
+
+    @EntityGraph(attributePaths = {
+        "reservation",
+        "table",
+        "table.diningRoom",
+        "tableCombination",
+        "tableCombination.items",
+        "tableCombination.items.table",
+        "resources",
+        "resources.storageResource",
+        "assignedBy"
+    })
+    List<ReservationAssignment> findByReservationIdAndReservationRestaurantIdOrderByAssignedAtDescIdDesc(
+        Long reservationId,
+        Long restaurantId
+    );
 }

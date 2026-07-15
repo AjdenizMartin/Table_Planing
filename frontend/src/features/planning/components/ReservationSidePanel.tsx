@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as frontdeskApi from "@/features/frontdesk/api/frontdeskApi";
 import * as planningApi from "@/features/planning/api/planningApi";
 import type { ReservationResponse, CustomerResponse } from "@/features/frontdesk/types";
@@ -9,6 +9,7 @@ import { getErrorMessage } from "@/features/restaurant-config/utils/errorMessage
 import { notify } from "@/features/notifications/components/NotificationToast";
 import { normalizeTimeForInput } from "@/features/frontdesk/utils/frontdeskUtils";
 import { EditReservationModal } from "@/features/planning/components/EditReservationModal";
+import { AssignmentSuggestionsPanel } from "@/features/planning/components/AssignmentSuggestionsPanel";
 
 const CHANNEL_LABELS: Record<string, string> = {
   MANUAL: "Manual",
@@ -31,7 +32,7 @@ const SUCCESS_MESSAGES: Record<ActionKey, string> = {
   "no-show": "Customer marked as no-show.",
   "send-confirmation": "Confirmation sent.",
   reminder: "Reminder sent.",
-  reassign: "Table reassigned.",
+  reassign: "Asignacion aplicada.",
   edit: "",
 };
 
@@ -44,7 +45,7 @@ const ACTION_LABELS: Record<ActionKey, string> = {
   "no-show": "No-show",
   "send-confirmation": "Send confirmation",
   reminder: "Send reminder",
-  reassign: "Reassign table",
+  reassign: "Ver sugerencias",
   edit: "Edit details",
 };
 
@@ -58,11 +59,11 @@ interface Props {
   diningRoomName: string | null;
   restaurantId: number;
   selectedDate: string;
+  canManageAssignments: boolean;
   onClose: () => void;
 }
 
 function getVisibleActions(status: string, reservation: PlanningReservationSummaryResponse): ActionKey[] {
-  const isUnassigned = reservation.tableId === null && reservation.tableCombinationId === null;
   const actions: ActionKey[] = [];
 
   if (status === "PENDING") {
@@ -77,9 +78,7 @@ function getVisibleActions(status: string, reservation: PlanningReservationSumma
 
   if (status !== "COMPLETED" && status !== "CANCELLED" && status !== "NO_SHOW") {
     actions.push("send-confirmation", "reminder");
-    if (isUnassigned) {
-      actions.push("reassign");
-    }
+    actions.push("reassign");
     actions.push("edit");
   }
 
@@ -139,6 +138,7 @@ export function ReservationSidePanel({
   diningRoomName,
   restaurantId,
   selectedDate,
+  canManageAssignments,
   onClose,
 }: Props) {
   const queryClient = useQueryClient();
@@ -146,6 +146,7 @@ export function ReservationSidePanel({
   const [activeAction, setActiveAction] = useState<ActionKey | null>(null);
   const [actionResult, setActionResult] = useState<string | null>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -157,9 +158,68 @@ export function ReservationSidePanel({
   }, [open, onClose]);
 
   const actions = useMemo(
-    () => (reservationSummary ? getVisibleActions(reservationSummary.status, reservationSummary) : []),
-    [reservationSummary],
+    () => {
+      const visible = reservationSummary
+        ? getVisibleActions(reservationSummary.status, reservationSummary)
+        : [];
+      return canManageAssignments ? visible : visible.filter((action) => action !== "reassign");
+    },
+    [canManageAssignments, reservationSummary],
   );
+
+  useEffect(() => {
+    setSuggestionsOpen(false);
+    setError(null);
+    setActionResult(null);
+  }, [reservationSummary?.reservationId]);
+
+  const suggestionsQuery = useQuery({
+    queryKey: ["assignment-suggestions", restaurantId, reservationSummary?.reservationId],
+    queryFn: () => planningApi.getAssignmentSuggestions(
+      restaurantId,
+      reservationSummary!.reservationId,
+    ),
+    enabled: open && suggestionsOpen && canManageAssignments && reservationSummary !== null,
+    retry: 1,
+  });
+
+  const historyQuery = useQuery({
+    queryKey: ["assignment-history", restaurantId, reservationSummary?.reservationId],
+    queryFn: () => planningApi.getAssignmentHistory(
+      restaurantId,
+      reservationSummary!.reservationId,
+    ),
+    enabled: open && reservationSummary !== null,
+    retry: 1,
+  });
+
+  const selectAssignmentMutation = useMutation({
+    mutationFn: (candidate: { candidateType: "TABLE" | "TABLE_COMBINATION"; candidateId: number }) =>
+      planningApi.selectAssignment(
+        restaurantId,
+        reservationSummary!.reservationId,
+        candidate,
+      ),
+    onSuccess: async () => {
+      setSuggestionsOpen(false);
+      setError(null);
+      setActionResult("Asignacion aplicada y recursos reservados.");
+      notify("Asignacion aplicada.", "");
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["planning", restaurantId, selectedDate] }),
+        queryClient.invalidateQueries({
+          queryKey: ["assignment-history", restaurantId, reservationSummary?.reservationId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["assignment-suggestions", restaurantId, reservationSummary?.reservationId],
+        }),
+      ]);
+    },
+    onError: (err) => {
+      setError(getErrorMessage(err));
+      void suggestionsQuery.refetch();
+    },
+  });
 
   const actionMutation = useMutation({
     mutationFn: async ({ action }: { action: ActionKey }) => {
@@ -193,14 +253,6 @@ export function ReservationSidePanel({
           }
           return { type: "notification" as const };
         }
-        case "reassign": {
-          const result = await planningApi.assignReservationAutomatically(restaurantId, id);
-          if (!result.assigned) {
-            const summary = result.summary || result.reasons?.join(". ") || "No table available";
-            throw new Error(summary);
-          }
-          return { type: "assign" as const, data: result };
-        }
         default:
           throw new Error(`Unknown action: ${action}`);
       }
@@ -229,6 +281,12 @@ export function ReservationSidePanel({
   function handleAction(action: ActionKey) {
     if (action === "edit") {
       setEditModalOpen(true);
+      return;
+    }
+    if (action === "reassign") {
+      setSuggestionsOpen((current) => !current);
+      setError(null);
+      setActionResult(null);
       return;
     }
     if (activeAction) return;
@@ -379,6 +437,24 @@ export function ReservationSidePanel({
                 label="Tipo de asignacion"
                 value={reservationSummary.assignmentType || (reservationSummary.tableId ? "manual" : null)}
               />
+              {reservationSummary.setupTimeMinutes > 0 ? (
+                <OperationalMessage
+                  label="Preparacion"
+                  value={`${reservationSummary.setupTimeMinutes} min · coste ${costLabel(reservationSummary.operationalCostLevel)}`}
+                />
+              ) : null}
+              {reservationSummary.assignedResources.length > 0 ? (
+                <div className="rounded-2xl border border-amber-300/20 bg-amber-500/10 px-3 py-3 text-xs text-amber-50">
+                  <p className="font-semibold uppercase tracking-[0.15em] text-amber-200">Inventario reservado</p>
+                  <div className="mt-2 grid gap-1.5">
+                    {reservationSummary.assignedResources.map((resource) => (
+                      <p key={resource.storageResourceId}>
+                        {resource.quantity} x {resource.resourceName}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
               {reservationSummary.tableId === null && reservationSummary.tableCombinationId === null ? (
                 <div className="rounded-2xl border border-violet-300/20 bg-violet-500/10 px-3 py-2 text-xs text-violet-100">
                   <span className="font-semibold uppercase tracking-[0.15em] text-violet-200">Sin asignar:</span>{" "}
@@ -386,6 +462,41 @@ export function ReservationSidePanel({
                 </div>
               ) : null}
             </div>
+
+            {suggestionsOpen ? (
+              <AssignmentSuggestionsPanel
+                suggestions={suggestionsQuery.data?.suggestions ?? []}
+                loading={suggestionsQuery.isLoading}
+                errorMessage={suggestionsQuery.error ? getErrorMessage(suggestionsQuery.error) : null}
+                selecting={selectAssignmentMutation.isPending}
+                onRefresh={() => void suggestionsQuery.refetch()}
+                onSelect={(candidate) => selectAssignmentMutation.mutate(candidate)}
+              />
+            ) : null}
+
+            {historyQuery.data && historyQuery.data.length > 0 ? (
+              <section className="border-b border-white/10 pb-4">
+                <h3 className="text-sm font-semibold text-white">Historial de asignacion</h3>
+                <div className="mt-3 grid gap-2">
+                  {historyQuery.data.slice(0, 4).map((item) => (
+                    <div key={item.assignmentId} className="flex items-start justify-between gap-3 text-xs">
+                      <div>
+                        <p className="text-slate-200">
+                          {item.tableCode ?? item.tableCombinationName ?? item.assignmentType}
+                          {item.active ? " · actual" : ""}
+                        </p>
+                        <p className="mt-0.5 text-slate-500">
+                          {item.assignedByName ?? "Sistema"} · {formatDateTime(item.assignedAt)}
+                        </p>
+                      </div>
+                      {item.resources.length > 0 ? (
+                        <span className="shrink-0 text-amber-200">{item.resources.length} recursos</span>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              </section>
+            ) : null}
 
             {/* Hour protection notice */}
             <div className="rounded-3xl border border-amber-300/25 bg-amber-400/10 p-3 text-xs text-amber-100">
@@ -427,4 +538,13 @@ export function ReservationSidePanel({
       />
     </div>
   );
+}
+
+function costLabel(level: "LOW" | "MEDIUM" | "HIGH" | null) {
+  if (!level) return "bajo";
+  return level === "LOW" ? "bajo" : level === "MEDIUM" ? "medio" : "alto";
+}
+
+function formatDateTime(value: string | null) {
+  return value ? new Date(value).toLocaleString() : "sin fecha";
 }

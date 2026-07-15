@@ -105,6 +105,12 @@ El roadmap prioriza primero el nucleo de valor del producto: configuracion del r
 - scoring inicial
 - explicacion de asignacion
 
+### Extension avanzada prevista
+
+- excluir mesas de almacen del algoritmo normal
+- evaluar sillas extra y almacen solo en niveles avanzados con coste operativo
+- generar planes de montaje y tareas antes de aplicar opciones especiales
+
 ### Criterios de finalizacion
 
 - el sistema asigna de forma consistentemente mejor que una regla trivial
@@ -125,6 +131,12 @@ El roadmap prioriza primero el nucleo de valor del producto: configuracion del r
 - filtros por salon
 - acciones operativas rapidas
 - drag and drop inicial
+
+### Extension avanzada prevista
+
+- mostrar recursos de almacen y montajes especiales como elementos operativos diferenciados
+- mostrar tareas de preparacion asociadas a reservas
+- permitir aprobar o rechazar opciones avanzadas sin cambiar horas existentes
 
 ### Criterios de finalizacion
 
@@ -243,6 +255,69 @@ El MVP debe incluir solo lo esencial para demostrar valor real:
 - asignacion automatica inicial
 - planning visual
 - confirmacion SMS basica
+
+## MVP avanzado recomendado
+
+Para demostrar valor en el problema real de mesas moviles y almacen sin romper el sistema actual:
+
+- `tableType` en mesas (`FIXED`, `MOVABLE`, `STORAGE`, `TEMPORARY`)
+- inventario `StorageResource` para sillas extra y mesas guardadas
+- exclusion de mesas `STORAGE` del planning normal y candidatos basicos
+- UI minima para ver y crear recursos de almacen
+- documentacion del algoritmo por niveles antes de implementar montajes automaticos
+
+### Sprint 1. Storage Inventory
+
+**Estado:** `DONE`
+
+- inventario configurable con tipos operativos, cantidad, capacidad por unidad y tiempo de preparacion
+- filtros por tipo y estado
+- resumen de sillas, mesas y recursos activos/inactivos
+- edicion, desactivacion y reactivacion sin borrado fisico
+- aislamiento por restaurante y validaciones negativas cubiertas por tests de integracion
+- sin uso automatico por el algoritmo
+
+### Sprint 2. Combinaciones Avanzadas
+
+**Estado:** `DONE`
+
+- V16 con tipo, coste, preparacion y requisitos de inventario
+- CRUD backend/frontend con capacidad efectiva y validacion multi-tenant
+- proteccion de inventario comprometido por reservas futuras
+
+### Sprint 3. Sugerencias y aplicacion segura
+
+**Estado:** `DONE`
+
+- modos automatico/manual separados y top 3 determinista
+- V17 con snapshots de recursos por asignacion
+- seleccion transaccional, bloqueo pesimista, auditoria y realtime
+
+### Sprint 4. Operacion y tablet
+
+**Estado:** `DONE`
+
+- comparador de sugerencias, recursos e historial en el panel de reserva
+- permisos de aprobacion separados para manager y staff
+- Vitest, Testing Library y Playwright a 768/1024 px
+
+### Sprint 5. Despliegue del piloto
+
+**Estado:** `READY_FOR_ENVIRONMENT`
+
+- frontend estatico Nginx, proxy API/WebSocket, TLS y rate limiting
+- Compose productivo con red interna, secretos, health checks y reinicio
+- backup, restauracion y rollback documentados
+
+### Sprint 6. Salida a piloto
+
+**Estado:** `READY_FOR_UAT`
+
+- E2E criticos automatizados y script de rendimiento
+- runbook, onboarding y checklist UAT disponibles
+- pendientes externos: dominio, certificados, datos reales, cuentas y ejecucion UAT en VPS
+
+Los planes de montaje, tareas operativas y editor visual avanzado siguen fuera del piloto. La seleccion explicita del manager actua como aprobacion.
 
 ## Fuera del MVP
 

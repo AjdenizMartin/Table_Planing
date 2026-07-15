@@ -5,6 +5,8 @@ import com.restaurantplanner.restaurant.domain.Restaurant;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -13,6 +15,8 @@ import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "table_combination")
@@ -34,9 +38,24 @@ public class TableCombination extends BaseEntity {
     @Column(nullable = false)
     private boolean active;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "combination_type", nullable = false, length = 20)
+    private CombinationType combinationType = CombinationType.STANDARD;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "operational_cost_level", nullable = false, length = 20)
+    private OperationalCostLevel operationalCostLevel = OperationalCostLevel.LOW;
+
+    @Column(name = "setup_time_minutes", nullable = false)
+    private Integer setupTimeMinutes = 0;
+
     @OneToMany(mappedBy = "tableCombination", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("orderIndex ASC")
     private List<TableCombinationItem> items = new ArrayList<>();
+
+    @OneToMany(mappedBy = "tableCombination", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("id ASC")
+    private Set<TableCombinationResourceRequirement> resourceRequirements = new LinkedHashSet<>();
 
     public Restaurant getRestaurant() {
         return restaurant;
@@ -78,7 +97,35 @@ public class TableCombination extends BaseEntity {
         this.active = active;
     }
 
+    public CombinationType getCombinationType() {
+        return combinationType;
+    }
+
+    public void setCombinationType(CombinationType combinationType) {
+        this.combinationType = combinationType;
+    }
+
+    public OperationalCostLevel getOperationalCostLevel() {
+        return operationalCostLevel;
+    }
+
+    public void setOperationalCostLevel(OperationalCostLevel operationalCostLevel) {
+        this.operationalCostLevel = operationalCostLevel;
+    }
+
+    public Integer getSetupTimeMinutes() {
+        return setupTimeMinutes;
+    }
+
+    public void setSetupTimeMinutes(Integer setupTimeMinutes) {
+        this.setupTimeMinutes = setupTimeMinutes;
+    }
+
     public List<TableCombinationItem> getItems() {
         return items;
+    }
+
+    public Set<TableCombinationResourceRequirement> getResourceRequirements() {
+        return resourceRequirements;
     }
 }

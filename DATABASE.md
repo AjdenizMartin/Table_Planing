@@ -24,20 +24,29 @@ La base de datos debe soportar un producto multi-restaurante con consistencia op
 - `restaurant_table`
 - `table_combination`
 - `table_combination_item`
+- `table_combination_resource_requirement`
 - `customer`
 - `reservation`
 - `reservation_assignment`
+- `reservation_assignment_resource`
 - `audit_log`
 - `restaurant_rule`
 - `notification`
 - `scheduled_notification`
 - `notification_log`
 - `ai_insight`
+- `storage_resource`
 
 ### Tablas planificadas pero no creadas
 
 - `planning_slot`
 - `ai_recommendation`
+- `floor_plan_template`
+- `daily_floor_plan`
+- `table_setup_option`
+- `table_setup_option_item`
+- `reservation_setup_plan`
+- `setup_task`
 
 ## Entidades principales
 
@@ -94,6 +103,7 @@ Permite que un usuario tenga distintos roles segun restaurante.
 - `id`
 - `restaurant_id`
 - `dining_room_id`
+- `table_type` (`FIXED`, `MOVABLE`, `STORAGE`, `TEMPORARY`)
 - `code`
 - `label`
 - `min_capacity`
@@ -107,6 +117,24 @@ Permite que un usuario tenga distintos roles segun restaurante.
 - `created_at`
 - `updated_at`
 
+Las mesas `STORAGE` representan mesas guardadas fuera del salon. En la implementacion de Fase 1 pueden no tener `dining_room_id` y no deben aparecer como mesas normales del planning ni como candidatas del algoritmo basico.
+
+### StorageResource
+
+- `id`
+- `restaurant_id`
+- `resource_type` (`EXTRA_TABLE`, `EXTRA_CHAIR`, `HIGH_CHAIR`, `FOLDING_TABLE`, `TABLE_EXTENSION`, `BENCH`, `STORAGE_TABLE`, `OTHER`)
+- `name`
+- `quantity`
+- `capacity_per_unit`
+- `setup_time_minutes`
+- `active`
+- `notes`
+- `created_at`
+- `updated_at`
+
+Representa inventario agregado de almacen, como sillas extra, mesas plegables, tronas, extensiones o bancos. `STORAGE_TABLE` se conserva por compatibilidad con datos de V14. `quantity`, `capacity_per_unit` y `setup_time_minutes` no admiten valores negativos. Las combinaciones avanzadas pueden requerir cualquier tipo de recurso; capacidad adicional es `quantity * capacity_per_unit` y una capacidad cero representa un recurso operativo sin plazas.
+
 ### TableCombination
 
 - `id`
@@ -115,8 +143,13 @@ Permite que un usuario tenga distintos roles segun restaurante.
 - `min_capacity`
 - `max_capacity`
 - `active`
+- `combination_type` (`STANDARD`, `ADVANCED`)
+- `operational_cost_level` (`LOW`, `MEDIUM`, `HIGH`)
+- `setup_time_minutes`
 - `created_at`
 - `updated_at`
+
+V16 migra combinaciones existentes a `STANDARD`, coste `LOW`, preparacion `0` y sin requisitos de inventario.
 
 ### TableCombinationItem
 
@@ -124,6 +157,18 @@ Permite que un usuario tenga distintos roles segun restaurante.
 - `table_combination_id`
 - `table_id`
 - `order_index`
+
+### TableCombinationResourceRequirement
+
+- `id`
+- `restaurant_id`
+- `table_combination_id`
+- `storage_resource_id`
+- `quantity`
+- `created_at`
+- `updated_at`
+
+La pareja combinacion/recurso es unica. `restaurant_id` se mantiene de forma explicita para aislamiento multi-tenant y validacion defensiva.
 
 ### Customer
 
@@ -172,6 +217,23 @@ Permite que un usuario tenga distintos roles segun restaurante.
 - `assigned_by`
 - `assigned_at`
 - `active`
+- `operational_cost_level`
+- `setup_time_minutes`
+
+### ReservationAssignmentResource
+
+- `id`
+- `restaurant_id`
+- `reservation_assignment_id`
+- `storage_resource_id`
+- `quantity`
+- `resource_name_snapshot`
+- `resource_type_snapshot`
+- `capacity_per_unit_snapshot`
+- `setup_time_minutes_snapshot`
+- `created_at`
+
+Los snapshots preservan la explicacion historica aunque cambie despues el inventario. Las asignaciones inactivas mantienen sus consumos como historial, pero solo las activas y con reserva operativa cuentan para disponibilidad.
 
 ### PlanningSlot
 
@@ -272,10 +334,13 @@ Planificado en documentos iniciales, pero la implementacion real actual usa `AiI
 - `DiningRoom 1..N RestaurantTable`
 - `Restaurant 1..N TableCombination`
 - `TableCombination 1..N TableCombinationItem`
+- `TableCombination 1..N TableCombinationResourceRequirement`
+- `StorageResource 1..N TableCombinationResourceRequirement`
 - `Restaurant 1..N Customer`
 - `Restaurant 1..N Reservation`
 - `Customer 1..N Reservation`
 - `Reservation 1..N ReservationAssignment`
+- `ReservationAssignment 1..N ReservationAssignmentResource`
 - `Restaurant 1..N RestaurantRule`
 - `Reservation 1..N NotificationLog`
 - `Restaurant 1..N AIRecommendation`
@@ -316,6 +381,7 @@ Planificado en documentos iniciales, pero la implementacion real actual usa `AiI
 
 - `PENDING`
 - `CONFIRMED`
+- `ARRIVED`
 - `SEATED`
 - `COMPLETED`
 - `CANCELLED`
@@ -347,6 +413,8 @@ Usar `jsonb` de forma controlada en:
 - Flyway desde el primer commit tecnico
 - migraciones pequeñas y secuenciales
 - no editar migraciones ya ejecutadas en entornos compartidos
+- `V14` crea `storage_resource` y el primer conjunto de tipos
+- `V15` amplia tipos y añade `capacity_per_unit` y `setup_time_minutes` con valor inicial `0` para preservar datos existentes
 
 ## Futuras extensiones posibles
 

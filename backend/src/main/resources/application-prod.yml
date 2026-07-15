@@ -2,7 +2,22 @@ spring:
   jpa:
     show-sql: false
 
+server:
+  forward-headers-strategy: framework
+  error:
+    include-message: never
+    include-stacktrace: never
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
 logging:
   level:
     org.hibernate.SQL: WARN
-
+    org.springframework.security: WARN

@@ -11,6 +11,9 @@ import com.restaurantplanner.diningroom.domain.DiningRoomRepository;
 import com.restaurantplanner.restaurant.domain.Restaurant;
 import com.restaurantplanner.restaurant.domain.RestaurantRepository;
 import com.restaurantplanner.restaurant.domain.RestaurantStatus;
+import com.restaurantplanner.storage.domain.StorageResource;
+import com.restaurantplanner.storage.domain.StorageResourceRepository;
+import com.restaurantplanner.storage.domain.StorageResourceType;
 import com.restaurantplanner.table.domain.RestaurantTable;
 import com.restaurantplanner.table.domain.RestaurantTableRepository;
 import com.restaurantplanner.tablecombination.domain.TableCombinationRepository;
@@ -77,6 +80,9 @@ class TableCombinationIntegrationTest {
 
     @Autowired
     private TableCombinationRepository tableCombinationRepository;
+
+    @Autowired
+    private StorageResourceRepository storageResourceRepository;
 
     @Test
     void createValidCombination() throws Exception {
@@ -233,6 +239,42 @@ class TableCombinationIntegrationTest {
             .andExpect(jsonPath("$.length()").value(0));
     }
 
+    @Test
+    void createAdvancedCombinationWithInventoryCapacity() throws Exception {
+        Restaurant restaurant = createRestaurant("Main", "main");
+        DiningRoom diningRoom = createDiningRoom(restaurant, "Main Room");
+        RestaurantTable tableOne = createTable(restaurant, diningRoom, "T1", 2, 2);
+        RestaurantTable tableTwo = createTable(restaurant, diningRoom, "T2", 2, 2);
+        StorageResource chairs = createStorageResource(restaurant, "Extra chairs", 4, 1);
+        User owner = createUser("owner@example.com", "secret123", "Owner");
+        assignRole(owner, restaurant, Role.RESTAURANT_OWNER);
+        String accessToken = loginAndExtractAccessToken("owner@example.com", "secret123");
+
+        mockMvc.perform(post("/api/restaurants/{restaurantId}/table-combinations", restaurant.getId())
+                .header(HttpHeaders.AUTHORIZATION, bearer(accessToken))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "name": "Large group setup",
+                      "minCapacity": 4,
+                      "maxCapacity": 6,
+                      "active": true,
+                      "tableIds": [%d, %d],
+                      "combinationType": "ADVANCED",
+                      "operationalCostLevel": "MEDIUM",
+                      "setupTimeMinutes": 20,
+                      "resourceRequirements": [
+                        {"storageResourceId": %d, "quantity": 2}
+                      ]
+                    }
+                    """.formatted(tableOne.getId(), tableTwo.getId(), chairs.getId())))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.combinationType").value("ADVANCED"))
+            .andExpect(jsonPath("$.operationalCostLevel").value("MEDIUM"))
+            .andExpect(jsonPath("$.setupTimeMinutes").value(20))
+            .andExpect(jsonPath("$.resourceRequirements[0].capacityContribution").value(2));
+    }
+
     private String loginAndExtractAccessToken(String email, String password) throws Exception {
         String response = mockMvc.perform(post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -312,6 +354,23 @@ class TableCombinationIntegrationTest {
         table.setHeight(80);
         table.setActive(true);
         return restaurantTableRepository.save(table);
+    }
+
+    private StorageResource createStorageResource(
+        Restaurant restaurant,
+        String name,
+        int quantity,
+        int capacityPerUnit
+    ) {
+        StorageResource resource = new StorageResource();
+        resource.setRestaurant(restaurant);
+        resource.setResourceType(StorageResourceType.EXTRA_CHAIR);
+        resource.setName(name);
+        resource.setQuantity(quantity);
+        resource.setCapacityPerUnit(capacityPerUnit);
+        resource.setSetupTimeMinutes(5);
+        resource.setActive(true);
+        return storageResourceRepository.save(resource);
     }
 
     private com.restaurantplanner.tablecombination.domain.TableCombination createCombination(

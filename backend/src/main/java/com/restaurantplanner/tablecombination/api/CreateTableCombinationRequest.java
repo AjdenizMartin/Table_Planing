@@ -12,6 +12,10 @@ public record CreateTableCombinationRequest(
     @NotNull @Min(1) Integer minCapacity,
     @NotNull @Min(1) Integer maxCapacity,
     @NotNull Boolean active,
-    @NotEmpty @Size(min = 2) List<@NotNull Long> tableIds
+    @NotEmpty @Size(min = 2) List<@NotNull Long> tableIds,
+    String combinationType,
+    String operationalCostLevel,
+    @Min(0) Integer setupTimeMinutes,
+    @Size(max = 50) List<@NotNull @jakarta.validation.Valid TableCombinationResourceRequirementRequest> resourceRequirements
 ) {
 }

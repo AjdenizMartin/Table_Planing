@@ -10,7 +10,8 @@ public class RestaurantTableMapper {
         return new RestaurantTableResponse(
             table.getId(),
             table.getRestaurant().getId(),
-            table.getDiningRoom().getId(),
+            table.getDiningRoom() == null ? null : table.getDiningRoom().getId(),
+            table.getTableType().name(),
             table.getCode(),
             table.getLabel(),
             table.getMinCapacity(),
@@ -26,4 +27,3 @@ public class RestaurantTableMapper {
         );
     }
 }
-

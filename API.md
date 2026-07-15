@@ -195,6 +195,15 @@ Endpoints:
 - `POST /api/tables/{tableId}/enable` - `PLANNED`
 - `POST /api/tables/{tableId}/disable` - `PLANNED`
 
+Fase 1 de planificacion avanzada anade `tableType` a mesas:
+
+- `FIXED`
+- `MOVABLE`
+- `STORAGE`
+- `TEMPORARY`
+
+Las mesas `STORAGE` se registran como inventario operativo y no aparecen como mesas normales del planning.
+
 ### 6. Table Combinations
 
 Responsabilidad:
@@ -209,6 +218,53 @@ Endpoints:
 - `GET /api/restaurants/{restaurantId}/table-combinations/{combinationId}` - `IMPLEMENTED`
 - `PATCH /api/restaurants/{restaurantId}/table-combinations/{combinationId}` - `IMPLEMENTED`
 - `DELETE /api/restaurants/{restaurantId}/table-combinations/{combinationId}` - `IMPLEMENTED`
+
+Los contratos de alta y edicion aceptan `combinationType`, `operationalCostLevel`, `setupTimeMinutes` y `resourceRequirements: [{storageResourceId, quantity}]`. Los campos omitidos conservan compatibilidad como `STANDARD`, `LOW`, `0` y lista vacia. Una combinacion estandar no puede consumir inventario ni tener preparacion previa.
+
+### 6b. Storage Resources
+
+Responsabilidad:
+
+- gestionar inventario de almacen como sillas extra o mesas guardadas
+- validar cantidades disponibles para futuras opciones de montaje
+
+Endpoints:
+
+- `POST /api/restaurants/{restaurantId}/storage-resources` - `IMPLEMENTED`
+- `GET /api/restaurants/{restaurantId}/storage-resources?resourceType={type}&active={boolean}` - `IMPLEMENTED`
+- `GET /api/restaurants/{restaurantId}/storage-resources/{resourceId}` - `IMPLEMENTED`
+- `PATCH /api/restaurants/{restaurantId}/storage-resources/{resourceId}` - `IMPLEMENTED`
+- `DELETE /api/restaurants/{restaurantId}/storage-resources/{resourceId}` - `IMPLEMENTED`
+- `POST /api/restaurants/{restaurantId}/storage-resources/{resourceId}/availability-check` - `IMPLEMENTED`
+
+Tipos de recurso actuales:
+
+- `EXTRA_TABLE`
+- `EXTRA_CHAIR`
+- `HIGH_CHAIR`
+- `FOLDING_TABLE`
+- `TABLE_EXTENSION`
+- `BENCH`
+- `STORAGE_TABLE`
+- `OTHER`
+
+Los filtros `resourceType` y `active` son opcionales y combinables. Todas las consultas y modificaciones se resuelven por `restaurantId`; un identificador de recurso perteneciente a otro restaurante devuelve `NOT_FOUND`.
+
+Campos editables mediante `PATCH`:
+
+- `resourceType`
+- `name`
+- `quantity`
+- `capacityPerUnit`
+- `setupTimeMinutes`
+- `notes`
+- `active`
+
+`quantity`, `capacityPerUnit` y `setupTimeMinutes` deben ser enteros no negativos. `name` y `resourceType` son obligatorios al crear. Los dos campos operativos añadidos en Sprint 1 aceptan omision al crear y se inicializan a `0` para mantener compatibilidad con clientes anteriores.
+
+`DELETE` no borra fisicamente el registro: mantiene compatibilidad con el endpoint existente y realiza una desactivacion logica. La UI usa `PATCH` con `active=false` o `active=true` para desactivar y reactivar.
+
+No se permite reducir o desactivar un recurso por debajo de su pico de consumo futuro ya comprometido. El calculo considera asignaciones activas y las ventanas de preparacion, servicio y limpieza.
 
 ### 7. Customers
 
@@ -247,13 +303,31 @@ Endpoints:
 - `GET /api/restaurants/{restaurantId}/reservations/{reservationId}` - `IMPLEMENTED`
 - `PATCH /api/restaurants/{restaurantId}/reservations/{reservationId}` - `IMPLEMENTED`
 - `POST /api/restaurants/{restaurantId}/reservations/{reservationId}/assign` - `IMPLEMENTED`
+- `GET /api/restaurants/{restaurantId}/reservations/{reservationId}/assignment-suggestions` - `IMPLEMENTED`
+- `POST /api/restaurants/{restaurantId}/reservations/{reservationId}/assignment-selection` - `IMPLEMENTED`
+- `GET /api/restaurants/{restaurantId}/reservations/{reservationId}/assignment-history` - `IMPLEMENTED`
 - `POST /api/restaurants/{restaurantId}/reservations/{reservationId}/confirm` - `IMPLEMENTED`
 - `POST /api/restaurants/{restaurantId}/reservations/{reservationId}/cancel` - `IMPLEMENTED`
 - `POST /api/restaurants/{restaurantId}/reservations/{reservationId}/seat` - `IMPLEMENTED`
 - `POST /api/restaurants/{restaurantId}/reservations/{reservationId}/complete` - `IMPLEMENTED`
 - `POST /api/restaurants/{restaurantId}/reservations/{reservationId}/no-show` - `IMPLEMENTED`
 - `POST /api/restaurants/{restaurantId}/reservations/{reservationId}/reassign` - `PLANNED`
-- `POST /api/restaurants/{restaurantId}/reservations/{reservationId}/arrived` - `PLANNED`
+- `POST /api/restaurants/{restaurantId}/reservations/{reservationId}/arrived` - `IMPLEMENTED`
+
+`assignment-suggestions` devuelve como maximo tres candidatos deterministas y no escribe en base de datos. Cada opcion incluye mesas, capacidad, score, coste, preparacion, inventario requerido/disponible y explicacion estructurada.
+
+`assignment-selection` recibe:
+
+```json
+{
+  "candidateType": "TABLE_COMBINATION",
+  "candidateId": 42
+}
+```
+
+La seleccion se revalida en transaccion, bloquea los recursos de inventario en orden estable, vuelve a comprobar solapes y solo entonces desactiva la asignacion anterior y persiste la nueva. Un conflicto concurrente devuelve `409` y no sobrevende inventario.
+
+Owner, manager y platform admin pueden consultar y aplicar sugerencias. Staff puede consultar planning, recursos asignados e historial, pero no solicitar ni aprobar sugerencias. El endpoint automatico `assign`, confirmacion automatica y recalculo diario siguen limitados a mesas y combinaciones `STANDARD`.
 
 Filtros previstos:
 

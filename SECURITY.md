@@ -72,6 +72,9 @@ Alcance:
 | Crear y editar reservas | Yes | Yes | Yes | Limited |
 | Confirmar o cancelar reservas | Yes | Yes | Yes | Limited |
 | Reasignar mesas manualmente | Yes | Yes | Yes | No |
+| Consultar top 3 avanzado | Yes | Yes | Yes | No |
+| Aprobar asignacion avanzada | Yes | Yes | Yes | No |
+| Ver recursos e historial | Yes | Yes | Yes | Yes |
 | Ver planning | Yes | Yes | Yes | Yes |
 | Recalcular planning | Yes | Yes | Yes | No |
 | Ver recomendaciones IA | Yes | Yes | Yes | No |
@@ -178,6 +181,8 @@ Esto evita que un endpoint aparente estar protegido pero permita cruces indebido
 
 - lectura y escritura para roles operativos
 - `WAITER` con acceso restringido a acciones del servicio
+- sugerencias y seleccion avanzada solo para owner, manager y platform admin
+- historial y recursos asignados visibles para roles operativos del restaurante
 
 ### Planning
 
@@ -201,6 +206,19 @@ Esto evita que un endpoint aparente estar protegido pero permita cruces indebido
 - validacion de payloads con `Spring Validation`
 - limitacion de tasa en login y mensajeria
 - errores sin fuga de informacion sensible
+
+Implementacion del piloto:
+
+- Nginx termina TLS y redirige HTTP a HTTPS
+- login limitado a 5 solicitudes por minuto por IP, con burst controlado
+- CORS backend parametrizado y restringido al origen HTTPS del piloto
+- registro publico bloqueado en Nginx
+- Actuator expone solo `health` y no se publica a Internet
+- PostgreSQL y backend viven en una red Docker interna sin puertos host
+- secretos de PostgreSQL y JWT se montan como archivos, nunca en la imagen
+- perfil `prod` no activa el bootstrap demo por estar limitado a `@Profile("dev")`
+
+La limitacion por IP en Nginx es adecuada para el piloto de un VPS. Antes de una exposicion publica amplia debe complementarse con observabilidad, bloqueo progresivo por cuenta y proteccion del proveedor perimetral.
 
 ## Seguridad de frontend
 

@@ -2,6 +2,9 @@ package com.restaurantplanner.reservation.api;
 
 import com.restaurantplanner.auth.security.AuthenticatedUser;
 import com.restaurantplanner.optimization.api.AssignReservationResponse;
+import com.restaurantplanner.optimization.api.AssignmentSelectionRequest;
+import com.restaurantplanner.optimization.api.AssignmentHistoryItemResponse;
+import com.restaurantplanner.optimization.api.AssignmentSuggestionsResponse;
 import com.restaurantplanner.optimization.service.ReservationAssignmentService;
 import com.restaurantplanner.reservation.service.ReservationService;
 import jakarta.validation.Valid;
@@ -155,6 +158,47 @@ public class ReservationController {
         Authentication authentication
     ) {
         return reservationAssignmentService.assign(
+            restaurantId,
+            reservationId,
+            (AuthenticatedUser) authentication.getPrincipal()
+        );
+    }
+
+    @GetMapping("/{reservationId}/assignment-suggestions")
+    public AssignmentSuggestionsResponse assignmentSuggestions(
+        @PathVariable Long restaurantId,
+        @PathVariable Long reservationId,
+        Authentication authentication
+    ) {
+        return reservationAssignmentService.suggest(
+            restaurantId,
+            reservationId,
+            (AuthenticatedUser) authentication.getPrincipal()
+        );
+    }
+
+    @PostMapping("/{reservationId}/assignment-selection")
+    public AssignReservationResponse selectAssignment(
+        @PathVariable Long restaurantId,
+        @PathVariable Long reservationId,
+        @Valid @RequestBody AssignmentSelectionRequest request,
+        Authentication authentication
+    ) {
+        return reservationAssignmentService.select(
+            restaurantId,
+            reservationId,
+            request,
+            (AuthenticatedUser) authentication.getPrincipal()
+        );
+    }
+
+    @GetMapping("/{reservationId}/assignment-history")
+    public List<AssignmentHistoryItemResponse> assignmentHistory(
+        @PathVariable Long restaurantId,
+        @PathVariable Long reservationId,
+        Authentication authentication
+    ) {
+        return reservationAssignmentService.history(
             restaurantId,
             reservationId,
             (AuthenticatedUser) authentication.getPrincipal()

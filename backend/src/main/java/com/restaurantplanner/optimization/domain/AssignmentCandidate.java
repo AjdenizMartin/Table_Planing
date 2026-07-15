@@ -3,6 +3,8 @@ package com.restaurantplanner.optimization.domain;
 import com.restaurantplanner.diningroom.domain.DiningRoom;
 import com.restaurantplanner.table.domain.RestaurantTable;
 import com.restaurantplanner.tablecombination.domain.TableCombination;
+import com.restaurantplanner.tablecombination.domain.CombinationType;
+import com.restaurantplanner.tablecombination.domain.OperationalCostLevel;
 import java.util.List;
 
 public record AssignmentCandidate(
@@ -12,8 +14,40 @@ public record AssignmentCandidate(
     List<RestaurantTable> tables,
     int minCapacity,
     int maxCapacity,
-    String displayName
+    String displayName,
+    CombinationType combinationType,
+    OperationalCostLevel operationalCostLevel,
+    int setupTimeMinutes,
+    List<CandidateResourceRequirement> resourceRequirements
 ) {
+
+    public AssignmentCandidate(
+        AssignmentCandidateType type,
+        RestaurantTable table,
+        TableCombination tableCombination,
+        List<RestaurantTable> tables,
+        int minCapacity,
+        int maxCapacity,
+        String displayName
+    ) {
+        this(
+            type,
+            table,
+            tableCombination,
+            tables,
+            minCapacity,
+            maxCapacity,
+            displayName,
+            CombinationType.STANDARD,
+            OperationalCostLevel.LOW,
+            0,
+            List.of()
+        );
+    }
+
+    public boolean advanced() {
+        return combinationType == CombinationType.ADVANCED;
+    }
 
     public List<Long> tableIds() {
         return tables.stream().map(RestaurantTable::getId).toList();
