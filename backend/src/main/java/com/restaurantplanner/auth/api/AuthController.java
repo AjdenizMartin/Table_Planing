@@ -28,12 +28,6 @@ public class AuthController {
         return authService.login(request);
     }
 
-    @PostMapping("/register")
-    @ResponseStatus(HttpStatus.CREATED)
-    public AuthResponse register(@Valid @RequestBody RegisterRequest request) {
-        return authService.register(request);
-    }
-
     @PostMapping("/refresh")
     public AuthResponse refresh(@Valid @RequestBody RefreshRequest request) {
         return authService.refresh(request);
@@ -54,4 +48,3 @@ public class AuthController {
         return authService.me(authenticatedUser, restaurantId);
     }
 }
-

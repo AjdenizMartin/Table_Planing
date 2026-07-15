@@ -3,6 +3,7 @@ import { useState, type FormEvent } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { ApiError } from "@/services/api/client";
 import { useAuth } from "@/features/auth/context/AuthContext";
+import { registrationEnabled } from "@/features/auth/registration";
 
 interface LocationState {
   from?: {
@@ -14,8 +15,8 @@ export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { login, status, session } = useAuth();
-  const [email, setEmail] = useState("demo@restaurant.com");
-  const [password, setPassword] = useState("Demo1234!");
+  const [email, setEmail] = useState(import.meta.env.DEV ? "demo@restaurant.com" : "");
+  const [password, setPassword] = useState(import.meta.env.DEV ? "Demo1234!" : "");
 
   const mutation = useMutation({
     mutationFn: login,
@@ -102,15 +103,17 @@ export function LoginPage() {
               resolvera despues del login si hace falta.
             </p>
 
-            <div className="mt-5 rounded-2xl border border-emerald-400/25 bg-emerald-500/10 px-4 py-4 text-sm text-emerald-100">
-              <p className="font-semibold">Acceso demo local</p>
-              <p className="mt-2">
-                Email: <span className="font-mono">demo@restaurant.com</span>
-              </p>
-              <p className="mt-1">
-                Password: <span className="font-mono">Demo1234!</span>
-              </p>
-            </div>
+            {import.meta.env.DEV ? (
+              <div className="mt-5 rounded-2xl border border-emerald-400/25 bg-emerald-500/10 px-4 py-4 text-sm text-emerald-100">
+                <p className="font-semibold">Acceso demo local</p>
+                <p className="mt-2">
+                  Email: <span className="font-mono">demo@restaurant.com</span>
+                </p>
+                <p className="mt-1">
+                  Password: <span className="font-mono">Demo1234!</span>
+                </p>
+              </div>
+            ) : null}
 
             <form className="mt-8 grid gap-5" onSubmit={handleSubmit}>
               <label className="grid gap-2">
@@ -155,12 +158,14 @@ export function LoginPage() {
               </button>
             </form>
 
-            <p className="mt-6 text-center text-sm text-slate-400">
-              No tienes una cuenta?{" "}
-              <Link to="/register" className="font-medium text-brand-400 hover:text-brand-300 transition">
-                Crea tu restaurante
-              </Link>
-            </p>
+            {registrationEnabled ? (
+              <p className="mt-6 text-center text-sm text-slate-400">
+                No tienes una cuenta?{" "}
+                <Link to="/register" className="font-medium text-brand-400 hover:text-brand-300 transition">
+                  Crea tu restaurante
+                </Link>
+              </p>
+            ) : null}
           </div>
         </section>
       </div>

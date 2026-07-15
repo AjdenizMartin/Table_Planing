@@ -11,7 +11,7 @@
 
 - Add authenticated owner-facing team administration and password reset flows.
 - Review JSONB persistence and standardize typed serialization.
-- Add production metrics and alert delivery beyond Docker health checks.
+- Add long-term metric aggregation and dashboards beyond the pilot operations check and webhook alert.
 - Expand route-level loading, conflict and offline messaging in the frontend.
 
 ## Medium

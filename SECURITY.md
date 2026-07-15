@@ -212,11 +212,14 @@ Implementacion del piloto:
 - Nginx termina TLS y redirige HTTP a HTTPS
 - login limitado a 5 solicitudes por minuto por IP, con burst controlado
 - CORS backend parametrizado y restringido al origen HTTPS del piloto
-- registro publico bloqueado en Nginx
+- perfil `prod` sin controlador de registro, build frontend sin ruta/CTA de alta y bloqueo adicional en Nginx
 - Actuator expone solo `health` y no se publica a Internet
 - PostgreSQL y backend viven en una red Docker interna sin puertos host
 - secretos de PostgreSQL y JWT se montan como archivos, nunca en la imagen
 - perfil `prod` no activa el bootstrap demo por estar limitado a `@Profile("dev")`
+- backend ejecutado con usuario no privilegiado, filesystem de solo lectura, sin capacidades Linux y con `no-new-privileges`
+- Nginx aplica HSTS, CSP, proteccion contra framing y restricciones de permisos del navegador
+- logs Docker rotados y monitor operativo con alerta webhook opcional sin incluir secretos
 
 La limitacion por IP en Nginx es adecuada para el piloto de un VPS. Antes de una exposicion publica amplia debe complementarse con observabilidad, bloqueo progresivo por cuenta y proteccion del proveedor perimetral.
 

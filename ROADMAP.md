@@ -227,6 +227,8 @@ El roadmap prioriza primero el nucleo de valor del producto: configuracion del r
 
 **Estado:** `IN_PROGRESS`
 
+**Tramo de codigo:** `DONE`; pendiente validacion en infraestructura real.
+
 ### Objetivos
 
 - endurecer la plataforma
@@ -239,6 +241,20 @@ El roadmap prioriza primero el nucleo de valor del producto: configuracion del r
 - observabilidad
 - documentacion operativa
 - seguridad revisada
+
+### Implementado para el piloto
+
+- perfil productivo sin registro publico ni credenciales demo en frontend
+- backend no privilegiado, filesystem de solo lectura, capacidades eliminadas y secretos por archivo
+- TLS, CSP, rate limiting, red interna y rotacion de logs
+- preflight reproducible y monitor de HTTPS, TLS, disco y backups con alerta opcional
+- onboarding, backup cifrado externo, restauracion, rollback y UAT documentados
+
+### Pendiente de cierre
+
+- ejecutar preflight y despliegue del tag aprobado en Ubuntu 24.04
+- comprobar backup S3 y restauracion real
+- validar rendimiento, Android fisico y UAT con usuarios/datos reales
 
 ### Criterios de finalizacion
 

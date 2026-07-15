@@ -5,6 +5,8 @@ set -eu
 
 cert_dir="${LETSENCRYPT_DIR:-./deploy/letsencrypt}"
 webroot_dir="${ACME_WEBROOT_DIR:-./deploy/certbot-www}"
+env_file="${PRODUCTION_ENV_FILE:-.env.production}"
+compose_file="${PRODUCTION_COMPOSE_FILE:-docker-compose.prod.yml}"
 
 absolute_path() {
   case "$1" in
@@ -25,5 +27,5 @@ docker run --rm \
   --webroot-path /var/www/certbot \
   --quiet
 
-docker compose --env-file .env.production -f docker-compose.prod.yml exec -T frontend nginx -s reload
+docker compose --env-file "$env_file" -f "$compose_file" exec -T frontend nginx -s reload
 echo "TLS renewal check completed for $APP_DOMAIN"
