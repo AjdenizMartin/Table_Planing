@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 import com.restaurantplanner.diningroom.domain.DiningRoom;
 import com.restaurantplanner.optimization.domain.AssignmentCandidate;
 import com.restaurantplanner.optimization.domain.AssignmentCandidateType;
+import com.restaurantplanner.optimization.domain.CandidateSearchMode;
 import com.restaurantplanner.optimization.service.CandidateFinder;
 import com.restaurantplanner.restaurant.domain.Restaurant;
 import com.restaurantplanner.table.domain.RestaurantTable;
@@ -16,6 +17,7 @@ import com.restaurantplanner.table.domain.TableType;
 import com.restaurantplanner.tablecombination.domain.TableCombination;
 import com.restaurantplanner.tablecombination.domain.TableCombinationItem;
 import com.restaurantplanner.tablecombination.domain.TableCombinationRepository;
+import com.restaurantplanner.tablecombination.domain.CombinationType;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -141,6 +143,24 @@ class CandidateFinderTest {
         assertEquals(2, candidates.size());
         assertEquals("A1", candidates.get(0).displayName());
         assertEquals("B1", candidates.get(1).displayName());
+    }
+
+    @Test
+    void advancedCombinationsOnlyAppearInManualSuggestionMode() {
+        when(tableRepository.findByRestaurantIdAndTableTypeNotOrderByDiningRoomIdAscCodeAsc(1L, TableType.STORAGE))
+            .thenReturn(List.of());
+        RestaurantTable tableA = createTable(200L, "A1", room, true);
+        RestaurantTable tableB = createTable(201L, "A2", room, true);
+        TableCombination combination = createCombination(300L, "Advanced pair", true, tableA, tableB);
+        combination.setCombinationType(CombinationType.ADVANCED);
+        when(combinationRepository.findByRestaurantIdAndActiveTrueOrderByNameAscIdAsc(1L))
+            .thenReturn(List.of(combination));
+
+        assertTrue(finder.findCandidates(1L).isEmpty());
+        assertEquals(
+            1,
+            finder.findCandidates(1L, CandidateSearchMode.MANUAL_SUGGESTION).size()
+        );
     }
 
     private DiningRoom createRoom(String name, int priority, boolean accessible, boolean active) {

@@ -10,7 +10,11 @@ public record TableCombinationResponse(
     Integer minCapacity,
     Integer maxCapacity,
     boolean active,
+    String combinationType,
+    String operationalCostLevel,
+    Integer setupTimeMinutes,
     List<TableCombinationItemResponse> items,
+    List<TableCombinationResourceRequirementResponse> resourceRequirements,
     Instant createdAt,
     Instant updatedAt
 ) {

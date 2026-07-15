@@ -14,6 +14,8 @@ import com.restaurantplanner.reservation.domain.Reservation;
 import com.restaurantplanner.reservation.domain.ReservationChannel;
 import com.restaurantplanner.reservation.domain.ReservationStatus;
 import com.restaurantplanner.table.domain.RestaurantTable;
+import com.restaurantplanner.tablecombination.domain.CombinationType;
+import com.restaurantplanner.tablecombination.domain.OperationalCostLevel;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -167,6 +169,50 @@ class AssignmentScorerTest {
 
         assertEquals(scoredA.totalScore(), scoredB.totalScore(), 0.0001,
             "Identical tables should have the same score");
+    }
+
+    @Test
+    void advancedCostAndSetupPenaltiesAreDeterministic() {
+        DiningRoom room = createRoom("Main", 1, true, true);
+        List<RestaurantTable> tables = List.of(
+            createTableRaw(room, "A1", 2, 2),
+            createTableRaw(room, "A2", 2, 2)
+        );
+        AssignmentCandidate low = new AssignmentCandidate(
+            AssignmentCandidateType.TABLE_COMBINATION,
+            null,
+            null,
+            tables,
+            2,
+            4,
+            "Low",
+            CombinationType.ADVANCED,
+            OperationalCostLevel.LOW,
+            20,
+            List.of()
+        );
+        AssignmentCandidate high = new AssignmentCandidate(
+            AssignmentCandidateType.TABLE_COMBINATION,
+            null,
+            null,
+            tables,
+            2,
+            4,
+            "High",
+            CombinationType.ADVANCED,
+            OperationalCostLevel.HIGH,
+            80,
+            List.of()
+        );
+
+        ScoredCandidate lowScore = scorer.score(low, fourPersonReservation, available(), List.of(low, high));
+        ScoredCandidate highScore = scorer.score(high, fourPersonReservation, available(), List.of(low, high));
+
+        assertEquals(8d, lowScore.penalties().get("operational_cost_penalty"), 0.001);
+        assertEquals(48d, highScore.penalties().get("operational_cost_penalty"), 0.001);
+        assertEquals(10d, lowScore.penalties().get("setup_time_penalty"), 0.001);
+        assertEquals(30d, highScore.penalties().get("setup_time_penalty"), 0.001);
+        assertTrue(lowScore.totalScore() > highScore.totalScore());
     }
 
     private CandidateAvailability available() {

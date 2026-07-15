@@ -7,16 +7,22 @@ import com.restaurantplanner.auth.security.AuthenticatedUser;
 import com.restaurantplanner.common.api.NotFoundException;
 import com.restaurantplanner.restaurant.domain.Restaurant;
 import com.restaurantplanner.restaurant.domain.RestaurantRepository;
+import com.restaurantplanner.storage.domain.StorageResource;
+import com.restaurantplanner.storage.domain.StorageResourceRepository;
 import com.restaurantplanner.table.domain.RestaurantTable;
 import com.restaurantplanner.table.domain.RestaurantTableRepository;
 import com.restaurantplanner.table.domain.TableType;
 import com.restaurantplanner.tablecombination.api.CreateTableCombinationRequest;
 import com.restaurantplanner.tablecombination.api.TableCombinationMapper;
 import com.restaurantplanner.tablecombination.api.TableCombinationResponse;
+import com.restaurantplanner.tablecombination.api.TableCombinationResourceRequirementRequest;
 import com.restaurantplanner.tablecombination.api.UpdateTableCombinationRequest;
+import com.restaurantplanner.tablecombination.domain.CombinationType;
+import com.restaurantplanner.tablecombination.domain.OperationalCostLevel;
 import com.restaurantplanner.tablecombination.domain.TableCombination;
 import com.restaurantplanner.tablecombination.domain.TableCombinationItem;
 import com.restaurantplanner.tablecombination.domain.TableCombinationRepository;
+import com.restaurantplanner.tablecombination.domain.TableCombinationResourceRequirement;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -35,6 +41,7 @@ public class TableCombinationService {
 
     private final TableCombinationRepository tableCombinationRepository;
     private final RestaurantTableRepository restaurantTableRepository;
+    private final StorageResourceRepository storageResourceRepository;
     private final RestaurantRepository restaurantRepository;
     private final RoleAssignmentRepository roleAssignmentRepository;
     private final TableCombinationMapper tableCombinationMapper;
@@ -43,6 +50,7 @@ public class TableCombinationService {
     public TableCombinationService(
         TableCombinationRepository tableCombinationRepository,
         RestaurantTableRepository restaurantTableRepository,
+        StorageResourceRepository storageResourceRepository,
         RestaurantRepository restaurantRepository,
         RoleAssignmentRepository roleAssignmentRepository,
         TableCombinationMapper tableCombinationMapper,
@@ -50,6 +58,7 @@ public class TableCombinationService {
     ) {
         this.tableCombinationRepository = tableCombinationRepository;
         this.restaurantTableRepository = restaurantTableRepository;
+        this.storageResourceRepository = storageResourceRepository;
         this.restaurantRepository = restaurantRepository;
         this.roleAssignmentRepository = roleAssignmentRepository;
         this.tableCombinationMapper = tableCombinationMapper;
@@ -66,9 +75,20 @@ public class TableCombinationService {
         requireOwnerManagerOrAdmin(authenticatedUser, restaurantId);
 
         String normalizedName = normalizeRequired(request.name(), "name");
+        CombinationType combinationType = parseCombinationType(request.combinationType(), CombinationType.STANDARD);
+        OperationalCostLevel operationalCostLevel = parseOperationalCostLevel(
+            request.operationalCostLevel(),
+            OperationalCostLevel.LOW
+        );
+        int setupTimeMinutes = request.setupTimeMinutes() == null ? 0 : request.setupTimeMinutes();
         validateCapacityRange(request.minCapacity(), request.maxCapacity());
         List<RestaurantTable> tables = resolveTables(restaurantId, request.tableIds());
-        validateCombinationCapacities(request.minCapacity(), request.maxCapacity(), tables);
+        List<ResolvedResourceRequirement> requirements = resolveResourceRequirements(
+            restaurantId,
+            request.resourceRequirements()
+        );
+        validateAdvancedConfiguration(combinationType, setupTimeMinutes, requirements);
+        validateCombinationCapacities(request.minCapacity(), request.maxCapacity(), tables, requirements);
 
         TableCombination combination = new TableCombination();
         combination.setRestaurant(restaurant);
@@ -76,7 +96,11 @@ public class TableCombinationService {
         combination.setMinCapacity(request.minCapacity());
         combination.setMaxCapacity(request.maxCapacity());
         combination.setActive(request.active());
+        combination.setCombinationType(combinationType);
+        combination.setOperationalCostLevel(operationalCostLevel);
+        combination.setSetupTimeMinutes(setupTimeMinutes);
         replaceItems(combination, tables);
+        replaceResourceRequirements(combination, restaurant, requirements);
 
         TableCombination saved = tableCombinationRepository.save(combination);
         auditService.record(restaurantId, "TableCombination", saved.getId(), "combination.created", authenticatedUser.userId(), "{\"name\":\"" + saved.getName() + "\"}");
@@ -109,22 +133,49 @@ public class TableCombinationService {
 
         TableCombination combination = findCombinationOrThrow(restaurantId, combinationId);
 
+        CombinationType combinationType = request.combinationType() == null
+            ? combination.getCombinationType()
+            : parseCombinationType(request.combinationType(), combination.getCombinationType());
+        OperationalCostLevel operationalCostLevel = request.operationalCostLevel() == null
+            ? combination.getOperationalCostLevel()
+            : parseOperationalCostLevel(request.operationalCostLevel(), combination.getOperationalCostLevel());
+        int setupTimeMinutes = request.setupTimeMinutes() == null
+            ? combination.getSetupTimeMinutes()
+            : request.setupTimeMinutes();
+        int minCapacity = request.minCapacity() == null ? combination.getMinCapacity() : request.minCapacity();
+        int maxCapacity = request.maxCapacity() == null ? combination.getMaxCapacity() : request.maxCapacity();
+        List<RestaurantTable> tables = request.tableIds() == null
+            ? combination.getItems().stream().map(TableCombinationItem::getTable).toList()
+            : resolveTables(restaurantId, request.tableIds());
+        List<ResolvedResourceRequirement> requirements = request.resourceRequirements() == null
+            ? combination.getResourceRequirements().stream()
+                .map(requirement -> new ResolvedResourceRequirement(
+                    requirement.getStorageResource(),
+                    requirement.getQuantity()
+                ))
+                .toList()
+            : resolveResourceRequirements(restaurantId, request.resourceRequirements());
+
+        validateCapacityRange(minCapacity, maxCapacity);
+        validateAdvancedConfiguration(combinationType, setupTimeMinutes, requirements);
+        validateCombinationCapacities(minCapacity, maxCapacity, tables, requirements);
+
         if (request.name() != null) {
             combination.setName(normalizeRequired(request.name(), "name"));
         }
-        if (request.minCapacity() != null || request.maxCapacity() != null) {
-            int minCapacity = request.minCapacity() != null ? request.minCapacity() : combination.getMinCapacity();
-            int maxCapacity = request.maxCapacity() != null ? request.maxCapacity() : combination.getMaxCapacity();
-            validateCapacityRange(minCapacity, maxCapacity);
-            combination.setMinCapacity(minCapacity);
-            combination.setMaxCapacity(maxCapacity);
-        }
+        combination.setMinCapacity(minCapacity);
+        combination.setMaxCapacity(maxCapacity);
+        combination.setCombinationType(combinationType);
+        combination.setOperationalCostLevel(operationalCostLevel);
+        combination.setSetupTimeMinutes(setupTimeMinutes);
         if (request.active() != null) {
             combination.setActive(request.active());
         }
         if (request.tableIds() != null) {
-            List<RestaurantTable> tables = resolveTables(restaurantId, request.tableIds());
             replaceItems(combination, tables);
+        }
+        if (request.resourceRequirements() != null) {
+            replaceResourceRequirements(combination, combination.getRestaurant(), requirements);
         }
 
         auditService.record(restaurantId, "TableCombination", combinationId, "combination.updated", authenticatedUser.userId(), null);
@@ -217,19 +268,124 @@ public class TableCombinationService {
         }
     }
 
+    private List<ResolvedResourceRequirement> resolveResourceRequirements(
+        Long restaurantId,
+        List<TableCombinationResourceRequirementRequest> requests
+    ) {
+        if (requests == null || requests.isEmpty()) {
+            return List.of();
+        }
+
+        Set<Long> distinctIds = requests.stream()
+            .map(TableCombinationResourceRequirementRequest::storageResourceId)
+            .collect(Collectors.toCollection(LinkedHashSet::new));
+        if (distinctIds.size() != requests.size()) {
+            throw new IllegalArgumentException("resourceRequirements must not contain duplicate resources");
+        }
+
+        List<StorageResource> resources = storageResourceRepository.findByRestaurantIdAndIdIn(
+            restaurantId,
+            new ArrayList<>(distinctIds)
+        );
+        if (resources.size() != distinctIds.size()) {
+            throw new NotFoundException("One or more storage resources do not belong to the restaurant");
+        }
+
+        Map<Long, StorageResource> resourcesById = resources.stream()
+            .collect(Collectors.toMap(StorageResource::getId, resource -> resource));
+
+        return requests.stream().map(request -> {
+            StorageResource resource = resourcesById.get(request.storageResourceId());
+            if (resource == null) {
+                throw new NotFoundException("One or more storage resources do not belong to the restaurant");
+            }
+            if (!resource.isActive()) {
+                throw new IllegalArgumentException("Inactive storage resources cannot be used in combinations");
+            }
+            if (request.quantity() > resource.getQuantity()) {
+                throw new IllegalArgumentException(
+                    "Required quantity for " + resource.getName() + " exceeds configured inventory"
+                );
+            }
+            return new ResolvedResourceRequirement(resource, request.quantity());
+        }).toList();
+    }
+
+    private void replaceResourceRequirements(
+        TableCombination combination,
+        Restaurant restaurant,
+        List<ResolvedResourceRequirement> requirements
+    ) {
+        combination.getResourceRequirements().clear();
+        for (ResolvedResourceRequirement resolved : requirements) {
+            TableCombinationResourceRequirement requirement = new TableCombinationResourceRequirement();
+            requirement.setRestaurant(restaurant);
+            requirement.setTableCombination(combination);
+            requirement.setStorageResource(resolved.resource());
+            requirement.setQuantity(resolved.quantity());
+            combination.getResourceRequirements().add(requirement);
+        }
+    }
+
     private void validateCapacityRange(int minCapacity, int maxCapacity) {
         if (minCapacity > maxCapacity) {
             throw new IllegalArgumentException("minCapacity must be less than or equal to maxCapacity");
         }
     }
 
-    private void validateCombinationCapacities(int minCapacity, int maxCapacity, List<RestaurantTable> tables) {
-        int combinedMaxCapacity = tables.stream().mapToInt(RestaurantTable::getMaxCapacity).sum();
+    private void validateCombinationCapacities(
+        int minCapacity,
+        int maxCapacity,
+        List<RestaurantTable> tables,
+        List<ResolvedResourceRequirement> requirements
+    ) {
+        int combinedMaxCapacity = tables.stream().mapToInt(RestaurantTable::getMaxCapacity).sum()
+            + requirements.stream().mapToInt(requirement ->
+                requirement.quantity() * requirement.resource().getCapacityPerUnit()
+            ).sum();
         if (maxCapacity > combinedMaxCapacity) {
             throw new IllegalArgumentException("maxCapacity must not exceed the combined max capacity of included tables");
         }
         if (minCapacity > combinedMaxCapacity) {
             throw new IllegalArgumentException("minCapacity must be compatible with included tables");
+        }
+    }
+
+    private void validateAdvancedConfiguration(
+        CombinationType combinationType,
+        int setupTimeMinutes,
+        List<ResolvedResourceRequirement> requirements
+    ) {
+        if (setupTimeMinutes < 0) {
+            throw new IllegalArgumentException("setupTimeMinutes must not be negative");
+        }
+        if (combinationType == CombinationType.STANDARD && !requirements.isEmpty()) {
+            throw new IllegalArgumentException("Standard combinations cannot require storage resources");
+        }
+        if (combinationType == CombinationType.STANDARD && setupTimeMinutes != 0) {
+            throw new IllegalArgumentException("Standard combinations must have zero setup time");
+        }
+    }
+
+    private CombinationType parseCombinationType(String value, CombinationType defaultValue) {
+        if (!StringUtils.hasText(value)) {
+            return defaultValue;
+        }
+        try {
+            return CombinationType.valueOf(value.trim().toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException("Unsupported combinationType: " + value);
+        }
+    }
+
+    private OperationalCostLevel parseOperationalCostLevel(String value, OperationalCostLevel defaultValue) {
+        if (!StringUtils.hasText(value)) {
+            return defaultValue;
+        }
+        try {
+            return OperationalCostLevel.valueOf(value.trim().toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException("Unsupported operationalCostLevel: " + value);
         }
     }
 
@@ -247,5 +403,8 @@ public class TableCombinationService {
         }
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private record ResolvedResourceRequirement(StorageResource resource, int quantity) {
     }
 }

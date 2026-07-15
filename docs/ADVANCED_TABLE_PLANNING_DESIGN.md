@@ -1,5 +1,9 @@
 # Advanced Table Planning Design
 
+## Estado de implementacion del piloto
+
+V16 y V17 implementan combinaciones `STANDARD`/`ADVANCED`, coste operativo, preparacion, requisitos de inventario, sugerencias top 3, seleccion explicita y snapshots de consumo. La aprobacion es la propia seleccion del manager. `ReservationSetupPlan`, `SetupTask`, planos diarios y editor visual avanzado permanecen fuera del alcance del piloto.
+
 ## 1. Problema operativo real
 
 Muchos restaurantes no operan con un plano completamente fijo. Durante un servicio real, el equipo puede juntar mesas, mover mesas ligeras, añadir sillas, sacar mesas guardadas o preparar un montaje temporal para grupos grandes. Las apps de table planning que solo buscan una mesa libre o una combinacion simple suelen fallar en estos casos:
@@ -102,7 +106,7 @@ Campos:
 - `created_at`
 - `updated_at`
 
-Uso: registrar recursos como sillas extra, mesas plegables, tronas, extensiones o bancos. `STORAGE_TABLE` permanece como tipo compatible con V14. En Sprint 1 solo se configura y consulta el inventario; capacidad y tiempo de preparacion son descriptivos y no se aplican automaticamente al algoritmo.
+Uso: registrar recursos como sillas extra, mesas plegables, tronas, extensiones o bancos. `STORAGE_TABLE` permanece como tipo compatible con V14. En el piloto estos recursos se consumen solo al seleccionar de forma explicita una combinacion avanzada; nunca entran en la asignacion automatica.
 
 ### FloorPlanTemplate
 

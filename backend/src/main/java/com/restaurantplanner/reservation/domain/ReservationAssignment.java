@@ -4,14 +4,23 @@ import com.restaurantplanner.common.domain.BaseEntity;
 import com.restaurantplanner.diningroom.domain.DiningRoom;
 import com.restaurantplanner.table.domain.RestaurantTable;
 import com.restaurantplanner.tablecombination.domain.TableCombination;
+import com.restaurantplanner.tablecombination.domain.OperationalCostLevel;
 import com.restaurantplanner.user.domain.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import org.hibernate.annotations.ColumnTransformer;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -56,6 +65,16 @@ public class ReservationAssignment extends BaseEntity {
 
     @Column(nullable = false)
     private boolean active;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "operational_cost_level", nullable = false, length = 20)
+    private OperationalCostLevel operationalCostLevel = OperationalCostLevel.LOW;
+
+    @Column(name = "setup_time_minutes", nullable = false)
+    private Integer setupTimeMinutes = 0;
+
+    @OneToMany(mappedBy = "reservationAssignment", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<ReservationAssignmentResource> resources = new LinkedHashSet<>();
 
     public Reservation getReservation() {
         return reservation;
@@ -135,5 +154,25 @@ public class ReservationAssignment extends BaseEntity {
 
     public void setActive(boolean active) {
         this.active = active;
+    }
+
+    public OperationalCostLevel getOperationalCostLevel() {
+        return operationalCostLevel;
+    }
+
+    public void setOperationalCostLevel(OperationalCostLevel operationalCostLevel) {
+        this.operationalCostLevel = operationalCostLevel;
+    }
+
+    public Integer getSetupTimeMinutes() {
+        return setupTimeMinutes;
+    }
+
+    public void setSetupTimeMinutes(Integer setupTimeMinutes) {
+        this.setupTimeMinutes = setupTimeMinutes;
+    }
+
+    public Set<ReservationAssignmentResource> getResources() {
+        return resources;
     }
 }

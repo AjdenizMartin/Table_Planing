@@ -10,6 +10,7 @@ import com.restaurantplanner.common.api.NotFoundException;
 import com.restaurantplanner.optimization.domain.AssignmentCandidate;
 import com.restaurantplanner.optimization.domain.AssignmentCandidateType;
 import com.restaurantplanner.optimization.domain.CandidateAvailability;
+import com.restaurantplanner.optimization.api.AssignmentSelectionRequest;
 import com.restaurantplanner.optimization.service.AvailabilityChecker;
 import com.restaurantplanner.optimization.service.ReservationAssignmentService;
 import com.restaurantplanner.planning.api.MoveReservationRequest;
@@ -45,6 +46,7 @@ public class PlanningService {
     private static final Set<ReservationStatus> ASSIGNABLE_STATUSES = EnumSet.of(
         ReservationStatus.PENDING,
         ReservationStatus.CONFIRMED,
+        ReservationStatus.ARRIVED,
         ReservationStatus.SEATED
     );
 
@@ -154,45 +156,16 @@ public class PlanningService {
             throw new ConflictException("Only active operational reservations can be moved");
         }
 
-        AssignmentCandidate candidate = hasTable
-            ? buildTableCandidate(restaurantId, request.tableId())
-            : buildCombinationCandidate(restaurantId, request.tableCombinationId());
-
-        List<ReservationAssignment> occupiedAssignments = reservationAssignmentRepository
-            .findByActiveTrueAndReservationRestaurantIdAndReservationReservationDateAndReservationStatusIn(
-                restaurantId,
-                reservation.getReservationDate(),
-                ASSIGNABLE_STATUSES
-            );
-        CandidateAvailability availability = availabilityChecker.evaluate(candidate, reservation, occupiedAssignments);
-        if (!availability.available()) {
-            throw new ConflictException("Target resource is not available: " + String.join(", ", availability.rejectionReasons()));
-        }
-
-        deactivateCurrentAssignments(reservation.getId());
-
-        ReservationAssignment assignment = new ReservationAssignment();
-        assignment.setReservation(reservation);
-        assignment.setAssignmentType(hasTable ? "MANUAL_TABLE" : "MANUAL_TABLE_COMBINATION");
-        assignment.setDiningRoom(candidate.diningRooms().size() == 1 ? candidate.diningRooms().get(0) : null);
-        assignment.setTable(candidate.table());
-        assignment.setTableCombination(candidate.tableCombination());
-        assignment.setScore(null);
-        assignment.setExplanationJson(buildManualExplanationJson(candidate));
-        assignment.setAssignedBy(findUserOrNull(authenticatedUser.userId()));
-        assignment.setAssignedAt(Instant.now());
-        assignment.setActive(true);
-        reservationAssignmentRepository.save(assignment);
-        PlanningDayResponse planningDay = planningSnapshotService.build(restaurant, reservation.getReservationDate());
-        aiService.generateInsightsForDate(restaurantId, reservation.getReservationDate(), planningDay);
-        auditService.record(restaurantId, "Reservation", reservation.getId(), "reservation.moved", authenticatedUser.userId(), "{\"tableId\":" + (request.tableId() != null ? request.tableId() : "null") + ",\"combinationId\":" + (request.tableCombinationId() != null ? request.tableCombinationId() : "null") + "}");
-        realtimePublisher.publishReservationEvent(
-            "reservation.assigned",
+        reservationAssignmentService.select(
             restaurantId,
             reservation.getId(),
-            reservation.getReservationDate(),
-            "Reservation moved manually"
+            new AssignmentSelectionRequest(
+                hasTable ? "TABLE" : "TABLE_COMBINATION",
+                hasTable ? request.tableId() : request.tableCombinationId()
+            ),
+            authenticatedUser
         );
+        PlanningDayResponse planningDay = planningSnapshotService.build(restaurant, reservation.getReservationDate());
         realtimePublisher.publishPlanningRecalculated(
             restaurantId,
             reservation.getReservationDate(),

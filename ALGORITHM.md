@@ -6,7 +6,7 @@ El motor de asignacion debe decidir la mejor mesa o combinacion para cada reserv
 
 ## Version implementada actualmente
 
-Estado actual: `PARTIALLY_DONE`
+Estado actual: `PILOT_READY`
 
 Implementado hoy:
 
@@ -17,6 +17,11 @@ Implementado hoy:
 - desempate determinista
 - exclusion de mesas `STORAGE` como candidatas normales
 - exclusion defensiva de combinaciones que contengan mesas `STORAGE`
+- modos separados `AUTOMATIC` y `MANUAL_SUGGESTION`
+- top 3 manual con combinaciones avanzadas e inventario
+- capacidad adicional por recursos y disponibilidad temporal
+- penalizaciones operativas avanzadas deterministas
+- aplicacion transaccional con bloqueo y revalidacion
 
 No implementado todavia:
 
@@ -24,7 +29,6 @@ No implementado todavia:
 - optimizacion batch por turno completo
 - simulacion avanzada de demanda futura
 - disponibilidad como modulo/API separado
-- uso automatico de sillas extra o recursos de almacen
 - montajes especiales con aprobacion y tareas operativas
 
 ## Principios
@@ -84,7 +88,12 @@ inicio_real = hora_reserva
 fin_real = hora_reserva + duracion_estimada + buffer_limpieza
 ```
 
-En fases futuras se puede añadir margen previo o tolerancia de retraso.
+Para un candidato avanzado el inicio efectivo se adelanta por su preparacion:
+
+```text
+inicio_inventario = hora_reserva - setup_time_minutes
+fin_inventario = fin_reserva + buffer_limpieza
+```
 
 ## Estrategia de seleccion
 
@@ -96,16 +105,15 @@ En fases futuras se puede añadir margen previo o tolerancia de retraso.
 
 ### Paso 2. Buscar candidatos
 
-Buscar:
-
-- mesas individuales validas
-- combinaciones predefinidas validas
+Modo `AUTOMATIC` busca mesas individuales y combinaciones `STANDARD`. Modo `MANUAL_SUGGESTION` anade combinaciones `ADVANCED`, calcula recursos requeridos y limita la salida ordenada a tres opciones.
 
 En una fase avanzada se podran generar combinaciones dinamicas controladas.
 
 Desde Fase 1 de planificacion avanzada, las mesas con `table_type = STORAGE` quedan fuera de la busqueda normal. Las combinaciones estandar tampoco deben contener mesas `STORAGE`; el backend lo valida al crear o actualizar combinaciones y el finder las ignora defensivamente si aparecen por datos legacy. Solo deben evaluarse en niveles avanzados con aprobacion o plan de montaje.
 
-`StorageResource` no es una entrada de `CandidateFinder` ni del planning operativo en Sprint 1. Sus campos de cantidad, capacidad por unidad y tiempo de preparacion son configuracion descriptiva; no amplian capacidades de mesas, no crean candidatos y no modifican horarios o asignaciones.
+`StorageResource` solo entra mediante requisitos de una combinacion avanzada. Todos sus tipos son validos. Cada unidad aporta `capacity_per_unit`; valor cero permite modelar manteleria, extensiones u otros recursos sin plazas. La disponibilidad resta cantidades consumidas por asignaciones activas cuyas ventanas se solapan.
+
+La seleccion manual bloquea en base de datos los recursos requeridos en orden de id y repite la comprobacion antes de persistir. Dos transacciones concurrentes no pueden superar `StorageResource.quantity`.
 
 ## Evolucion avanzada por niveles
 
@@ -143,9 +151,16 @@ Para cada candidato:
 
 Cada opcion recibe una puntuacion total compuesta por bonuses y penalizaciones.
 
+Las combinaciones avanzadas anaden:
+
+```text
+operational_cost_penalty = LOW 8 | MEDIUM 24 | HIGH 48
+setup_time_penalty = min(setup_time_minutes * 0.5, 30)
+```
+
 ### Paso 6. Elegir mejor opcion
 
-Seleccionar el candidato con mayor score.
+Seleccionar por score descendente y desempate estable por tipo e id. En sugerencia manual se devuelven como maximo tres.
 
 ### Paso 7. Explicar decision
 
@@ -177,8 +192,6 @@ score_total =
 - w11 * recombination_cost
 - w12 * reassignment_cost
 - w13 * fragmentation_penalty
-```
-
 ## Significado de factores
 
 ### Bonuses

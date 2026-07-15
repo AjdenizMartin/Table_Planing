@@ -3,6 +3,7 @@ package com.restaurantplanner.planning.api;
 import com.restaurantplanner.reservation.domain.ReservationStatus;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 
 public record PlanningReservationSummaryResponse(
     Long reservationId,
@@ -22,6 +23,9 @@ public record PlanningReservationSummaryResponse(
     Long tableId,
     String tableCode,
     Long tableCombinationId,
-    String tableCombinationName
+    String tableCombinationName,
+    String operationalCostLevel,
+    Integer setupTimeMinutes,
+    List<PlanningAssignedResourceResponse> assignedResources
 ) {
 }

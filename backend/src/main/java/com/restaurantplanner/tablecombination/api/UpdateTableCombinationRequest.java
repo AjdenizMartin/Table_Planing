@@ -9,6 +9,10 @@ public record UpdateTableCombinationRequest(
     @Min(1) Integer minCapacity,
     @Min(1) Integer maxCapacity,
     Boolean active,
-    @Size(min = 2) List<@Min(1) Long> tableIds
+    @Size(min = 2) List<@Min(1) Long> tableIds,
+    String combinationType,
+    String operationalCostLevel,
+    @Min(0) Integer setupTimeMinutes,
+    @Size(max = 50) List<@jakarta.validation.Valid TableCombinationResourceRequirementRequest> resourceRequirements
 ) {
 }

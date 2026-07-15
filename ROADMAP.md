@@ -279,13 +279,45 @@ Para demostrar valor en el problema real de mesas moviles y almacen sin romper e
 
 ### Sprint 2. Combinaciones Avanzadas
 
-**Estado:** `NOT_STARTED`
+**Estado:** `DONE`
 
-- definir combinaciones avanzadas sin alterar reservas existentes
-- documentar primero reglas, coste operativo y explicabilidad
-- mantener fuera hasta una decision posterior los planes de montaje, tareas operativas y aprobacion de manager
+- V16 con tipo, coste, preparacion y requisitos de inventario
+- CRUD backend/frontend con capacidad efectiva y validacion multi-tenant
+- proteccion de inventario comprometido por reservas futuras
 
-Las fases posteriores siguen incluyendo planes de montaje, tareas operativas, aprobacion de manager y editor visual avanzado. No forman parte de Sprint 1.
+### Sprint 3. Sugerencias y aplicacion segura
+
+**Estado:** `DONE`
+
+- modos automatico/manual separados y top 3 determinista
+- V17 con snapshots de recursos por asignacion
+- seleccion transaccional, bloqueo pesimista, auditoria y realtime
+
+### Sprint 4. Operacion y tablet
+
+**Estado:** `DONE`
+
+- comparador de sugerencias, recursos e historial en el panel de reserva
+- permisos de aprobacion separados para manager y staff
+- Vitest, Testing Library y Playwright a 768/1024 px
+
+### Sprint 5. Despliegue del piloto
+
+**Estado:** `READY_FOR_ENVIRONMENT`
+
+- frontend estatico Nginx, proxy API/WebSocket, TLS y rate limiting
+- Compose productivo con red interna, secretos, health checks y reinicio
+- backup, restauracion y rollback documentados
+
+### Sprint 6. Salida a piloto
+
+**Estado:** `READY_FOR_UAT`
+
+- E2E criticos automatizados y script de rendimiento
+- runbook, onboarding y checklist UAT disponibles
+- pendientes externos: dominio, certificados, datos reales, cuentas y ejecucion UAT en VPS
+
+Los planes de montaje, tareas operativas y editor visual avanzado siguen fuera del piloto. La seleccion explicita del manager actua como aprobacion.
 
 ## Fuera del MVP
 

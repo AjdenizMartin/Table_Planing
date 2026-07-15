@@ -8,6 +8,9 @@ import com.restaurantplanner.common.api.ConflictException;
 import com.restaurantplanner.common.api.NotFoundException;
 import com.restaurantplanner.restaurant.domain.Restaurant;
 import com.restaurantplanner.restaurant.domain.RestaurantRepository;
+import com.restaurantplanner.reservation.domain.ReservationAssignmentResource;
+import com.restaurantplanner.reservation.domain.ReservationAssignmentResourceRepository;
+import com.restaurantplanner.reservation.domain.ReservationStatus;
 import com.restaurantplanner.storage.api.CreateStorageResourceRequest;
 import com.restaurantplanner.storage.api.StorageAvailabilityResponse;
 import com.restaurantplanner.storage.api.StorageResourceMapper;
@@ -19,7 +22,13 @@ import com.restaurantplanner.storage.domain.StorageResourceType;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.Objects;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.function.Consumer;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -34,19 +43,22 @@ public class StorageResourceService {
     private final RoleAssignmentRepository roleAssignmentRepository;
     private final StorageResourceMapper storageResourceMapper;
     private final AuditService auditService;
+    private final ReservationAssignmentResourceRepository assignmentResourceRepository;
 
     public StorageResourceService(
         StorageResourceRepository storageResourceRepository,
         RestaurantRepository restaurantRepository,
         RoleAssignmentRepository roleAssignmentRepository,
         StorageResourceMapper storageResourceMapper,
-        AuditService auditService
+        AuditService auditService,
+        ReservationAssignmentResourceRepository assignmentResourceRepository
     ) {
         this.storageResourceRepository = storageResourceRepository;
         this.restaurantRepository = restaurantRepository;
         this.roleAssignmentRepository = roleAssignmentRepository;
         this.storageResourceMapper = storageResourceMapper;
         this.auditService = auditService;
+        this.assignmentResourceRepository = assignmentResourceRepository;
     }
 
     @Transactional
@@ -119,10 +131,23 @@ public class StorageResourceService {
         UpdateStorageResourceRequest request,
         AuthenticatedUser authenticatedUser
     ) {
-        findAccessibleRestaurantOrThrow(restaurantId, authenticatedUser);
+        Restaurant restaurant = findAccessibleRestaurantOrThrow(restaurantId, authenticatedUser);
         requireOwnerManagerOrAdmin(authenticatedUser, restaurantId);
 
         StorageResource resource = findResourceOrThrow(restaurantId, resourceId);
+        if (request.quantity() != null) {
+            int committedPeak = findFutureCommittedPeak(restaurant, resourceId);
+            if (request.quantity() < committedPeak) {
+                Map<String, Object> details = new LinkedHashMap<>();
+                details.put("resourceId", resourceId);
+                details.put("requestedQuantity", request.quantity());
+                details.put("committedPeak", committedPeak);
+                throw new ConflictException("Quantity cannot be lower than future committed inventory", details);
+            }
+        }
+        if (Boolean.FALSE.equals(request.active()) && findFutureCommittedPeak(restaurant, resourceId) > 0) {
+            throw new ConflictException("Storage resource with future assignments cannot be deactivated");
+        }
         if (request.resourceType() != null) {
             resource.setResourceType(parseResourceType(request.resourceType()));
         }
@@ -143,9 +168,12 @@ public class StorageResourceService {
 
     @Transactional
     public void delete(Long restaurantId, Long resourceId, AuthenticatedUser authenticatedUser) {
-        findAccessibleRestaurantOrThrow(restaurantId, authenticatedUser);
+        Restaurant restaurant = findAccessibleRestaurantOrThrow(restaurantId, authenticatedUser);
         requireOwnerManagerOrAdmin(authenticatedUser, restaurantId);
         StorageResource resource = findResourceOrThrow(restaurantId, resourceId);
+        if (findFutureCommittedPeak(restaurant, resourceId) > 0) {
+            throw new ConflictException("Storage resource with future assignments cannot be deactivated");
+        }
         resource.setActive(false);
         auditService.record(restaurantId, "StorageResource", resourceId, "storage_resource.deactivated", authenticatedUser.userId(), null);
     }
@@ -231,9 +259,49 @@ public class StorageResourceService {
         return value == null ? 0 : value;
     }
 
+    private int findFutureCommittedPeak(Restaurant restaurant, Long resourceId) {
+        LocalDate businessDate = LocalDate.now(ZoneId.of(restaurant.getTimezone()));
+        List<ReservationAssignmentResource> allocations = assignmentResourceRepository
+            .findByRestaurantIdAndStorageResourceIdAndReservationAssignmentActiveTrueAndReservationAssignmentReservationReservationDateGreaterThanEqualAndReservationAssignmentReservationStatusIn(
+                restaurant.getId(),
+                resourceId,
+                businessDate,
+                EnumSet.of(
+                    ReservationStatus.PENDING,
+                    ReservationStatus.CONFIRMED,
+                    ReservationStatus.ARRIVED,
+                    ReservationStatus.SEATED
+                )
+            );
+
+        List<InventoryEvent> events = new ArrayList<>();
+        for (ReservationAssignmentResource allocation : allocations) {
+            var assignment = allocation.getReservationAssignment();
+            var reservation = assignment.getReservation();
+            LocalDateTime start = LocalDateTime.of(reservation.getReservationDate(), reservation.getStartTime())
+                .minusMinutes(assignment.getSetupTimeMinutes());
+            LocalDateTime end = LocalDateTime.of(reservation.getReservationDate(), reservation.getEndTime())
+                .plusMinutes(reservation.getCleaningBufferMin());
+            events.add(new InventoryEvent(start, allocation.getQuantity()));
+            events.add(new InventoryEvent(end, -allocation.getQuantity()));
+        }
+
+        events.sort(Comparator.comparing(InventoryEvent::at).thenComparingInt(InventoryEvent::delta));
+        int current = 0;
+        int peak = 0;
+        for (InventoryEvent event : events) {
+            current += event.delta();
+            peak = Math.max(peak, current);
+        }
+        return peak;
+    }
+
     private <T> void applyIfPresent(T value, Consumer<T> consumer) {
         if (value != null) {
             consumer.accept(value);
         }
+    }
+
+    private record InventoryEvent(LocalDateTime at, int delta) {
     }
 }

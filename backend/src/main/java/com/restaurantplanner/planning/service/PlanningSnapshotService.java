@@ -9,6 +9,7 @@ import com.restaurantplanner.planning.api.PlanningDiningRoomResponse;
 import com.restaurantplanner.planning.api.PlanningReservationSummaryResponse;
 import com.restaurantplanner.planning.api.PlanningRestaurantSummaryResponse;
 import com.restaurantplanner.planning.api.PlanningTableResponse;
+import com.restaurantplanner.planning.api.PlanningAssignedResourceResponse;
 import com.restaurantplanner.reservation.domain.Reservation;
 import com.restaurantplanner.reservation.domain.ReservationAssignment;
 import com.restaurantplanner.reservation.domain.ReservationAssignmentRepository;
@@ -40,6 +41,7 @@ public class PlanningSnapshotService {
     private static final Set<ReservationStatus> PLANNING_VISIBLE_STATUSES = EnumSet.of(
         ReservationStatus.PENDING,
         ReservationStatus.CONFIRMED,
+        ReservationStatus.ARRIVED,
         ReservationStatus.SEATED,
         ReservationStatus.COMPLETED
     );
@@ -47,6 +49,7 @@ public class PlanningSnapshotService {
     private static final Set<ReservationStatus> ASSIGNABLE_STATUSES = EnumSet.of(
         ReservationStatus.PENDING,
         ReservationStatus.CONFIRMED,
+        ReservationStatus.ARRIVED,
         ReservationStatus.SEATED
     );
 
@@ -199,7 +202,16 @@ public class PlanningSnapshotService {
             assignment.getTable() == null ? null : assignment.getTable().getId(),
             assignment.getTable() == null ? null : assignment.getTable().getCode(),
             assignment.getTableCombination() == null ? null : assignment.getTableCombination().getId(),
-            assignment.getTableCombination() == null ? null : assignment.getTableCombination().getName()
+            assignment.getTableCombination() == null ? null : assignment.getTableCombination().getName(),
+            assignment.getOperationalCostLevel().name(),
+            assignment.getSetupTimeMinutes(),
+            assignment.getResources().stream().map(resource -> new PlanningAssignedResourceResponse(
+                resource.getStorageResource().getId(),
+                resource.getResourceTypeSnapshot(),
+                resource.getResourceNameSnapshot(),
+                resource.getQuantity(),
+                resource.getCapacityPerUnitSnapshot()
+            )).toList()
         );
     }
 
@@ -222,7 +234,10 @@ public class PlanningSnapshotService {
             null,
             null,
             null,
-            null
+            null,
+            null,
+            0,
+            List.of()
         );
     }
 

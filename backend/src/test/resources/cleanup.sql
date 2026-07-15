@@ -18,3 +18,5 @@ TRUNCATE TABLE
     app_user,
     restaurant
 CASCADE;
+TRUNCATE TABLE reservation_assignment_resource RESTART IDENTITY CASCADE;
+TRUNCATE TABLE table_combination_resource_requirement RESTART IDENTITY CASCADE;
