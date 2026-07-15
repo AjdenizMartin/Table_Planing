@@ -7,6 +7,8 @@ umask 077
 
 backup_dir="${BACKUP_DIR:-./backups}"
 retention_days="${BACKUP_RETENTION_DAYS:-14}"
+env_file="${PRODUCTION_ENV_FILE:-.env.production}"
+compose_file="${PRODUCTION_COMPOSE_FILE:-docker-compose.prod.yml}"
 timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
 backup_path="$backup_dir/${POSTGRES_DB}_${timestamp}.dump"
 temporary_path="$backup_path.tmp"
@@ -18,7 +20,7 @@ trap cleanup EXIT
 trap 'exit 1' INT TERM
 
 mkdir -p "$backup_dir"
-docker compose --env-file .env.production -f docker-compose.prod.yml exec -T postgres \
+docker compose --env-file "$env_file" -f "$compose_file" exec -T postgres \
   pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --format=custom --no-owner --no-acl > "$temporary_path"
 
 if [ ! -s "$temporary_path" ]; then

@@ -10,7 +10,9 @@ fi
 : "${POSTGRES_USER:?POSTGRES_USER is required}"
 
 backup_path="$1"
-compose="docker compose --env-file .env.production -f docker-compose.prod.yml"
+env_file="${PRODUCTION_ENV_FILE:-.env.production}"
+compose_file="${PRODUCTION_COMPOSE_FILE:-docker-compose.prod.yml}"
+compose="docker compose --env-file $env_file -f $compose_file"
 backend_stopped=0
 
 restart_backend() {

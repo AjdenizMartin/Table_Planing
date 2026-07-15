@@ -5,11 +5,12 @@
 1. Preparar Ubuntu 24.04 LTS con 2 vCPU, 4 GB RAM, 80 GB SSD, Docker, Compose, `jq` y `restic`.
 2. Restringir SSH a claves y publicar solo 80/443.
 3. Crear DNS `A` para `APP_DOMAIN` apuntando al VPS.
-4. Copiar `.env.production.example` a `.env.production` y completar dominio, email, rutas y repositorio Restic.
+4. Copiar `.env.production.example` a `.env.production`, completar dominio, tag, email, rutas y repositorio Restic, y aplicar `chmod 600 .env.production`.
 5. Crear todos los archivos bajo `secrets/` con valores aleatorios y permisos `0600`.
-6. Crear `logs/`, hacer checkout de `v0.1.0-rc.1` y no desplegar una rama flotante.
-7. Exportar `.env.production` y ejecutar `scripts/bootstrap-tls.sh` antes del primer arranque.
-8. Validar Compose y levantar el tag aprobado:
+6. Crear `logs/`, hacer checkout de `v0.1.0-rc.2` y no desplegar una rama flotante.
+7. Ejecutar `./scripts/production-preflight.sh`; debe validar Ubuntu, tag, DNS, secretos, disco, puertos y Compose.
+8. Exportar `.env.production` y ejecutar `scripts/bootstrap-tls.sh` antes del primer arranque.
+9. Validar Compose y levantar el tag aprobado:
 
 ```bash
 docker compose --env-file .env.production -f docker-compose.prod.yml config --quiet
@@ -62,6 +63,16 @@ Ejecutar diariamente desde cron:
 ```
 
 La retencion por defecto es 14 diarias, 8 semanales y 12 mensuales. Una copia en el mismo VPS no cuenta como recuperacion.
+
+## Observabilidad operativa
+
+Despues de crear el primer backup local y externo, ejecutar `./scripts/pilot-ops-check.sh`. Comprueba los tres contenedores, HTTPS, registro bloqueado, vencimiento TLS, disco y backups local/Restic. Configurar `OPS_ALERT_WEBHOOK_URL_FILE` con un archivo `0600` para enviar fallos sin incluir secretos.
+
+Ejecutar cada hora y registrar la salida:
+
+```text
+5 * * * * cd /opt/table-planning && set -a && . ./.env.production && set +a && ./scripts/pilot-ops-check.sh >> logs/ops-check.log 2>&1
+```
 
 ## Rendimiento
 

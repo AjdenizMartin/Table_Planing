@@ -110,6 +110,7 @@ Endpoints:
 - `POST /api/auth/refresh` - `IMPLEMENTED`
 - `POST /api/auth/logout` - `IMPLEMENTED`
 - `GET /api/auth/me` - `IMPLEMENTED`
+- `POST /api/auth/register` - `DEV_ONLY`; el controlador no se registra con perfil `prod` y Nginx devuelve `404`
 
 Payloads iniciales esperados:
 

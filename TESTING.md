@@ -295,6 +295,15 @@ Antes del piloto tambien se ejecuta `PilotOnboardingIntegrationTest`: comprueba 
 
 Playwright cubre viewports tablet con Chromium, pero no sustituye el UAT sobre una tablet Android fisica. Ese gate manual incluye tactil, teclado virtual, rotacion, zona horaria y reconexion WebSocket.
 
+## Validacion de produccion
+
+- `ProductionRegistrationIntegrationTest` arranca con perfil `prod` y exige `404` en `/api/auth/register`.
+- los tests frontend verifican que un build productivo no puede habilitar la ruta de registro.
+- el build productivo no debe contener credenciales demo.
+- `scripts/production-preflight.sh` rechaza un checkout sin tag exacto, secretos inseguros, DNS ausente, poco disco o Compose invalido.
+- `scripts/pilot-ops-check.sh` falla ante contenedores no saludables, HTTPS/registro/TLS incorrectos, disco alto o backups ausentes.
+- la imagen backend debe ejecutar como usuario no root y arrancar con filesystem de solo lectura y capacidades eliminadas.
+
 ## Definition of done para testing
 
 Antes de cerrar una funcionalidad importante:
