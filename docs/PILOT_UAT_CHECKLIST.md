@@ -7,6 +7,7 @@
 - [ ] Inventario y 20 combinaciones revisados por manager.
 - [ ] Owner, manager y staff acceden con cuentas no compartidas.
 - [ ] Credenciales demo y registro publico no estan disponibles.
+- [ ] Onboarding repetido no duplica usuarios ni cambia contrasenas.
 
 ## Flujo manager
 
@@ -23,6 +24,8 @@
 - [ ] Ver planning, mesa, preparacion y recursos asignados.
 - [ ] Cambiar llegada, sentado y completado segun permisos.
 - [ ] Confirmar que no aparece la accion de aprobar sugerencias.
+- [ ] Completar el flujo en Chrome sobre tablet Android real.
+- [ ] Validar tactil, teclado virtual, rotacion y reconexion tras suspender la tablet.
 
 ## Resiliencia
 
@@ -30,8 +33,10 @@
 - [ ] Planning responde por debajo de 2 s en VPS.
 - [ ] Sugerencias responden por debajo de 1 s en VPS.
 - [ ] Backup diario creado y copiado fuera del VPS.
+- [ ] Restic valida el repositorio cifrado sin errores.
 - [ ] Restauracion realizada y documentada.
 - [ ] Rollback ensayado con la version anterior.
+- [ ] Dos turnos paralelos completados usando el procedimiento manual como respaldo.
 - [ ] CI completamente verde y cero incidencias criticas abiertas.
 
 Firmas: owner, manager, responsable tecnico y fecha de aprobacion.

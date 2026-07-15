@@ -18,4 +18,4 @@ read_secret() {
 read_secret SPRING_DATASOURCE_PASSWORD
 read_secret APP_SECURITY_JWT_SECRET
 
-exec java -jar /app/app.jar
+exec java -jar /app/app.jar "$@"

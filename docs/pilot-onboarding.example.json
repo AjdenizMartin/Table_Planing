@@ -1,0 +1,28 @@
+{
+  "restaurant": {
+    "name": "Pilot Restaurant",
+    "slug": "pilot-restaurant",
+    "timezone": "Europe/Dublin",
+    "phone": "+35310000000"
+  },
+  "users": [
+    {
+      "name": "Pilot Owner",
+      "email": "owner@example.com",
+      "role": "RESTAURANT_OWNER",
+      "passwordFile": "/run/onboarding/owner_password.txt"
+    },
+    {
+      "name": "Pilot Manager",
+      "email": "manager@example.com",
+      "role": "MANAGER",
+      "passwordFile": "/run/onboarding/manager_password.txt"
+    },
+    {
+      "name": "Pilot Staff",
+      "email": "staff@example.com",
+      "role": "STAFF",
+      "passwordFile": "/run/onboarding/staff_password.txt"
+    }
+  ]
+}

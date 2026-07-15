@@ -31,6 +31,7 @@ docker compose up --build
 - `.env.production.example`: nombres de variables sin secretos.
 - `secrets/postgres_password.txt`: password PostgreSQL, ignorado por Git.
 - `secrets/jwt_secret.txt`: secreto JWT aleatorio largo, ignorado por Git.
+- `secrets/restic_password.txt` y credenciales S3: cifrado y acceso al backup externo.
 - `frontend/nginx/default.conf.template`: TLS y proxy.
 - `frontend/Dockerfile.prod`: build estatico multi-stage.
 
@@ -38,9 +39,9 @@ No usar los valores demo ni el compose de desarrollo en el VPS.
 
 ## Primer despliegue
 
-1. Instalar Docker Engine, Compose plugin y configurar firewall para SSH, 80 y 443.
+1. Instalar Docker Engine, Compose plugin, `jq`, `restic` y configurar firewall para SSH, 80 y 443.
 2. Crear DNS para el dominio del piloto.
-3. Preparar `.env.production` y los dos archivos de secretos.
+3. Preparar `.env.production` y los secretos de PostgreSQL, JWT y backup externo.
 4. Obtener certificado con `scripts/bootstrap-tls.sh`.
 5. Validar configuracion:
 
@@ -61,6 +62,8 @@ docker compose --env-file .env.production -f docker-compose.prod.yml ps
 curl --fail https://reservas.example.com/api/system/ping
 ```
 
+8. Ejecutar el onboarding administrativo descrito en `docs/PILOT_RUNBOOK.md`. No habilitar temporalmente `/api/auth/register` ni insertar usuarios mediante SQL.
+
 Flyway aplica V1-V17 al arrancar el backend. El backend no se considera saludable hasta terminar migraciones y responder `/actuator/health` dentro de la red.
 
 ## Actualizacion
@@ -76,7 +79,7 @@ No mezclar una actualizacion de imagen con cambios manuales de esquema.
 
 ## Backup y restauracion
 
-`scripts/backup-postgres.sh` genera un dump custom, elimina copias locales vencidas y se puede ejecutar por cron. Los dumps deben replicarse fuera del VPS.
+`scripts/backup-postgres.sh` genera de forma atomica un dump custom con permisos privados y elimina copias locales vencidas. `scripts/backup-offsite.sh` cifra y replica esos dumps mediante Restic hacia almacenamiento S3 compatible.
 
 `scripts/restore-postgres.sh <backup.dump>` detiene backend, restaura con `pg_restore --clean --if-exists` y vuelve a arrancarlo. Toda restauracion requiere ventana de mantenimiento y comprobacion funcional posterior.
 
@@ -90,6 +93,10 @@ El procedimiento completo, renovacion TLS, incidencias y rollback vive en [docs/
 - alerta de espacio en disco y resultado del backup diario
 
 Actuator externo no se publica; el health del backend se consulta dentro de Compose.
+
+## Clientes Android
+
+Ubuntu ejecuta el servidor. Las tablets Android acceden por Chrome a la URL HTTPS y no necesitan Docker ni una APK. El piloto requiere validar en un dispositivo real tactil, teclado virtual, rotacion, zona horaria y reconexion WebSocket. No hay soporte offline en esta version.
 
 ## Limites del piloto
 

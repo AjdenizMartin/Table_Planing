@@ -291,6 +291,10 @@ Pipeline actual:
 5. ejecutar Playwright en escritorio y tablet
 6. construir imagenes Docker backend, frontend dev y frontend prod
 
+Antes del piloto tambien se ejecuta `PilotOnboardingIntegrationTest`: comprueba creacion auditada, repeticion idempotente, rollback por conflicto y rechazo de archivos de contrasena sin permisos `0600`.
+
+Playwright cubre viewports tablet con Chromium, pero no sustituye el UAT sobre una tablet Android fisica. Ese gate manual incluye tactil, teclado virtual, rotacion, zona horaria y reconexion WebSocket.
+
 ## Definition of done para testing
 
 Antes de cerrar una funcionalidad importante:
