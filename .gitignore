@@ -18,6 +18,8 @@ logs/
 secrets/
 backups/
 deploy/letsencrypt/
+/onboarding/
+pilot-fixture-result.env
 
 # Java
 backend/target/

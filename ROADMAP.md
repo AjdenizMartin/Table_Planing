@@ -314,7 +314,8 @@ Para demostrar valor en el problema real de mesas moviles y almacen sin romper e
 **Estado:** `READY_FOR_UAT`
 
 - E2E criticos automatizados y script de rendimiento
-- runbook, onboarding y checklist UAT disponibles
+- runner de onboarding transaccional, fixture de 150 reservas y checklist UAT disponibles
+- renovacion TLS y backup externo cifrado automatizables
 - pendientes externos: dominio, certificados, datos reales, cuentas y ejecucion UAT en VPS
 
 Los planes de montaje, tareas operativas y editor visual avanzado siguen fuera del piloto. La seleccion explicita del manager actua como aprobacion.

@@ -2,68 +2,116 @@
 
 ## Preparacion
 
-1. Crear DNS `A` para `APP_DOMAIN` apuntando al VPS.
-2. Copiar `.env.production.example` a `.env.production` y completar dominio, email y rutas.
-3. Crear `secrets/postgres_password.txt` y `secrets/jwt_secret.txt` con valores aleatorios distintos de los ejemplos.
-4. Exportar las variables de `.env.production` y ejecutar `scripts/bootstrap-tls.sh` antes del primer arranque.
-5. Levantar con `docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build`.
-6. Verificar `docker compose --env-file .env.production -f docker-compose.prod.yml ps` y `https://$APP_DOMAIN`.
+1. Preparar Ubuntu 24.04 LTS con 2 vCPU, 4 GB RAM, 80 GB SSD, Docker, Compose, `jq` y `restic`.
+2. Restringir SSH a claves y publicar solo 80/443.
+3. Crear DNS `A` para `APP_DOMAIN` apuntando al VPS.
+4. Copiar `.env.production.example` a `.env.production` y completar dominio, email, rutas y repositorio Restic.
+5. Crear todos los archivos bajo `secrets/` con valores aleatorios y permisos `0600`.
+6. Crear `logs/`, hacer checkout de `v0.1.0-rc.1` y no desplegar una rama flotante.
+7. Exportar `.env.production` y ejecutar `scripts/bootstrap-tls.sh` antes del primer arranque.
+8. Validar Compose y levantar el tag aprobado:
 
-Produccion no expone PostgreSQL ni backend, no ejecuta `DevBootstrapDataInitializer` y Nginx bloquea el registro publico. Las cuentas se crean durante onboarding administrativo.
+```bash
+docker compose --env-file .env.production -f docker-compose.prod.yml config --quiet
+docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build
+docker compose --env-file .env.production -f docker-compose.prod.yml ps
+curl --fail "https://$APP_DOMAIN/api/system/ping"
+```
 
-## Onboarding del restaurante
+Produccion no expone PostgreSQL ni backend, no ejecuta datos demo y Nginx devuelve `404` para el registro publico.
 
-Orden obligatorio:
+## Onboarding administrativo
 
-1. Owner, manager y staff con roles correctos.
-2. Restaurante y zona horaria.
-3. Salones y dimensiones de layout.
-4. Mesas operativas, capacidades, tipo y coordenadas.
-5. Inventario con cantidad, capacidad por unidad y preparacion.
-6. Combinaciones estandar.
-7. Combinaciones avanzadas, coste y requisitos.
-8. Reserva de prueba por cada estado operativo.
+El alta inicial no usa una API publica. Preparar un directorio ignorado por Git:
 
-Validar con tres usuarios que staff no puede aplicar sugerencias y manager/owner si.
+```bash
+mkdir -p onboarding
+cp docs/pilot-onboarding.example.json onboarding/manifest.json
+chmod 600 onboarding/manifest.json
+for role in owner manager staff; do
+  { printf 'Aa1!'; openssl rand -base64 24 | tr -d '\n'; printf '\n'; } > "onboarding/${role}_password.txt"
+  chmod 600 "onboarding/${role}_password.txt"
+done
+```
 
-## Backup
+Editar nombres y emails, conservando rutas `/run/onboarding/...` dentro del manifiesto. Ejecutar:
+
+```bash
+./scripts/pilot-onboard.sh
+```
+
+El comando usa `prod,onboarding`, valida un unico owner, roles permitidos, zona horaria, conflictos y permisos `0600`. Acepta `RESTAURANT_OWNER`, `MANAGER`, `WAITER` y el alias `STAFF`, que se persiste como `WAITER`. Es transaccional, no resetea contrasenas existentes y audita actor, usuarios y restaurante. Una repeticion puede omitir `passwordFile` para usuarios ya verificados.
+
+Despues, cargar desde la UI y en este orden: salones, 40 mesas, inventario, combinaciones estandar, 20 combinaciones totales y reservas de prueba. Confirmar con las tres cuentas que staff (`WAITER`) no puede aprobar sugerencias.
+
+## Backup externo
+
+Inicializar una sola vez el repositorio cifrado:
+
+```bash
+set -a && . ./.env.production && set +a
+export AWS_ACCESS_KEY_ID="$(cat "$AWS_ACCESS_KEY_ID_FILE")"
+export AWS_SECRET_ACCESS_KEY="$(cat "$AWS_SECRET_ACCESS_KEY_FILE")"
+restic init
+```
 
 Ejecutar diariamente desde cron:
 
 ```text
-15 3 * * * cd /opt/table-planning && set -a && . ./.env.production && set +a && ./scripts/backup-postgres.sh
+15 3 * * * cd /opt/table-planning && set -a && . ./.env.production && set +a && ./scripts/backup-postgres.sh && ./scripts/backup-offsite.sh >> logs/backup.log 2>&1
 ```
 
-La retencion se controla con `BACKUP_RETENTION_DAYS`. Copiar los dumps fuera del VPS con el mecanismo del proveedor. Una copia en el mismo disco no cubre perdida del servidor.
+La retencion por defecto es 14 diarias, 8 semanales y 12 mensuales. Una copia en el mismo VPS no cuenta como recuperacion.
+
+## Rendimiento
+
+Crear primero un backup base. La carga es deliberadamente mutante y debe restaurarse al terminar:
+
+```bash
+export PILOT_BASE_URL="https://$APP_DOMAIN"
+export PILOT_OWNER_EMAIL="owner@example.com"
+export PILOT_OWNER_PASSWORD_FILE="./onboarding/owner_password.txt"
+export PILOT_RESTAURANT_ID="<id>"
+export PILOT_DATE="<YYYY-MM-DD>"
+export PILOT_FIXTURE_CONFIRM=CREATE_SYNTHETIC_DATA
+./scripts/pilot-load-fixture.sh
+set -a && . ./pilot-fixture-result.env && set +a
+./scripts/pilot-performance-smoke.sh
+```
+
+El gate exige diez respuestas de planning por debajo de 2 s y diez de sugerencias por debajo de 1 s. Restaurar el backup base tras guardar resultados.
 
 ## Restauracion
 
-1. Activar ventana de mantenimiento.
-2. Exportar `.env.production` en la shell.
-3. Ejecutar `./scripts/restore-postgres.sh backups/<archivo>.dump`.
-4. Confirmar health de backend y acceso de manager.
-5. Comparar conteos de restaurantes, reservas y asignaciones.
-6. Registrar fecha, operador, backup y resultado.
+1. Activar ventana de mantenimiento y exportar `.env.production`.
+2. Ejecutar `./scripts/restore-postgres.sh backups/<archivo>.dump`.
+3. Confirmar health, login de manager y conteos de restaurantes, reservas y asignaciones.
+4. Registrar fecha, operador, backup y resultado.
 
 Probar restauracion antes de UAT y mensualmente durante el piloto.
 
 ## Renovacion TLS
 
-Renovar el certificado en una ventana breve con Certbot y recargar frontend. Verificar fecha de expiracion con `openssl s_client` o el monitor del proveedor. Mantener alertas al menos 14 dias antes del vencimiento.
+El challenge usa el webroot servido por Nginx. Programar una comprobacion diaria:
+
+```text
+20 4 * * * cd /opt/table-planning && set -a && . ./.env.production && set +a && ./scripts/renew-tls.sh >> logs/tls.log 2>&1
+```
+
+Mantener ademas una alerta externa al menos 14 dias antes del vencimiento.
 
 ## Rollback
 
 1. Detener frontend y backend; mantener PostgreSQL.
-2. Volver a la imagen/commit anterior.
-3. Si la migracion no es compatible, restaurar el backup previo al despliegue.
-4. Arrancar backend, comprobar Flyway y health.
-5. Arrancar frontend y ejecutar el smoke de manager/staff.
-
-Nunca editar manualmente `flyway_schema_history`.
+2. Volver al tag anterior.
+3. Si las migraciones no son compatibles, restaurar el backup previo.
+4. Arrancar backend, comprobar Flyway/health y despues frontend.
+5. Ejecutar smoke de manager y staff. Nunca editar `flyway_schema_history`.
 
 ## Incidencias
 
-- Inventario agotado: actualizar sugerencias; no forzar SQL ni duplicar asignaciones.
+- Inventario agotado: actualizar sugerencias; no forzar SQL.
 - Conflicto concurrente: la segunda seleccion recibe `409`; recargar y elegir otra opcion.
 - Backend no saludable: revisar logs y conectividad interna con PostgreSQL.
-- Realtime caido: la operacion REST sigue siendo valida; recargar planning mientras se recupera WebSocket.
+- Realtime caido: REST sigue siendo valido; recargar planning mientras se recupera WebSocket.
+- Android sin conexion: volver al procedimiento manual; esta version no ofrece modo offline.

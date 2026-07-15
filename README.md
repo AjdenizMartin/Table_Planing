@@ -157,6 +157,7 @@ Implementado actualmente:
 - insights explicativos de planning
 - top 3 manual con recursos, coste y preparacion
 - tests Vitest/Testing Library y Playwright a 768/1024 px
+- onboarding administrativo sin endpoint publico y operaciones de backup/TLS para el piloto
 
 Planificado o parcial:
 
