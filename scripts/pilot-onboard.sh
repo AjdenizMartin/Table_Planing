@@ -16,11 +16,39 @@ case "$onboarding_dir" in
   *) onboarding_mount="$(pwd)/$onboarding_dir" ;;
 esac
 
+staging_volume="table-planning-onboarding-$(id -u)-$$"
+cleanup() {
+  docker volume rm -f "$staging_volume" > /dev/null 2>&1 || true
+}
+trap cleanup EXIT HUP INT TERM
+
+docker volume create "$staging_volume" > /dev/null
+docker compose --env-file "$env_file" -f "$compose_file" run \
+  --rm \
+  --no-deps \
+  --user 0:0 \
+  --cap-add CHOWN \
+  --entrypoint /bin/sh \
+  -v "$onboarding_mount:/source:ro" \
+  -v "$staging_volume:/target" \
+  backend \
+  -c '
+    set -eu
+    cp /source/manifest.json /target/manifest.json
+    for password_file in /source/*_password.txt; do
+      [ -e "$password_file" ] || continue
+      cp "$password_file" "/target/$(basename "$password_file")"
+    done
+    chown -R 10001:10001 /target
+    find /target -type d -exec chmod 700 {} +
+    find /target -type f -exec chmod 600 {} +
+  '
+
 docker compose --env-file "$env_file" -f "$compose_file" run \
   --rm \
   --no-deps \
   -e SPRING_PROFILES_ACTIVE=prod,onboarding \
   -e APP_ONBOARDING_MANIFEST=/run/onboarding/manifest.json \
   -e SERVER_PORT=0 \
-  -v "$onboarding_mount:/run/onboarding:ro" \
+  -v "$staging_volume:/run/onboarding:ro" \
   backend
