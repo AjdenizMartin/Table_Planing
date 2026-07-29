@@ -19,14 +19,14 @@ docker compose up --build
 `docker-compose.prod.yml` contiene:
 
 - PostgreSQL 16 sin puerto publico y volumen persistente.
-- backend Spring Boot sin privilegios, con perfil `prod`, filesystem de solo lectura, health check y secretos montados.
+- backend Spring Boot con perfil `prod`, filesystem de solo lectura, health check y secretos montados. El entrypoint usa capacidades minimas para leerlos y cambia inmediatamente al usuario no privilegiado, sin conservar capacidades.
 - frontend compilado con Node y servido por Nginx.
 - proxy de mismo origen para `/api` y `/ws`.
 - HTTP redirigido a HTTPS, TLS 1.2/1.3 y HSTS.
 - limitacion de login y registro publico ausente tanto en backend como en frontend productivos.
 - CSP y cabeceras contra framing, sniffing y acceso a camara, microfono o geolocalizacion.
 - Nginx como unico servicio en la red perimetral; backend y PostgreSQL exclusivamente en la red interna.
-- capacidades eliminadas en backend, rotacion de logs y reinicio `unless-stopped`.
+- capacidades eliminadas antes de ejecutar Java en backend, rotacion de logs y reinicio `unless-stopped`.
 
 ## Configuracion
 

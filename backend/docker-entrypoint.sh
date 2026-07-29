@@ -18,4 +18,12 @@ read_secret() {
 read_secret SPRING_DATASOURCE_PASSWORD
 read_secret APP_SECURITY_JWT_SECRET
 
-exec java -jar /app/app.jar "$@"
+exec setpriv \
+  --reuid=10001 \
+  --regid=10001 \
+  --clear-groups \
+  --bounding-set=-all \
+  --inh-caps=-all \
+  --ambient-caps=-all \
+  --no-new-privs \
+  java -jar /app/app.jar "$@"

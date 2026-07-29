@@ -78,5 +78,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: docker build --tag table-planning-backend:ci backend
+      - run: ./scripts/test-backend-container-security.sh table-planning-backend:ci
       - run: docker build --tag table-planning-frontend:ci frontend
       - run: docker build --file frontend/Dockerfile.prod --tag table-planning-frontend-prod:ci frontend
