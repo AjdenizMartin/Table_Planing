@@ -7,7 +7,7 @@
 3. Crear DNS `A` para `APP_DOMAIN` apuntando al VPS.
 4. Copiar `.env.production.example` a `.env.production`, completar dominio, tag, email, rutas y repositorio Restic, y aplicar `chmod 600 .env.production`.
 5. Crear todos los archivos bajo `secrets/` con valores aleatorios y permisos `0600`.
-6. Crear `logs/`, hacer checkout de `v0.1.0-rc.4` y no desplegar una rama flotante.
+6. Crear `logs/`, hacer checkout de `v0.1.0-rc.5` y no desplegar una rama flotante.
 7. Ejecutar `./scripts/production-preflight.sh`; debe validar Ubuntu, tag, DNS, secretos, disco, puertos y Compose.
 8. Exportar `.env.production` y ejecutar `scripts/bootstrap-tls.sh` antes del primer arranque.
 9. Validar Compose y levantar el tag aprobado:
@@ -41,7 +41,7 @@ Editar nombres y emails, conservando rutas `/run/onboarding/...` dentro del mani
 ./scripts/pilot-onboard.sh
 ```
 
-El comando usa `prod,onboarding`, valida un unico owner, roles permitidos, zona horaria, conflictos y permisos `0600`. Acepta `RESTAURANT_OWNER`, `MANAGER`, `WAITER` y el alias `STAFF`, que se persiste como `WAITER`. Es transaccional, no resetea contrasenas existentes y audita actor, usuarios y restaurante. Una repeticion puede omitir `passwordFile` para usuarios ya verificados.
+El comando copia los archivos `0600` a un volumen Docker privado y efimero propiedad del UID `10001`, usa `prod,onboarding` y elimina el volumen al terminar. Valida un unico owner, roles permitidos, zona horaria, conflictos y permisos. Acepta `RESTAURANT_OWNER`, `MANAGER`, `WAITER` y el alias `STAFF`, que se persiste como `WAITER`. Es transaccional, no resetea contrasenas existentes y audita actor, usuarios y restaurante. Una repeticion puede omitir `passwordFile` para usuarios ya verificados.
 
 Despues, cargar desde la UI y en este orden: salones, 40 mesas, inventario, combinaciones estandar, 20 combinaciones totales y reservas de prueba. Confirmar con las tres cuentas que staff (`WAITER`) no puede aprobar sugerencias.
 
