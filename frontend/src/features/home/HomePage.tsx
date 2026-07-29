@@ -1,70 +1,87 @@
+import {
+  CalendarPlus,
+  Map,
+  Search,
+  Sparkles,
+  Users,
+} from "lucide-react";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/features/auth/context/AuthContext";
+import { useI18n } from "@/features/i18n/I18nProvider";
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
+const quickActions = [
+  {
+    to: "/planning",
+    label: "Abrir planning",
+    icon: Sparkles,
+    color: "text-emerald-300 bg-emerald-400/10",
+  },
+  {
+    to: "/reservations",
+    label: "Nueva reserva",
+    icon: CalendarPlus,
+    color: "text-sky-300 bg-sky-400/10",
+  },
+  {
+    to: "/customers",
+    label: "Buscar cliente",
+    icon: Search,
+    color: "text-amber-300 bg-amber-400/10",
+  },
+  {
+    to: "/settings/layout",
+    label: "Configurar sala",
+    icon: Map,
+    color: "text-violet-300 bg-violet-400/10",
+  },
+];
 
 export function HomePage() {
   const { session } = useAuth();
+  const { t } = useI18n();
   const activeRestaurant =
     session.restaurants.find(
       (restaurant) => restaurant.id === session.activeRestaurantId,
     ) ?? null;
 
   return (
-    <section className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
-      <div className="rounded-3xl border border-white/10 bg-white/5 p-8 shadow-2xl shadow-slate-950/40">
-        <p className="mb-3 text-sm uppercase tracking-[0.25em] text-brand-300">
-          Sesion Activa
-        </p>
-        <h2 className="max-w-2xl text-4xl font-semibold tracking-tight text-white">
-          La autenticacion del frontend ya puede proteger rutas y fijar restaurante activo.
-        </h2>
-        <p className="mt-4 max-w-2xl text-base leading-7 text-slate-300">
-          Esta pantalla ya vive dentro de una ruta protegida. Ya puedes moverte
-          entre configuracion, clientes, reservas y planning usando el contexto
-          del restaurante activo.
-        </p>
-
-        <div className="mt-8 grid gap-4 sm:grid-cols-2">
-          <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
-            <p className="text-xs uppercase tracking-[0.25em] text-slate-500">
-              Usuario
-            </p>
-            <p className="mt-2 text-lg font-semibold text-white">
-              {session.user?.name}
-            </p>
-            <p className="mt-1 text-sm text-slate-400">{session.user?.email}</p>
-          </div>
-
-          <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
-            <p className="text-xs uppercase tracking-[0.25em] text-slate-500">
-              Restaurante activo
-            </p>
-            <p className="mt-2 text-lg font-semibold text-white">
-              {activeRestaurant?.name ?? "Pendiente de seleccionar"}
-            </p>
-            <p className="mt-1 text-sm text-slate-400">
-              {activeRestaurant?.roles.join(", ") ?? "Sin contexto seleccionado"}
-            </p>
-          </div>
+    <section className="grid gap-6">
+      <header className="flex flex-col gap-2 border-b border-white/8 pb-5 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-sm text-slate-500">{t("Hoy")}</p>
+          <h1 className="mt-1 text-2xl font-semibold text-white sm:text-3xl">
+            {activeRestaurant?.name ?? t("Sin restaurante seleccionado")}
+          </h1>
         </div>
-      </div>
+        <div className="flex items-center gap-3 text-sm text-slate-400">
+          <Users className="h-4 w-4" />
+          <span>{session.user?.name}</span>
+        </div>
+      </header>
 
-      <div className="rounded-3xl border border-white/10 bg-slate-900/70 p-6">
-        <h3 className="text-lg font-semibold text-white">Entorno</h3>
-        <dl className="mt-4 space-y-3 text-sm text-slate-300">
-          <div>
-            <dt className="text-slate-500">API base URL</dt>
-            <dd className="mt-1 break-all text-brand-200">{apiBaseUrl}</dd>
-          </div>
-          <div>
-            <dt className="text-slate-500">Estado esperado del backend</dt>
-            <dd className="mt-1">`/api/auth/me` con JWT y `X-Restaurant-Id`</dd>
-          </div>
-          <div>
-            <dt className="text-slate-500">Siguiente modulo</dt>
-            <dd className="mt-1">Iterar sobre drag and drop y asignacion avanzada</dd>
-          </div>
-        </dl>
+      <div>
+        <h2 className="text-sm font-semibold text-slate-300">
+          {t("Accesos rapidos")}
+        </h2>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {quickActions.map((action) => {
+            const Icon = action.icon;
+            return (
+              <Link
+                key={action.to}
+                to={action.to}
+                className="group flex min-h-24 items-center gap-4 rounded-lg border border-white/8 bg-[#111614] p-4 transition hover:border-white/15 hover:bg-[#151b18]"
+              >
+                <span className={`grid h-10 w-10 place-items-center rounded-lg ${action.color}`}>
+                  <Icon className="h-5 w-5" />
+                </span>
+                <span className="text-sm font-semibold text-white">
+                  {t(action.label)}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
       </div>
     </section>
   );

@@ -7,6 +7,7 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -62,5 +63,15 @@ public class CustomerController {
         Authentication authentication
     ) {
         return customerService.update(restaurantId, customerId, request, (AuthenticatedUser) authentication.getPrincipal());
+    }
+
+    @DeleteMapping("/{customerId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(
+        @PathVariable Long restaurantId,
+        @PathVariable Long customerId,
+        Authentication authentication
+    ) {
+        customerService.delete(restaurantId, customerId, (AuthenticatedUser) authentication.getPrincipal());
     }
 }

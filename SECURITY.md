@@ -69,6 +69,7 @@ Alcance:
 | Gestionar combinaciones | Yes | Yes | Limited | No |
 | Gestionar reglas | Yes | Yes | Limited | No |
 | Crear y editar clientes | Yes | Yes | Yes | Limited |
+| Eliminar clientes sin reservas | Yes | Yes | Yes | No |
 | Crear y editar reservas | Yes | Yes | Yes | Limited |
 | Confirmar o cancelar reservas | Yes | Yes | Yes | Limited |
 | Reasignar mesas manualmente | Yes | Yes | Yes | No |
@@ -198,6 +199,13 @@ Esto evita que un endpoint aparente estar protegido pero permita cruces indebido
 
 - lectura de recomendaciones para owner y manager
 - acciones de aplicacion de sugerencias sujetas a permisos de planning
+
+### Customers
+
+- `PLATFORM_ADMIN`, `RESTAURANT_OWNER` y `MANAGER` pueden eliminar clientes
+- `WAITER` mantiene acceso de lectura y no ve la accion de borrado
+- el servicio valida el restaurante objetivo y bloquea el borrado si hay reservas asociadas
+- cada borrado aplicado genera una entrada de auditoria
 
 ## Seguridad de API
 

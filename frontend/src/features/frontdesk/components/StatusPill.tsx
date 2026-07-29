@@ -1,7 +1,9 @@
 import type { ReservationStatus } from "@/features/frontdesk/types";
 import { formatReservationStatus } from "@/features/frontdesk/utils/frontdeskUtils";
+import { useI18n } from "@/features/i18n/I18nProvider";
 
 export function StatusPill({ status }: { status: ReservationStatus }) {
+  const { t } = useI18n();
   const toneByStatus: Record<ReservationStatus, string> = {
     PENDING: "border-amber-400/25 bg-amber-500/10 text-amber-100",
     CONFIRMED: "border-sky-400/25 bg-sky-500/10 text-sky-100",
@@ -15,11 +17,11 @@ export function StatusPill({ status }: { status: ReservationStatus }) {
   return (
     <span
       className={[
-        "inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em]",
+        "inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase",
         toneByStatus[status],
       ].join(" ")}
     >
-      {formatReservationStatus(status)}
+      {t(formatReservationStatus(status))}
     </span>
   );
 }

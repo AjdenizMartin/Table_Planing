@@ -10,6 +10,8 @@ import { notify } from "@/features/notifications/components/NotificationToast";
 import { normalizeTimeForInput } from "@/features/frontdesk/utils/frontdeskUtils";
 import { EditReservationModal } from "@/features/planning/components/EditReservationModal";
 import { AssignmentSuggestionsPanel } from "@/features/planning/components/AssignmentSuggestionsPanel";
+import { X } from "lucide-react";
+import { useI18n } from "@/features/i18n/I18nProvider";
 
 const CHANNEL_LABELS: Record<string, string> = {
   MANUAL: "Manual",
@@ -24,29 +26,29 @@ const CHANNEL_LABELS: Record<string, string> = {
 type ActionKey = "confirm" | "cancel" | "arrived" | "seat" | "complete" | "no-show" | "send-confirmation" | "reminder" | "reassign" | "edit";
 
 const SUCCESS_MESSAGES: Record<ActionKey, string> = {
-  confirm: "Reservation confirmed.",
-  cancel: "Reservation cancelled.",
-  arrived: "Customer marked as arrived.",
-  seat: "Customer marked as seated.",
-  complete: "Reservation completed.",
-  "no-show": "Customer marked as no-show.",
-  "send-confirmation": "Confirmation sent.",
-  reminder: "Reminder sent.",
+  confirm: "Reserva confirmada.",
+  cancel: "Reserva cancelada.",
+  arrived: "Llegada registrada.",
+  seat: "Cliente sentado.",
+  complete: "Reserva completada.",
+  "no-show": "Ausencia registrada.",
+  "send-confirmation": "Confirmacion enviada.",
+  reminder: "Recordatorio enviado.",
   reassign: "Asignacion aplicada.",
   edit: "",
 };
 
 const ACTION_LABELS: Record<ActionKey, string> = {
-  confirm: "Confirm",
-  cancel: "Cancel",
-  arrived: "Mark arrived",
-  seat: "Mark seated",
-  complete: "Mark finished",
-  "no-show": "No-show",
-  "send-confirmation": "Send confirmation",
-  reminder: "Send reminder",
+  confirm: "Confirmar",
+  cancel: "Cancelar",
+  arrived: "Registrar llegada",
+  seat: "Sentar",
+  complete: "Completar",
+  "no-show": "No presentado",
+  "send-confirmation": "Enviar confirmacion",
+  reminder: "Enviar recordatorio",
   reassign: "Ver sugerencias",
-  edit: "Edit details",
+  edit: "Editar reserva",
 };
 
 interface Props {
@@ -85,35 +87,48 @@ function getVisibleActions(status: string, reservation: PlanningReservationSumma
   return actions;
 }
 
-function formatName(reservation: PlanningReservationSummaryResponse, full: ReservationResponse | undefined) {
+function formatName(
+  reservation: PlanningReservationSummaryResponse,
+  full: ReservationResponse | undefined,
+  reservationLabel: string,
+) {
   if (full?.customerFirstName || full?.customerLastName) {
     return [full.customerFirstName, full.customerLastName].filter(Boolean).join(" ");
   }
-  return reservation.customerName || `Reservation #${reservation.reservationId}`;
+  return reservation.customerName || `${reservationLabel} #${reservation.reservationId}`;
 }
 
-function formatPhone(customer: CustomerResponse | undefined, loading: boolean) {
-  if (loading) return "Cargando...";
+function formatPhone(
+  customer: CustomerResponse | undefined,
+  loading: boolean,
+  t: (key: string) => string,
+) {
+  if (loading) return t("Cargando...");
   if (customer?.phone) return customer.phone;
-  return "No registrado";
+  return t("No registrado");
 }
 
-function formatConfirmedAt(reservation: ReservationResponse | undefined) {
+function formatConfirmedAt(
+  reservation: ReservationResponse | undefined,
+  language: "es" | "en",
+  t: (key: string) => string,
+) {
   if (!reservation) return null;
+  const locale = language === "es" ? "es-ES" : "en-GB";
   if (reservation.confirmedAt) {
-    return `Confirmada ${new Date(reservation.confirmedAt).toLocaleString()}`;
+    return `${t("Confirmada")} ${new Date(reservation.confirmedAt).toLocaleString(locale)}`;
   }
   if (reservation.cancelledAt) {
-    return `Cancelada ${new Date(reservation.cancelledAt).toLocaleString()}`;
+    return `${t("Cancelada")} ${new Date(reservation.cancelledAt).toLocaleString(locale)}`;
   }
-  return "Sin confirmar";
+  return t("Sin confirmar");
 }
 
 function OperationalMessage({ label, value }: { label: string; value: string | null }) {
   if (!value) return null;
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-slate-300">
-      <span className="font-semibold uppercase tracking-[0.15em] text-slate-500">{label}:</span>{" "}
+    <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-slate-300">
+      <span className="font-semibold uppercase text-slate-500">{label}:</span>{" "}
       {value}
     </div>
   );
@@ -121,8 +136,8 @@ function OperationalMessage({ label, value }: { label: string; value: string | n
 
 function InfoRow({ label, value }: { label: string; value: string | number | null | undefined }) {
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2.5">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-500">{label}</p>
+    <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2.5">
+      <p className="text-[10px] font-semibold uppercase text-slate-500">{label}</p>
       <p className="mt-0.5 text-sm font-medium text-white">{value ?? "—"}</p>
     </div>
   );
@@ -142,6 +157,7 @@ export function ReservationSidePanel({
   onClose,
 }: Props) {
   const queryClient = useQueryClient();
+  const { t, language } = useI18n();
   const [error, setError] = useState<string | null>(null);
   const [activeAction, setActiveAction] = useState<ActionKey | null>(null);
   const [actionResult, setActionResult] = useState<string | null>(null);
@@ -203,8 +219,8 @@ export function ReservationSidePanel({
     onSuccess: async () => {
       setSuggestionsOpen(false);
       setError(null);
-      setActionResult("Asignacion aplicada y recursos reservados.");
-      notify("Asignacion aplicada.", "");
+      setActionResult(t("Asignacion aplicada y recursos reservados."));
+      notify(t("Asignacion aplicada."), "");
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["planning", restaurantId, selectedDate] }),
         queryClient.invalidateQueries({
@@ -260,8 +276,8 @@ export function ReservationSidePanel({
     onSuccess: (_data, { action }) => {
       setError(null);
       setActiveAction(null);
-      notify(SUCCESS_MESSAGES[action] || "Action completed.", "");
-      setActionResult(SUCCESS_MESSAGES[action] || "Action completed.");
+      notify(t(SUCCESS_MESSAGES[action] || "Accion completada."), "");
+      setActionResult(t(SUCCESS_MESSAGES[action] || "Accion completada."));
 
       queryClient.invalidateQueries({ queryKey: ["planning", restaurantId, selectedDate] });
       if (reservationSummary) {
@@ -301,7 +317,7 @@ export function ReservationSidePanel({
   const isLoading = fullReservationLoading || customerLoading;
 
   function actionButtonClass(actionKey: ActionKey) {
-    const base = "h-12 min-w-0 rounded-xl px-3 text-sm font-semibold transition active:scale-[0.97]";
+    const base = "h-12 min-w-0 rounded-lg px-3 text-sm font-semibold transition active:scale-[0.97]";
     const disabled = activeAction !== null && activeAction !== actionKey;
     const loading = activeAction === actionKey;
 
@@ -328,38 +344,40 @@ export function ReservationSidePanel({
   }
 
   return (
-    <div className="fixed inset-0 z-40 flex justify-center bg-slate-950/55 backdrop-blur-sm lg:justify-end">
+    <div className="fixed inset-0 z-[60] flex justify-center bg-slate-950/55 backdrop-blur-sm lg:justify-end">
       {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
       <div className="hidden flex-1 lg:block" onClick={onClose} />
 
       <aside
         className="flex h-full w-full flex-col overflow-y-auto border-l border-white/10 bg-slate-950 shadow-2xl shadow-black/50 lg:max-w-xl"
         role="dialog"
-        aria-label="Reservation details"
+        aria-label={t("Detalle de reserva")}
       >
         {/* Header */}
         <div className="flex items-start justify-between gap-4 border-b border-white/10 px-5 pb-4 pt-5">
           <div className="min-w-0">
-            <p className="truncate text-xs font-semibold uppercase tracking-[0.25em] text-brand-300">
-              Reserva #{reservationSummary.reservationId}
+            <p className="truncate text-xs font-semibold uppercase text-brand-300">
+              {t("Reserva")} #{reservationSummary.reservationId}
             </p>
             <h2 className="mt-1 truncate text-2xl font-semibold text-white">
-              {isLoading ? "Cargando..." : formatName(reservationSummary, fullReservation)}
+              {isLoading
+                ? t("Cargando...")
+                : formatName(reservationSummary, fullReservation, t("Reserva"))}
             </h2>
           </div>
           <button
             type="button"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-lg text-white transition hover:border-brand-400/40 hover:bg-brand-500/10"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-lg text-white transition hover:border-brand-400/40 hover:bg-brand-500/10"
             onClick={onClose}
-            aria-label="Close panel"
+            aria-label={t("Cerrar")}
           >
-            ✕
+            <X className="h-5 w-5" />
           </button>
         </div>
 
         {isLoading ? (
           <div className="flex flex-1 items-center justify-center p-8">
-            <div className="text-sm text-slate-400">Cargando detalle de la reserva...</div>
+            <div className="text-sm text-slate-400">{t("Cargando detalle de la reserva...")}</div>
           </div>
         ) : (
           <div className="flex-1 space-y-5 px-5 py-5">
@@ -368,52 +386,55 @@ export function ReservationSidePanel({
 
             {/* Error */}
             {error ? (
-              <div className="rounded-3xl border border-rose-300/30 bg-rose-500/10 p-4 text-sm text-rose-100">
+              <div className="rounded-lg border border-rose-300/30 bg-rose-500/10 p-4 text-sm text-rose-100">
                 {error}
               </div>
             ) : null}
 
             {/* Success */}
             {actionResult ? (
-              <div className="rounded-3xl border border-emerald-300/30 bg-emerald-500/10 p-4 text-sm text-emerald-100">
+              <div className="rounded-lg border border-emerald-300/30 bg-emerald-500/10 p-4 text-sm text-emerald-100">
                 {actionResult}
               </div>
             ) : null}
 
             {/* Info grid */}
             <div className="grid grid-cols-2 gap-3">
-              <InfoRow label="Telefono" value={formatPhone(customer, customerLoading)} />
-              <InfoRow label="Comensales" value={reservationSummary.partySize} />
-              <InfoRow label="Fecha" value={reservationSummary.reservationDate} />
-              <InfoRow label="Hora" value={normalizeTimeForInput(reservationSummary.startTime)} />
-              <InfoRow label="Duracion" value={`${reservationSummary.estimatedDurationMin} min`} />
               <InfoRow
-                label="Mesa"
-                value={reservationSummary.tableCode ?? reservationSummary.tableCombinationName ?? "Sin asignar"}
+                label={t("Telefono")}
+                value={formatPhone(customer, customerLoading, t)}
               />
-              <InfoRow label="Salon" value={diningRoomName} />
+              <InfoRow label={t("Comensales")} value={reservationSummary.partySize} />
+              <InfoRow label={t("Fecha")} value={reservationSummary.reservationDate} />
+              <InfoRow label={t("Hora")} value={normalizeTimeForInput(reservationSummary.startTime)} />
+              <InfoRow label={t("Duracion")} value={`${reservationSummary.estimatedDurationMin} min`} />
               <InfoRow
-                label="Canal"
+                label={t("Mesa")}
+                value={reservationSummary.tableCode ?? reservationSummary.tableCombinationName ?? t("Sin asignar")}
+              />
+              <InfoRow label={t("Salon")} value={diningRoomName} />
+              <InfoRow
+                label={t("Canal")}
                 value={fullReservation ? (CHANNEL_LABELS[fullReservation.channel] ?? fullReservation.channel) : "—"}
               />
             </div>
 
             {/* Confirmation status */}
             {fullReservation ? (
-              <div className="rounded-3xl border border-white/10 bg-slate-950/55 p-4">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">
-                  Estado de confirmacion
+              <div className="rounded-lg border border-white/10 bg-slate-950/55 p-4">
+                <p className="text-[10px] font-semibold uppercase text-slate-500">
+                  {t("Estado de confirmacion")}
                 </p>
                 <p className="mt-1 text-sm text-slate-200">
-                  {formatConfirmedAt(fullReservation) ?? "Sin confirmar"}
+                  {formatConfirmedAt(fullReservation, language, t) ?? t("Sin confirmar")}
                 </p>
               </div>
             ) : null}
 
             {/* Notes & preferences (merged) */}
             {reservationSummary.specialRequests ? (
-              <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-500">Requests</p>
+              <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] px-4 py-3">
+                <p className="text-[10px] font-semibold uppercase text-slate-500">{t("Peticiones especiales")}</p>
                 <p className="mt-1.5 whitespace-pre-wrap text-sm leading-6 text-slate-200">
                   {reservationSummary.specialRequests}
                 </p>
@@ -422,30 +443,30 @@ export function ReservationSidePanel({
 
             {/* Accessibility badge */}
             {reservationSummary.accessibilityRequired ? (
-              <div className="flex items-center gap-2 rounded-2xl border border-sky-300/20 bg-sky-500/10 px-4 py-2.5 text-sm text-sky-100">
-                Accessibility required
+              <div className="flex items-center gap-2 rounded-lg border border-sky-300/20 bg-sky-500/10 px-4 py-2.5 text-sm text-sky-100">
+                {t("Requiere accesibilidad")}
               </div>
             ) : null}
 
             {/* Operational messages */}
             <div className="grid gap-2">
               <OperationalMessage
-                label="Buffer limpieza"
+                label={t("Limpieza")}
                 value={reservationSummary.cleaningBufferMin ? `${reservationSummary.cleaningBufferMin} min` : null}
               />
               <OperationalMessage
-                label="Tipo de asignacion"
+                label={t("Tipo de asignacion")}
                 value={reservationSummary.assignmentType || (reservationSummary.tableId ? "manual" : null)}
               />
               {reservationSummary.setupTimeMinutes > 0 ? (
                 <OperationalMessage
-                  label="Preparacion"
+                  label={t("Preparacion")}
                   value={`${reservationSummary.setupTimeMinutes} min · coste ${costLabel(reservationSummary.operationalCostLevel)}`}
                 />
               ) : null}
               {reservationSummary.assignedResources.length > 0 ? (
-                <div className="rounded-2xl border border-amber-300/20 bg-amber-500/10 px-3 py-3 text-xs text-amber-50">
-                  <p className="font-semibold uppercase tracking-[0.15em] text-amber-200">Inventario reservado</p>
+                <div className="rounded-lg border border-amber-300/20 bg-amber-500/10 px-3 py-3 text-xs text-amber-50">
+                  <p className="font-semibold uppercase text-amber-200">{t("Inventario reservado")}</p>
                   <div className="mt-2 grid gap-1.5">
                     {reservationSummary.assignedResources.map((resource) => (
                       <p key={resource.storageResourceId}>
@@ -456,9 +477,9 @@ export function ReservationSidePanel({
                 </div>
               ) : null}
               {reservationSummary.tableId === null && reservationSummary.tableCombinationId === null ? (
-                <div className="rounded-2xl border border-violet-300/20 bg-violet-500/10 px-3 py-2 text-xs text-violet-100">
-                  <span className="font-semibold uppercase tracking-[0.15em] text-violet-200">Sin asignar:</span>{" "}
-                  Esta reserva no tiene mesa. Usa "Reassign table".
+                <div className="rounded-lg border border-violet-300/20 bg-violet-500/10 px-3 py-2 text-xs text-violet-100">
+                  <span className="font-semibold uppercase text-violet-200">{t("Sin asignar")}:</span>{" "}
+                  {t("Selecciona una sugerencia para asignar mesa.")}
                 </div>
               ) : null}
             </div>
@@ -476,32 +497,27 @@ export function ReservationSidePanel({
 
             {historyQuery.data && historyQuery.data.length > 0 ? (
               <section className="border-b border-white/10 pb-4">
-                <h3 className="text-sm font-semibold text-white">Historial de asignacion</h3>
+                <h3 className="text-sm font-semibold text-white">{t("Historial de asignacion")}</h3>
                 <div className="mt-3 grid gap-2">
                   {historyQuery.data.slice(0, 4).map((item) => (
                     <div key={item.assignmentId} className="flex items-start justify-between gap-3 text-xs">
                       <div>
                         <p className="text-slate-200">
                           {item.tableCode ?? item.tableCombinationName ?? item.assignmentType}
-                          {item.active ? " · actual" : ""}
+                          {item.active ? ` · ${t("actual")}` : ""}
                         </p>
                         <p className="mt-0.5 text-slate-500">
-                          {item.assignedByName ?? "Sistema"} · {formatDateTime(item.assignedAt)}
+                          {item.assignedByName ?? t("Sistema")} · {formatDateTime(item.assignedAt)}
                         </p>
                       </div>
                       {item.resources.length > 0 ? (
-                        <span className="shrink-0 text-amber-200">{item.resources.length} recursos</span>
+                        <span className="shrink-0 text-amber-200">{item.resources.length} {t("recursos")}</span>
                       ) : null}
                     </div>
                   ))}
                 </div>
               </section>
             ) : null}
-
-            {/* Hour protection notice */}
-            <div className="rounded-3xl border border-amber-300/25 bg-amber-400/10 p-3 text-xs text-amber-100">
-              La hora de esta reserva esta protegida. No se puede cambiar desde este panel.
-            </div>
 
             {/* Actions */}
             <div className="grid grid-cols-2 gap-3 pb-4">
@@ -516,7 +532,7 @@ export function ReservationSidePanel({
                     className={actionButtonClass(actionKey)}
                     onClick={() => handleAction(actionKey)}
                   >
-                    {isLoading ? "Procesando..." : ACTION_LABELS[actionKey]}
+                    {isLoading ? t("Procesando...") : t(ACTION_LABELS[actionKey])}
                   </button>
                 );
               })}

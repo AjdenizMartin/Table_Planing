@@ -38,7 +38,7 @@ const suggestions = [
   suggestion(43, "Salon privado", "TABLE_COMBINATION", true, 62, []),
 ];
 
-test("manager logs in, compares top 3 and applies an advanced option", async ({ page }) => {
+test("manager logs in, compares top 3 and applies an advanced option", async ({ page }, testInfo) => {
   const selections: unknown[] = [];
   await mockApi(page, "MANAGER", selections);
 
@@ -49,6 +49,10 @@ test("manager logs in, compares top 3 and applies an advanced option", async ({ 
   await expect(panel.getByText("Terraza ampliada")).toBeVisible();
   await expect(panel.getByText("2 x Sillas extra")).toBeVisible();
   await expect(panel.getByRole("button", { name: "Aplicar" })).toHaveCount(3);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+    await page.evaluate(() => window.innerWidth),
+  );
+  await captureVisualAudit(page, testInfo.outputPath("assignment-suggestions.png"));
 
   await panel.getByRole("article").filter({ hasText: "Terraza ampliada" }).getByRole("button", { name: "Aplicar" }).click();
   await expect(page.getByText("Asignacion aplicada y recursos reservados.")).toBeVisible();
@@ -59,19 +63,69 @@ test("staff can inspect the reservation but cannot approve suggestions", async (
   await mockApi(page, "WAITER", []);
   await loginAndOpenReservation(page);
 
-  await expect(page.getByRole("dialog", { name: "Reservation details" })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Detalle de reserva" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Ver sugerencias" })).toHaveCount(0);
 });
 
+test("manager can delete a customer after explicit confirmation", async ({ page }, testInfo) => {
+  const deletions: number[] = [];
+  await mockApi(page, "MANAGER", [], deletions);
+
+  await login(page);
+  await openCustomer(page);
+  await expect(page.getByRole("heading", { name: "Ada Rivera" })).toBeVisible();
+  await page.getByRole("button", { name: "Eliminar cliente" }).click();
+  await expect(page.getByRole("alertdialog", { name: "Eliminar cliente" })).toBeVisible();
+  await captureVisualAudit(page, testInfo.outputPath("customer-delete-dialog.png"));
+  await page.getByRole("button", { name: "Eliminar definitivamente" }).click();
+
+  await expect(page).toHaveURL(/\/customers$/);
+  expect(deletions).toEqual([77]);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+    await page.evaluate(() => window.innerWidth),
+  );
+});
+
+test("staff can inspect a customer but cannot delete it", async ({ page }) => {
+  await mockApi(page, "WAITER", []);
+
+  await login(page);
+  await openCustomer(page);
+  await expect(page.getByRole("heading", { name: "Ada Rivera" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Eliminar cliente" })).toHaveCount(0);
+});
+
 async function loginAndOpenReservation(page: Page) {
-  await page.goto("/login");
-  await page.getByRole("button", { name: "Entrar" }).click();
+  await login(page);
   await page.getByRole("link", { name: "Planning", exact: true }).click();
   await page.getByRole("button", { name: /Ada Rivera/ }).first().click();
-  await expect(page.getByRole("dialog", { name: "Reservation details" })).toContainText("Ada Rivera");
+  await expect(page.getByRole("dialog", { name: "Detalle de reserva" })).toContainText("Ada Rivera");
 }
 
-async function mockApi(page: Page, role: "MANAGER" | "WAITER", selections: unknown[]) {
+async function login(page: Page) {
+  await page.goto("/login");
+  await page.getByRole("button", { name: /Spanish|Español/ }).click();
+  await page.getByRole("button", { name: "Entrar" }).click();
+  await expect(page).toHaveURL(/\/planning$/);
+}
+
+async function openCustomer(page: Page) {
+  await page.getByRole("link", { name: "Clientes" }).click();
+  await page.getByRole("link", { name: "Ver ficha" }).click();
+}
+
+async function captureVisualAudit(page: Page, path: string) {
+  if (process.env.VISUAL_AUDIT === "1") {
+    await page.screenshot({ path });
+  }
+}
+
+async function mockApi(
+  page: Page,
+  role: "MANAGER" | "WAITER",
+  selections: unknown[],
+  deletions: number[] = [],
+) {
   await page.route("http://localhost:8080/api/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -85,6 +139,10 @@ async function mockApi(page: Page, role: "MANAGER" | "WAITER", selections: unkno
         user: { id: 5, name: "Pilot User", email: "pilot@example.com" },
         restaurants: [{ id: 1, name: "Pilot Restaurant", slug: "pilot", roles: [role] }],
       });
+    }
+    if (request.method() === "DELETE" && path.endsWith("/customers/77")) {
+      deletions.push(77);
+      return route.fulfill({ status: 204 });
     }
     if (path.endsWith("/notifications/unread-count")) return json(route, { count: 0 });
     if (path.endsWith("/ai/insights/summary")) return json(route, { LOW: 0, MEDIUM: 0, HIGH: 0 });
@@ -119,6 +177,7 @@ async function mockApi(page: Page, role: "MANAGER" | "WAITER", selections: unkno
     if (path.endsWith("/assignment-history")) return json(route, []);
     if (path.endsWith("/reservations/99")) return json(route, fullReservationFixture());
     if (path.endsWith("/customers/77")) return json(route, customerFixture());
+    if (path.endsWith("/customers")) return json(route, [customerFixture()]);
     if (path.includes("/notifications")) return json(route, []);
     if (path === "/api/system/ping") return json(route, { status: "ok" });
 

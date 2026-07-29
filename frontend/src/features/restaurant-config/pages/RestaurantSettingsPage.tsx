@@ -7,6 +7,7 @@ import { StatusMessage } from "@/features/restaurant-config/components/StatusMes
 import { useActiveRestaurant } from "@/features/restaurant-config/hooks/useActiveRestaurant";
 import * as configApi from "@/features/restaurant-config/api/configApi";
 import { getErrorMessage } from "@/features/restaurant-config/utils/errorMessage";
+import { useI18n } from "@/features/i18n/I18nProvider";
 
 const timezones = [
   "Europe/Dublin",
@@ -18,6 +19,7 @@ const timezones = [
 
 export function RestaurantSettingsPage() {
   const queryClient = useQueryClient();
+  const { t } = useI18n();
   const { activeRestaurantId } = useActiveRestaurant();
   const [validationError, setValidationError] = useState<string | null>(null);
   const [form, setForm] = useState({
@@ -62,31 +64,25 @@ export function RestaurantSettingsPage() {
 
   function validateForm() {
     if (!form.name.trim()) {
-      return "El nombre del restaurante es obligatorio.";
+      return t("El nombre del restaurante es obligatorio.");
     }
 
     if (!form.slug.trim()) {
-      return "El slug es obligatorio.";
+      return t("El slug es obligatorio.");
     }
 
     if (!form.timezone.trim()) {
-      return "La zona horaria es obligatoria.";
+      return t("La zona horaria es obligatoria.");
     }
 
     return null;
   }
 
   return (
-    <ConfigShell
-      title="Datos del restaurante"
-      description="Ajusta el perfil principal del restaurante activo sin tocar codigo. Esta pantalla cubre nombre, slug, timezone, telefono y estado general."
-    >
-      <ConfigCard
-        title="Ajustes principales"
-        subtitle="El backend mantiene las validaciones criticas; aqui solo pedimos los datos necesarios y mostramos cualquier error de forma clara."
-      >
+    <ConfigShell title={t("Restaurante")}>
+      <ConfigCard title={t("Datos del restaurante")}>
         {restaurantQuery.isLoading ? (
-          <StatusMessage tone="info">Cargando datos del restaurante...</StatusMessage>
+          <StatusMessage tone="info">{t("Cargando datos del restaurante...")}</StatusMessage>
         ) : null}
         {restaurantQuery.error ? (
           <StatusMessage tone="error">
@@ -116,7 +112,7 @@ export function RestaurantSettingsPage() {
             }}
           >
             <TextField
-              label="Nombre"
+              label={t("Nombre")}
               value={form.name}
               onChange={(event) =>
                 setForm((current) => ({ ...current, name: event.target.value }))
@@ -124,7 +120,7 @@ export function RestaurantSettingsPage() {
               required
             />
             <TextField
-              label="Slug"
+              label={t("Identificador web")}
               value={form.slug}
               onChange={(event) =>
                 setForm((current) => ({ ...current, slug: event.target.value }))
@@ -132,7 +128,7 @@ export function RestaurantSettingsPage() {
               required
             />
             <SelectField
-              label="Timezone"
+              label={t("Zona horaria")}
               value={form.timezone}
               onChange={(event) =>
                 setForm((current) => ({ ...current, timezone: event.target.value }))
@@ -145,7 +141,7 @@ export function RestaurantSettingsPage() {
               ))}
             </SelectField>
             <TextField
-              label="Telefono"
+              label={t("Telefono")}
               value={form.phone}
               onChange={(event) =>
                 setForm((current) => ({ ...current, phone: event.target.value }))
@@ -153,23 +149,23 @@ export function RestaurantSettingsPage() {
               placeholder="+34 600 000 000"
             />
             <SelectField
-              label="Estado"
+              label={t("Estado")}
               value={form.status}
               onChange={(event) =>
                 setForm((current) => ({ ...current, status: event.target.value }))
               }
             >
-              <option value="ACTIVE">ACTIVE</option>
-              <option value="INACTIVE">INACTIVE</option>
+              <option value="ACTIVE">{t("Activo")}</option>
+              <option value="INACTIVE">{t("Inactivo")}</option>
             </SelectField>
 
             <div className="lg:col-span-2 flex justify-end">
               <button
-                className="h-12 rounded-2xl bg-brand-500 px-6 text-sm font-semibold text-slate-950 transition hover:bg-brand-400 disabled:opacity-60"
+                className="h-12 rounded-lg bg-brand-500 px-6 text-sm font-semibold text-slate-950 transition hover:bg-brand-400 disabled:opacity-60"
                 type="submit"
                 disabled={updateMutation.isPending}
               >
-                {updateMutation.isPending ? "Guardando..." : "Guardar cambios"}
+                {updateMutation.isPending ? t("Guardando...") : t("Guardar cambios")}
               </button>
             </div>
           </form>

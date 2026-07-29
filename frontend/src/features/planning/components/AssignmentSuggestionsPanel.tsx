@@ -1,4 +1,6 @@
 import type { AssignmentSuggestionResponse } from "@/features/planning/types";
+import { Check, RefreshCw } from "lucide-react";
+import { useI18n } from "@/features/i18n/I18nProvider";
 
 interface Props {
   suggestions: AssignmentSuggestionResponse[];
@@ -17,25 +19,26 @@ export function AssignmentSuggestionsPanel({
   onRefresh,
   onSelect,
 }: Props) {
+  const { t } = useI18n();
   return (
-    <section className="border-y border-white/10 py-4" aria-label="Sugerencias de asignacion">
+    <section className="border-y border-white/10 py-4" aria-label={t("Sugerencias de asignacion")}>
       <div className="mb-3 flex items-center justify-between gap-3">
         <div>
-          <h3 className="text-sm font-semibold text-white">Opciones disponibles</h3>
-          <p className="mt-1 text-xs text-slate-500">La hora de la reserva no se modifica.</p>
+          <h3 className="text-sm font-semibold text-white">{t("Opciones disponibles")}</h3>
         </div>
         <button
           type="button"
-          className="h-10 rounded-xl border border-white/10 px-3 text-xs text-slate-300"
+          className="inline-flex h-10 items-center gap-2 rounded-lg border border-white/10 px-3 text-xs text-slate-300"
           onClick={onRefresh}
         >
-          Actualizar
+          <RefreshCw className="h-3.5 w-3.5" />
+          {t("Actualizar")}
         </button>
       </div>
 
-      {loading ? <p className="text-sm text-slate-400">Calculando opciones...</p> : null}
+      {loading ? <p className="text-sm text-slate-400">{t("Calculando opciones...")}</p> : null}
       {errorMessage ? (
-        <div role="alert" className="rounded-xl border border-rose-300/20 bg-rose-500/10 p-3 text-sm text-rose-100">
+        <div role="alert" className="rounded-lg border border-rose-300/20 bg-rose-500/10 p-3 text-sm text-rose-100">
           {errorMessage}
         </div>
       ) : null}
@@ -48,27 +51,28 @@ export function AssignmentSuggestionsPanel({
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-xs font-semibold text-brand-300">Opcion {index + 1}</p>
+                <p className="text-xs font-semibold text-brand-300">{t("Opcion")} {index + 1}</p>
                 <h4 className="mt-1 truncate text-sm font-semibold text-white">{suggestion.displayName}</h4>
                 <p className="mt-1 text-xs text-slate-400">
-                  {suggestion.minCapacity}-{suggestion.maxCapacity} pax · score {suggestion.score.toFixed(1)}
+                  {suggestion.minCapacity}-{suggestion.maxCapacity} {t("personas")} · {t("Puntuacion")} {suggestion.score.toFixed(1)}
                 </p>
               </div>
               <button
                 type="button"
-                className="h-10 shrink-0 rounded-xl bg-brand-500 px-4 text-xs font-semibold text-slate-950 disabled:opacity-50"
+                className="inline-flex h-10 shrink-0 items-center gap-2 rounded-lg bg-brand-500 px-4 text-xs font-semibold text-slate-950 disabled:opacity-50"
                 disabled={selecting}
                 onClick={() => onSelect({
                   candidateType: suggestion.candidateType,
                   candidateId: suggestion.candidateId,
                 })}
               >
-                Aplicar
+                <Check className="h-3.5 w-3.5" />
+                {t("Aplicar")}
               </button>
             </div>
             {suggestion.advanced ? (
               <p className="mt-2 text-xs text-amber-200">
-                Avanzada · coste {costLabel(suggestion.operationalCostLevel)} · {suggestion.setupTimeMinutes} min
+                {t("Avanzada")} · {t("coste")} {t(costLabel(suggestion.operationalCostLevel))} · {suggestion.setupTimeMinutes} min
               </p>
             ) : null}
             {suggestion.resources.length > 0 ? (
@@ -84,7 +88,7 @@ export function AssignmentSuggestionsPanel({
       </div>
 
       {!loading && !errorMessage && suggestions.length === 0 ? (
-        <p className="text-sm text-slate-400">No hay opciones viables en este momento.</p>
+        <p className="text-sm text-slate-400">{t("No hay opciones disponibles.")}</p>
       ) : null}
     </section>
   );

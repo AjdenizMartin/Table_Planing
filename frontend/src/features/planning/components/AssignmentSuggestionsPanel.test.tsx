@@ -2,6 +2,8 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { AssignmentSuggestionsPanel } from "./AssignmentSuggestionsPanel";
 import type { AssignmentSuggestionResponse } from "@/features/planning/types";
+import { I18nProvider } from "@/features/i18n/I18nProvider";
+import type { ReactElement } from "react";
 
 const advancedSuggestion: AssignmentSuggestionResponse = {
   candidateType: "TABLE_COMBINATION",
@@ -31,10 +33,19 @@ const advancedSuggestion: AssignmentSuggestionResponse = {
   },
 };
 
+function renderPanel(panel: ReactElement) {
+  window.localStorage.setItem("table-planning-language", "es");
+  return render(
+    <I18nProvider>
+      {panel}
+    </I18nProvider>,
+  );
+}
+
 describe("AssignmentSuggestionsPanel", () => {
   it("compares an advanced option and applies the selected candidate", () => {
     const onSelect = vi.fn();
-    render(
+    renderPanel(
       <AssignmentSuggestionsPanel
         suggestions={[advancedSuggestion]}
         loading={false}
@@ -54,7 +65,7 @@ describe("AssignmentSuggestionsPanel", () => {
   });
 
   it("renders conflict feedback without presenting a false empty state", () => {
-    render(
+    renderPanel(
       <AssignmentSuggestionsPanel
         suggestions={[]}
         loading={false}
@@ -76,7 +87,7 @@ describe("AssignmentSuggestionsPanel", () => {
       displayName: `Opcion ${index + 1}`,
     }));
 
-    render(
+    renderPanel(
       <AssignmentSuggestionsPanel
         suggestions={suggestions}
         loading={false}

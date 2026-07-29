@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import type { PlanningDayResponse, PlanningReservationSummaryResponse } from "@/features/planning/types";
 import { normalizeTimeForInput } from "@/features/frontdesk/utils/frontdeskUtils";
+import { useI18n } from "@/features/i18n/I18nProvider";
 
 type Priority = "high" | "medium" | "low";
 
@@ -176,6 +177,7 @@ interface Props {
 }
 
 export function NeedsAttentionPanel({ planning, onSelectReservation }: Props) {
+  const { t } = useI18n();
   const [collapsed, setCollapsed] = useState(false);
 
   const items = useMemo(() => {
@@ -192,26 +194,26 @@ export function NeedsAttentionPanel({ planning, onSelectReservation }: Props) {
   };
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-white/[0.06] bg-slate-950/40">
+    <section className="overflow-hidden rounded-lg border border-white/[0.06] bg-slate-950/40">
       <button
         type="button"
         className="flex w-full items-center justify-between px-4 py-2.5 text-left transition hover:bg-white/[0.02] active:scale-[0.99]"
         onClick={() => setCollapsed((c) => !c)}
       >
         <div className="flex items-center gap-2.5">
-          <span className="text-sm font-medium text-white">Needs attention</span>
+          <span className="text-sm font-medium text-white">{t("Requiere atencion")}</span>
           <span className="rounded-md border border-white/10 bg-white/5 px-2 py-0.5 text-xs font-semibold text-slate-300">{totalCount}</span>
           {highCount > 0 ? (
-            <span className="rounded-md border border-rose-400/30 bg-rose-500/15 px-2 py-0.5 text-xs font-semibold text-rose-200">{highCount} high</span>
+            <span className="rounded-md border border-rose-400/30 bg-rose-500/15 px-2 py-0.5 text-xs font-semibold text-rose-200">{highCount} {t("urgentes")}</span>
           ) : null}
         </div>
-        <span className="text-xs text-slate-500">{collapsed ? "Show" : "Hide"}</span>
+        <span className="text-xs text-slate-500">{collapsed ? t("Mostrar") : t("Ocultar")}</span>
       </button>
 
       {!collapsed ? (
         <div className="max-h-[300px] overflow-y-auto border-t border-white/[0.04] px-4 py-2.5">
           {items.length === 0 ? (
-            <p className="py-4 text-center text-sm text-slate-500">All clear — no items need attention.</p>
+            <p className="py-4 text-center text-sm text-slate-500">{t("No hay incidencias pendientes.")}</p>
           ) : (
             <div className="grid gap-1.5">
               {items.map((item) => {
@@ -221,7 +223,7 @@ export function NeedsAttentionPanel({ planning, onSelectReservation }: Props) {
                     key={item.id}
                     type="button"
                     className={[
-                      "flex items-center gap-3 rounded-xl border border-white/[0.04] border-l-2 px-3.5 py-2.5 text-left transition hover:bg-white/[0.03] active:scale-[0.98]",
+                      "flex items-center gap-3 rounded-lg border border-white/[0.04] border-l-2 px-3.5 py-2.5 text-left transition hover:bg-white/[0.03] active:scale-[0.98]",
                       style.border,
                       style.bg,
                     ].join(" ")}
@@ -232,7 +234,7 @@ export function NeedsAttentionPanel({ planning, onSelectReservation }: Props) {
                     <span className="text-xs text-slate-400">·</span>
                     <span className="min-w-0 truncate text-sm font-medium text-white">{item.customerName}</span>
                     <span className="shrink-0 text-xs text-slate-400">{item.partySize}</span>
-                    <span className="hidden min-w-0 truncate text-xs text-slate-500 sm:inline">· {item.problem}</span>
+                    <span className="hidden min-w-0 truncate text-xs text-slate-500 sm:inline">· {t(item.problem)}</span>
                   </button>
                 );
               })}

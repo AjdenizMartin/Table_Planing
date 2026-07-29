@@ -66,7 +66,7 @@ export function PlanningGrid({
       {diningRooms.map((room) => (
         <section
           key={room.id}
-          className="rounded-[2rem] border border-white/10 bg-slate-950/65 p-4 shadow-2xl shadow-black/20"
+          className="rounded-lg border border-white/10 bg-slate-950/65 p-4 shadow-2xl shadow-black/20"
         >
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -82,7 +82,7 @@ export function PlanningGrid({
             <div style={{ minWidth: LABEL_WIDTH + gridWidth }}>
               <div className="sticky top-0 z-10 flex border-b border-white/10 bg-slate-950/90 backdrop-blur">
                 <div
-                  className="shrink-0 px-4 py-3 text-xs font-semibold uppercase tracking-[0.25em] text-slate-500"
+                  className="shrink-0 px-4 py-3 text-xs font-semibold uppercase text-slate-500"
                   style={{ width: LABEL_WIDTH }}
                 >
                   Mesa
@@ -92,7 +92,7 @@ export function PlanningGrid({
                     {timeBlocks.map((timeBlock) => (
                       <div
                         key={`${room.id}-${timeBlock}`}
-                        className="shrink-0 border-l border-white/10 px-3 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500"
+                        className="shrink-0 border-l border-white/10 px-3 py-3 text-xs font-semibold uppercase text-slate-500"
                         style={{ width: BLOCK_WIDTH }}
                       >
                         {timeBlock}
@@ -106,7 +106,7 @@ export function PlanningGrid({
                 {room.tables.map((table) => (
                   <div key={table.id} className="flex items-stretch">
                     <div
-                      className="shrink-0 rounded-2xl border border-white/10 bg-white/5 px-4 py-4"
+                      className="shrink-0 rounded-lg border border-white/10 bg-white/5 px-4 py-4"
                       style={{ width: LABEL_WIDTH }}
                     >
                       <p className="text-sm font-semibold text-white">
@@ -119,7 +119,7 @@ export function PlanningGrid({
                     </div>
 
                     <div
-                      className="relative ml-2 overflow-hidden rounded-2xl border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))]"
+                      className="relative ml-2 overflow-hidden rounded-lg border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))]"
                       style={{ width: gridWidth, minHeight: 96 }}
                     >
                       <div className="absolute inset-0 flex">
@@ -145,7 +145,7 @@ export function PlanningGrid({
                             key={`${table.id}-${reservation.reservationId}`}
                             type="button"
                             className={[
-                              "absolute top-3 flex h-[72px] flex-col justify-between rounded-2xl border px-3 py-2 text-left shadow-lg transition",
+                              "absolute top-3 flex h-[72px] flex-col justify-between rounded-lg border px-3 py-2 text-left shadow-lg transition",
                               reservationTone(reservation.status),
                               selectedReservationId === reservation.reservationId
                                 ? "ring-2 ring-white/80"

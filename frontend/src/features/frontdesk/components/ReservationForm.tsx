@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Plus, RotateCcw } from "lucide-react";
 import * as frontdeskApi from "@/features/frontdesk/api/frontdeskApi";
 import type {
   CreateCustomerPayload,
@@ -16,6 +17,7 @@ import {
 } from "@/features/restaurant-config/components/Field";
 import { StatusMessage } from "@/features/restaurant-config/components/StatusMessage";
 import { getErrorMessage } from "@/features/restaurant-config/utils/errorMessage";
+import { useI18n } from "@/features/i18n/I18nProvider";
 
 const channels: ReservationChannel[] = [
   "MANUAL",
@@ -57,6 +59,7 @@ export function ReservationForm({
   initialDate,
   onCreated,
 }: ReservationFormProps) {
+  const { t } = useI18n();
   const { activeRestaurantId } = useActiveRestaurant();
   const [form, setForm] = useState({
     ...defaultForm,
@@ -100,7 +103,7 @@ export function ReservationForm({
 
   function validateForm() {
     if (form.customerMode === "existing" && !form.customerId) {
-      return "Selecciona un cliente para la reserva.";
+      return t("Selecciona un cliente para la reserva.");
     }
 
     if (
@@ -109,27 +112,27 @@ export function ReservationForm({
       !form.customerLastName.trim() &&
       !form.customerPhone.trim()
     ) {
-      return "Introduce al menos nombre, apellido o telefono del cliente.";
+      return t("Introduce al menos nombre, apellido o telefono del cliente.");
     }
 
     if (Number(form.partySize) <= 0) {
-      return "El numero de comensales debe ser mayor que cero.";
+      return t("El numero de comensales debe ser mayor que cero.");
     }
 
     if (!form.reservationDate) {
-      return "La fecha de la reserva es obligatoria.";
+      return t("La fecha de la reserva es obligatoria.");
     }
 
     if (!form.startTime) {
-      return "La hora de inicio es obligatoria.";
+      return t("La hora de inicio es obligatoria.");
     }
 
     if (Number(form.estimatedDurationMin) <= 0) {
-      return "La duracion estimada debe ser mayor que cero.";
+      return t("La duracion estimada debe ser mayor que cero.");
     }
 
     if (Number(form.cleaningBufferMin) < 0) {
-      return "El margen de limpieza no puede ser negativo.";
+      return t("El margen de limpieza no puede ser negativo.");
     }
 
     return null;
@@ -195,7 +198,7 @@ export function ReservationForm({
     <div className="grid gap-4">
       {!canManageReservations ? (
         <StatusMessage tone="info">
-          Tu rol actual puede consultar reservas, pero no crear nuevas.
+          {t("Tu rol puede consultar reservas, pero no crearlas.")}
         </StatusMessage>
       ) : null}
       {customersQuery.error ? (
@@ -207,12 +210,12 @@ export function ReservationForm({
       {submitError ? <StatusMessage tone="error">{submitError}</StatusMessage> : null}
 
       <div className="grid gap-4">
-        <section className="rounded-3xl border border-white/10 bg-white/5 p-4">
+        <section className="rounded-lg border border-white/10 bg-white/5 p-4">
           <div className="grid gap-2 sm:grid-cols-2">
             <button
               type="button"
               className={[
-                "min-h-11 rounded-2xl px-4 py-2 text-sm font-semibold transition",
+                "min-h-11 rounded-lg px-4 py-2 text-sm font-semibold transition",
                 form.customerMode === "quick"
                   ? "bg-brand-500 text-slate-950"
                   : "border border-white/10 bg-slate-950/50 text-slate-200 hover:border-brand-300/40",
@@ -225,12 +228,12 @@ export function ReservationForm({
                 }))
               }
             >
-              Cliente nuevo rapido
+              {t("Cliente nuevo")}
             </button>
             <button
               type="button"
               className={[
-                "min-h-11 rounded-2xl px-4 py-2 text-sm font-semibold transition",
+                "min-h-11 rounded-lg px-4 py-2 text-sm font-semibold transition",
                 form.customerMode === "existing"
                   ? "bg-brand-500 text-slate-950"
                   : "border border-white/10 bg-slate-950/50 text-slate-200 hover:border-brand-300/40",
@@ -242,7 +245,7 @@ export function ReservationForm({
                 }))
               }
             >
-              Buscar existente
+              {t("Cliente existente")}
             </button>
           </div>
 
@@ -250,7 +253,7 @@ export function ReservationForm({
             <div className="mt-4 grid gap-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <TextField
-                  label="Nombre"
+                  label={t("Nombre")}
                   value={form.customerFirstName}
                   onChange={(event) =>
                     setForm((current) => ({ ...current, customerFirstName: event.target.value }))
@@ -258,7 +261,7 @@ export function ReservationForm({
                   placeholder="John"
                 />
                 <TextField
-                  label="Apellido"
+                  label={t("Apellido")}
                   value={form.customerLastName}
                   onChange={(event) =>
                     setForm((current) => ({ ...current, customerLastName: event.target.value }))
@@ -268,7 +271,7 @@ export function ReservationForm({
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <TextField
-                  label="Telefono"
+                  label={t("Telefono")}
                   type="tel"
                   value={form.customerPhone}
                   onChange={(event) =>
@@ -277,7 +280,7 @@ export function ReservationForm({
                   placeholder="+353..."
                 />
                 <TextField
-                  label="Email"
+                  label={t("Email")}
                   type="email"
                   value={form.customerEmail}
                   onChange={(event) =>
@@ -287,34 +290,34 @@ export function ReservationForm({
                 />
               </div>
               <TextAreaField
-                label="Notas del cliente"
+                label={t("Notas del cliente")}
                 value={form.customerNotes}
                 onChange={(event) =>
                   setForm((current) => ({ ...current, customerNotes: event.target.value }))
                 }
-                placeholder="Cliente habitual, preferencias, idioma..."
+                placeholder={t("Preferencias del cliente")}
               />
             </div>
           ) : (
             <div className="mt-4 grid gap-4">
               <TextField
-                label="Buscar cliente"
+                label={t("Buscar cliente")}
                 value={form.customerSearch}
                 onChange={(event) =>
                   setForm((current) => ({ ...current, customerSearch: event.target.value }))
                 }
-                placeholder="Nombre o telefono"
+                placeholder={t("Nombre o telefono")}
               />
 
               <SelectField
-                label="Cliente"
+                label={t("Cliente")}
                 value={form.customerId}
                 onChange={(event) =>
                   setForm((current) => ({ ...current, customerId: event.target.value }))
                 }
               >
                 <option value="" disabled>
-                  Selecciona un cliente
+                  {t("Selecciona un cliente")}
                 </option>
                 {customerOptions.map((customer) => (
                   <option key={customer.id} value={customer.id}>
@@ -329,7 +332,7 @@ export function ReservationForm({
 
         <div className="grid gap-4 sm:grid-cols-2">
           <TextField
-            label="Fecha"
+            label={t("Fecha")}
             type="date"
             value={form.reservationDate}
             onChange={(event) =>
@@ -337,7 +340,7 @@ export function ReservationForm({
             }
           />
           <TextField
-            label="Hora"
+            label={t("Hora")}
             type="time"
             value={form.startTime}
             onChange={(event) =>
@@ -348,7 +351,7 @@ export function ReservationForm({
 
         <div className="grid gap-4 sm:grid-cols-2">
           <TextField
-            label="Comensales"
+            label={t("Comensales")}
             type="number"
             min={1}
             value={form.partySize}
@@ -357,7 +360,7 @@ export function ReservationForm({
             }
           />
           <TextField
-            label="Duracion"
+            label={t("Duracion")}
             type="number"
             min={1}
             value={form.estimatedDurationMin}
@@ -367,10 +370,10 @@ export function ReservationForm({
                 estimatedDurationMin: event.target.value,
               }))
             }
-            hint="Minutos"
+            hint={t("Minutos")}
           />
           <TextField
-            label="Limpieza"
+            label={t("Limpieza")}
             type="number"
             min={0}
             value={form.cleaningBufferMin}
@@ -380,10 +383,10 @@ export function ReservationForm({
                 cleaningBufferMin: event.target.value,
               }))
             }
-            hint="Minutos"
+            hint={t("Minutos")}
           />
           <SelectField
-            label="Canal"
+            label={t("Canal")}
             value={form.channel}
             onChange={(event) =>
               setForm((current) => ({
@@ -401,7 +404,7 @@ export function ReservationForm({
         </div>
 
         <CheckboxField
-          label="Requiere accesibilidad"
+          label={t("Requiere accesibilidad")}
           checked={form.accessibilityRequired}
           onChange={(checked) =>
             setForm((current) => ({ ...current, accessibilityRequired: checked }))
@@ -409,36 +412,42 @@ export function ReservationForm({
         />
 
         <TextAreaField
-          label="Peticiones especiales"
+          label={t("Peticiones especiales")}
           value={form.specialRequests}
           onChange={(event) =>
             setForm((current) => ({ ...current, specialRequests: event.target.value }))
           }
-          placeholder="Alergias, celebracion, silla infantil..."
+          placeholder={t("Alergias, celebracion, silla infantil")}
         />
       </div>
 
       <div className="flex flex-wrap justify-end gap-3">
         <button
-          className="h-12 rounded-2xl border border-white/10 bg-white/5 px-5 text-sm font-medium text-white transition hover:border-white/20"
+          className="h-12 rounded-lg border border-white/10 bg-white/5 px-5 text-sm font-medium text-white transition hover:border-white/20"
           type="button"
           onClick={resetForm}
         >
-          Limpiar
+          <span className="inline-flex items-center gap-2">
+            <RotateCcw className="h-4 w-4" />
+            {t("Limpiar")}
+          </span>
         </button>
         <button
-          className="h-12 rounded-2xl bg-brand-500 px-6 text-sm font-semibold text-slate-950 transition hover:bg-brand-400 disabled:opacity-60"
+          className="h-12 rounded-lg bg-brand-500 px-6 text-sm font-semibold text-slate-950 transition hover:bg-brand-400 disabled:opacity-60"
           type="button"
           disabled={!canManageReservations || isSubmitting}
           onClick={() => {
             void handleSubmit();
           }}
         >
-          {isSubmitting
-            ? "Creando..."
-            : form.customerMode === "quick"
-              ? "Crear cliente y reserva"
-              : "Crear reserva"}
+          <span className="inline-flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            {isSubmitting
+              ? t("Creando...")
+              : form.customerMode === "quick"
+                ? t("Crear cliente y reserva")
+                : t("Crear reserva")}
+          </span>
         </button>
       </div>
     </div>

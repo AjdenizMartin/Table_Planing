@@ -5,6 +5,7 @@ import {
   useMarkAsRead,
   useMarkAllAsRead,
 } from "@/features/notifications/hooks/useNotifications";
+import { useI18n } from "@/features/i18n/I18nProvider";
 
 interface NotificationDropdownProps {
   onClose: () => void;
@@ -12,6 +13,7 @@ interface NotificationDropdownProps {
 
 export function NotificationDropdown({ onClose }: NotificationDropdownProps) {
   const navigate = useNavigate();
+  const { t } = useI18n();
   const ref = useRef<HTMLDivElement>(null);
   const { data: notifications = [] } = useNotifications(true);
   const markAsRead = useMarkAsRead();
@@ -35,11 +37,11 @@ export function NotificationDropdown({ onClose }: NotificationDropdownProps) {
   return (
     <div
       ref={ref}
-      className="absolute right-0 top-full z-50 mt-2 w-80 rounded-2xl border border-white/10 bg-slate-900 shadow-2xl"
+      className="absolute right-0 top-full z-50 mt-2 w-80 rounded-lg border border-white/10 bg-slate-900 shadow-2xl"
     >
       <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
-        <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-          Notificaciones
+        <span className="text-xs font-semibold uppercase text-slate-400">
+          {t("Notificaciones")}
         </span>
         {notifications.length > 0 && (
           <button
@@ -49,14 +51,14 @@ export function NotificationDropdown({ onClose }: NotificationDropdownProps) {
               markAllAsRead.mutate();
             }}
           >
-            Marcar todas leidas
+            {t("Marcar todas como leidas")}
           </button>
         )}
       </div>
       <div className="max-h-80 overflow-y-auto">
         {notifications.length === 0 ? (
           <p className="px-4 py-8 text-center text-sm text-slate-500">
-            Sin notificaciones
+            {t("Sin notificaciones")}
           </p>
         ) : (
           notifications.slice(0, 20).map((notification) => (
@@ -84,13 +86,13 @@ export function NotificationDropdown({ onClose }: NotificationDropdownProps) {
       <div className="border-t border-white/10 px-4 py-2">
         <button
           type="button"
-          className="w-full rounded-xl py-2 text-sm text-brand-400 transition hover:bg-white/5"
+          className="w-full rounded-lg py-2 text-sm text-brand-400 transition hover:bg-white/5"
           onClick={() => {
             navigate("/notifications");
             onClose();
           }}
         >
-          Ver todas
+          {t("Ver todas")}
         </button>
       </div>
     </div>

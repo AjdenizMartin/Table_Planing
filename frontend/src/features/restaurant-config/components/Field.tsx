@@ -19,7 +19,7 @@ export function TextField({
       <input
         {...props}
         className={[
-          "h-12 w-full min-w-0 rounded-2xl border border-white/10 bg-slate-900/90 px-4 text-sm text-white outline-none transition focus:border-brand-400/70 focus:ring-2 focus:ring-brand-400/30",
+          "h-11 w-full min-w-0 rounded-lg border border-white/10 bg-[#0c100e] px-3 text-sm text-white outline-none transition focus:border-emerald-400/70 focus:ring-2 focus:ring-emerald-400/20",
           props.className ?? "",
         ].join(" ")}
       />
@@ -42,7 +42,7 @@ export function SelectField({
       <select
         {...props}
         className={[
-          "h-12 w-full min-w-0 rounded-2xl border border-white/10 bg-slate-900/90 px-4 text-sm text-white outline-none transition focus:border-brand-400/70 focus:ring-2 focus:ring-brand-400/30",
+          "h-11 w-full min-w-0 rounded-lg border border-white/10 bg-[#0c100e] px-3 text-sm text-white outline-none transition focus:border-emerald-400/70 focus:ring-2 focus:ring-emerald-400/20",
           props.className ?? "",
         ].join(" ")}
       >
@@ -62,7 +62,7 @@ export function CheckboxField({
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <label className="flex min-h-12 min-w-0 items-center gap-3 rounded-2xl border border-white/10 bg-slate-900/70 px-4 py-3">
+    <label className="flex min-h-11 min-w-0 items-center gap-3 rounded-lg border border-white/10 bg-[#0c100e] px-3 py-2.5">
       <input
         className="h-5 w-5 accent-brand-400"
         type="checkbox"
@@ -88,7 +88,7 @@ export function TextAreaField({
       <textarea
         {...props}
         className={[
-          "min-h-28 w-full min-w-0 rounded-2xl border border-white/10 bg-slate-900/90 px-4 py-3 text-sm text-white outline-none transition focus:border-brand-400/70 focus:ring-2 focus:ring-brand-400/30",
+          "min-h-24 w-full min-w-0 rounded-lg border border-white/10 bg-[#0c100e] px-3 py-3 text-sm text-white outline-none transition focus:border-emerald-400/70 focus:ring-2 focus:ring-emerald-400/20",
           props.className ?? "",
         ].join(" ")}
       />

@@ -29,6 +29,8 @@ import org.testcontainers.junit.jupiter.Container;
 import org.springframework.test.context.jdbc.Sql;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -160,6 +162,91 @@ class CustomerIntegrationTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.length()").value(1))
             .andExpect(jsonPath("$[0].phone").value("+34600333444"));
+    }
+
+    @Test
+    void managerCanDeleteCustomerWithoutReservations() throws Exception {
+        Restaurant restaurant = createRestaurant("Main", "main");
+        Customer customer = createCustomer(restaurant, "Ana", "Lopez", "+34600111222");
+        User manager = createUser("manager@example.com", "secret123", "Manager");
+        assignRole(manager, restaurant, Role.MANAGER);
+        String accessToken = loginAndExtractAccessToken("manager@example.com", "secret123");
+
+        mockMvc.perform(delete("/api/restaurants/{restaurantId}/customers/{customerId}", restaurant.getId(), customer.getId())
+                .header(HttpHeaders.AUTHORIZATION, bearer(accessToken)))
+            .andExpect(status().isNoContent());
+
+        assertFalse(customerRepository.existsById(customer.getId()));
+    }
+
+    @Test
+    void waiterCannotDeleteCustomer() throws Exception {
+        Restaurant restaurant = createRestaurant("Main", "main");
+        Customer customer = createCustomer(restaurant, "Ana", "Lopez", "+34600111222");
+        User waiter = createUser("waiter@example.com", "secret123", "Waiter");
+        assignRole(waiter, restaurant, Role.WAITER);
+        String accessToken = loginAndExtractAccessToken("waiter@example.com", "secret123");
+
+        mockMvc.perform(delete("/api/restaurants/{restaurantId}/customers/{customerId}", restaurant.getId(), customer.getId())
+                .header(HttpHeaders.AUTHORIZATION, bearer(accessToken)))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
+    }
+
+    @Test
+    void cannotDeleteCustomerFromAnotherRestaurant() throws Exception {
+        Restaurant restaurant = createRestaurant("Main", "main");
+        Restaurant otherRestaurant = createRestaurant("Other", "other");
+        Customer foreignCustomer = createCustomer(otherRestaurant, "Eva", "Santos", "+34600555666");
+        User manager = createUser("manager@example.com", "secret123", "Manager");
+        assignRole(manager, restaurant, Role.MANAGER);
+        String accessToken = loginAndExtractAccessToken("manager@example.com", "secret123");
+
+        mockMvc.perform(delete(
+                "/api/restaurants/{restaurantId}/customers/{customerId}",
+                restaurant.getId(),
+                foreignCustomer.getId()
+            )
+                .header(HttpHeaders.AUTHORIZATION, bearer(accessToken)))
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.code").value("NOT_FOUND"));
+    }
+
+    @Test
+    void cannotDeleteCustomerWithLinkedReservations() throws Exception {
+        Restaurant restaurant = createRestaurant("Main", "main");
+        Customer customer = createCustomer(restaurant, "Ana", "Lopez", "+34600111222");
+        User manager = createUser("manager@example.com", "secret123", "Manager");
+        assignRole(manager, restaurant, Role.MANAGER);
+        String accessToken = loginAndExtractAccessToken("manager@example.com", "secret123");
+
+        createReservation(restaurant, customer, accessToken);
+
+        mockMvc.perform(delete("/api/restaurants/{restaurantId}/customers/{customerId}", restaurant.getId(), customer.getId())
+                .header(HttpHeaders.AUTHORIZATION, bearer(accessToken)))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.code").value("CONFLICT"))
+            .andExpect(jsonPath("$.details.reason").value("HAS_RESERVATIONS"));
+    }
+
+    private void createReservation(Restaurant restaurant, Customer customer, String accessToken) throws Exception {
+        mockMvc.perform(post("/api/restaurants/{restaurantId}/reservations", restaurant.getId())
+                .header(HttpHeaders.AUTHORIZATION, bearer(accessToken))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "customerId": %d,
+                      "channel": "MANUAL",
+                      "partySize": 4,
+                      "reservationDate": "2027-05-26",
+                      "startTime": "20:00:00",
+                      "estimatedDurationMin": 90,
+                      "cleaningBufferMin": 15,
+                      "specialRequests": null,
+                      "accessibilityRequired": false
+                    }
+                    """.formatted(customer.getId())))
+            .andExpect(status().isCreated());
     }
 
     private String loginAndExtractAccessToken(String email, String password) throws Exception {

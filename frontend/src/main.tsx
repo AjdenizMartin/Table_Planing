@@ -5,18 +5,21 @@ import { RouterProvider } from "react-router-dom";
 import { router } from "./app/router";
 import { AuthProvider } from "@/features/auth/context/AuthContext";
 import { RealtimeProvider } from "@/features/realtime/RealtimeProvider";
+import { I18nProvider } from "@/features/i18n/I18nProvider";
 import "./index.css";
 
 const queryClient = new QueryClient();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <RealtimeProvider>
-          <RouterProvider router={router} />
-        </RealtimeProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <I18nProvider>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <RealtimeProvider>
+            <RouterProvider router={router} />
+          </RealtimeProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </I18nProvider>
   </React.StrictMode>
 );

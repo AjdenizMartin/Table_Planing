@@ -47,6 +47,13 @@ export function updateCustomer(
   );
 }
 
+export function deleteCustomer(restaurantId: number, customerId: number) {
+  return apiClient.request<void>(
+    `/api/restaurants/${restaurantId}/customers/${customerId}`,
+    { method: "DELETE" },
+  );
+}
+
 export function getReservations(restaurantId: number, date?: string) {
   const search = date ? `?date=${encodeURIComponent(date)}` : "";
   return apiClient.request<ReservationResponse[]>(

@@ -6,9 +6,11 @@ import {
   useMarkAllAsRead,
 } from "@/features/notifications/hooks/useNotifications";
 import type { Notification } from "@/features/notifications/types";
+import { useI18n } from "@/features/i18n/I18nProvider";
 
 export function NotificationsPage() {
   const navigate = useNavigate();
+  const { t } = useI18n();
   const [showRead, setShowRead] = useState(false);
   const { data: unread = [] } = useNotifications(true);
   const { data: all = [] } = useNotifications(false);
@@ -29,13 +31,13 @@ export function NotificationsPage() {
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">Notificaciones</h1>
+        <h1 className="text-2xl font-semibold text-white">{t("Notificaciones")}</h1>
         <button
           type="button"
-          className="h-11 rounded-2xl border border-white/10 bg-white/5 px-4 text-sm font-medium text-white transition hover:border-brand-400/40 hover:bg-brand-500/10"
+          className="h-11 rounded-lg border border-white/10 bg-white/5 px-4 text-sm font-medium text-white transition hover:border-brand-400/40 hover:bg-brand-500/10"
           onClick={() => setShowRead(!showRead)}
         >
-          {showRead ? "Solo no leidas" : "Mostrar todas"}
+          {showRead ? t("Solo no leidas") : t("Mostrar todas")}
         </button>
       </div>
 
@@ -43,19 +45,19 @@ export function NotificationsPage() {
         <div className="mb-4 flex justify-end">
           <button
             type="button"
-            className="rounded-xl px-4 py-2 text-sm text-brand-400 transition hover:bg-white/5"
+            className="rounded-lg px-4 py-2 text-sm text-brand-400 transition hover:bg-white/5"
             onClick={() => markAllAsRead.mutate()}
           >
-            Marcar todas como leidas
+            {t("Marcar todas como leidas")}
           </button>
         </div>
       )}
 
       <div className="flex flex-col gap-2">
         {notifications.length === 0 ? (
-          <div className="rounded-2xl border border-white/10 bg-white/5 px-6 py-12 text-center">
+          <div className="rounded-lg border border-white/10 bg-white/5 px-6 py-12 text-center">
             <p className="text-lg text-slate-400">
-              No hay notificaciones{showRead ? "" : " sin leer"}
+              {showRead ? t("No hay notificaciones") : t("No hay notificaciones sin leer")}
             </p>
           </div>
         ) : (
@@ -63,7 +65,7 @@ export function NotificationsPage() {
             <button
               key={notification.id}
               type="button"
-              className={`flex flex-col gap-1 rounded-2xl border px-5 py-4 text-left transition hover:bg-white/5 ${
+              className={`flex flex-col gap-1 rounded-lg border px-5 py-4 text-left transition hover:bg-white/5 ${
                 notification.read
                   ? "border-white/5 bg-white/[0.02]"
                   : "border-brand-400/20 bg-brand-500/[0.04]"

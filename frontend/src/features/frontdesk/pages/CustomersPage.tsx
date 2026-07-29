@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Eye, UserPlus } from "lucide-react";
 import * as frontdeskApi from "@/features/frontdesk/api/frontdeskApi";
 import { OperationsShell } from "@/features/frontdesk/components/OperationsShell";
 import type { CreateCustomerPayload } from "@/features/frontdesk/types";
@@ -17,6 +18,7 @@ import {
 import { StatusMessage } from "@/features/restaurant-config/components/StatusMessage";
 import { getErrorMessage } from "@/features/restaurant-config/utils/errorMessage";
 import { useAuth } from "@/features/auth/context/AuthContext";
+import { useI18n } from "@/features/i18n/I18nProvider";
 
 const emptyForm = {
   firstName: "",
@@ -30,6 +32,7 @@ const emptyForm = {
 
 export function CustomersPage() {
   const queryClient = useQueryClient();
+  const { t } = useI18n();
   const { session } = useAuth();
   const { activeRestaurantId } = useActiveRestaurant();
   const [search, setSearch] = useState("");
@@ -59,7 +62,7 @@ export function CustomersPage() {
 
   function validateForm() {
     if (!form.phone.trim() && !form.firstName.trim() && !form.lastName.trim()) {
-      return "Introduce telefono o al menos un nombre para crear el cliente.";
+      return t("Introduce telefono o al menos un nombre para crear el cliente.");
     }
 
     return null;
@@ -86,23 +89,20 @@ export function CustomersPage() {
   }
 
   return (
-    <OperationsShell
-      title="Clientes del restaurante"
-      description="Busca clientes por nombre o telefono y crea nuevas fichas para enlazarlas despues a reservas manuales."
-    >
+    <OperationsShell title={t("Clientes")}>
       <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-        <ConfigCard title="Base de clientes">
+        <ConfigCard title={t("Base de clientes")}>
           <div className="mb-5">
             <TextField
-              label="Buscar cliente"
+              label={t("Buscar cliente")}
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Nombre o telefono"
+              placeholder={t("Nombre o telefono")}
             />
           </div>
 
           {customersQuery.isLoading ? (
-            <StatusMessage tone="info">Cargando clientes...</StatusMessage>
+            <StatusMessage tone="info">{t("Cargando clientes...")}</StatusMessage>
           ) : null}
           {customersQuery.error ? (
             <StatusMessage tone="error">
@@ -114,7 +114,7 @@ export function CustomersPage() {
             {customersQuery.data?.map((customer) => (
               <article
                 key={customer.id}
-                className="rounded-3xl border border-white/10 bg-white/5 p-4"
+                className="rounded-lg border border-white/10 bg-white/5 p-4"
               >
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div>
@@ -122,21 +122,22 @@ export function CustomersPage() {
                       {formatCustomerName(customer)}
                     </h3>
                     <p className="mt-2 text-sm text-slate-400">
-                      {customer.phone || "Sin telefono"}
+                      {customer.phone || t("Sin telefono")}
                       {customer.email ? ` · ${customer.email}` : ""}
                     </p>
                     {customer.mobilityNeeds ? (
                       <p className="mt-1 text-sm text-slate-500">
-                        Movilidad: {customer.mobilityNeeds}
+                        {t("Movilidad")}: {customer.mobilityNeeds}
                       </p>
                     ) : null}
                   </div>
 
                   <Link
-                    className="inline-flex h-11 items-center justify-center rounded-2xl border border-white/10 bg-slate-900/70 px-4 text-sm font-medium text-white transition hover:border-brand-400/40 hover:bg-brand-500/10"
+                    className="inline-flex h-11 items-center justify-center rounded-lg border border-white/10 bg-slate-900/70 px-4 text-sm font-medium text-white transition hover:border-brand-400/40 hover:bg-brand-500/10"
                     to={`/customers/${customer.id}`}
                   >
-                    Ver ficha
+                    <Eye className="h-4 w-4" />
+                    {t("Ver ficha")}
                   </Link>
                 </div>
               </article>
@@ -144,19 +145,16 @@ export function CustomersPage() {
 
             {customersQuery.data?.length === 0 ? (
               <StatusMessage tone="info">
-                No hay clientes para esta busqueda en el restaurante activo.
+                {t("No hay clientes para esta busqueda.")}
               </StatusMessage>
             ) : null}
           </div>
         </ConfigCard>
 
-        <ConfigCard
-          title="Nuevo cliente"
-          subtitle="Crea una ficha ligera para poder reservar rapido desde tablet."
-        >
+        <ConfigCard title={t("Nuevo cliente")}>
           {!canManageCustomers ? (
             <StatusMessage tone="info">
-              Tu rol actual puede consultar clientes, pero no crear nuevos.
+              {t("Tu rol puede consultar clientes, pero no crearlos.")}
             </StatusMessage>
           ) : null}
           {validationError ? <StatusMessage tone="error">{validationError}</StatusMessage> : null}
@@ -169,14 +167,14 @@ export function CustomersPage() {
           <form className="grid gap-4" onSubmit={handleSubmit}>
             <div className="grid gap-4 sm:grid-cols-2">
               <TextField
-                label="Nombre"
+                label={t("Nombre")}
                 value={form.firstName}
                 onChange={(event) =>
                   setForm((current) => ({ ...current, firstName: event.target.value }))
                 }
               />
               <TextField
-                label="Apellidos"
+                label={t("Apellidos")}
                 value={form.lastName}
                 onChange={(event) =>
                   setForm((current) => ({ ...current, lastName: event.target.value }))
@@ -185,14 +183,14 @@ export function CustomersPage() {
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <TextField
-                label="Telefono"
+                label={t("Telefono")}
                 value={form.phone}
                 onChange={(event) =>
                   setForm((current) => ({ ...current, phone: event.target.value }))
                 }
               />
               <TextField
-                label="Email"
+                label={t("Email")}
                 type="email"
                 value={form.email}
                 onChange={(event) =>
@@ -201,16 +199,15 @@ export function CustomersPage() {
               />
             </div>
             <TextField
-              label="Etiquetas"
+              label={t("Etiquetas")}
               value={form.tags}
               onChange={(event) =>
                 setForm((current) => ({ ...current, tags: event.target.value }))
               }
-              placeholder="VIP, alergias, habitual"
-              hint="Separadas por comas"
+              placeholder={t("VIP, alergias, habitual")}
             />
             <TextField
-              label="Necesidades de movilidad"
+              label={t("Necesidades de movilidad")}
               value={form.mobilityNeeds}
               onChange={(event) =>
                 setForm((current) => ({
@@ -220,7 +217,7 @@ export function CustomersPage() {
               }
             />
             <TextAreaField
-              label="Notas"
+              label={t("Notas")}
               value={form.notes}
               onChange={(event) =>
                 setForm((current) => ({ ...current, notes: event.target.value }))
@@ -229,11 +226,14 @@ export function CustomersPage() {
 
             <div className="flex justify-end">
               <button
-                className="h-12 rounded-2xl bg-brand-500 px-6 text-sm font-semibold text-slate-950 transition hover:bg-brand-400 disabled:opacity-60"
+                className="h-12 rounded-lg bg-brand-500 px-6 text-sm font-semibold text-slate-950 transition hover:bg-brand-400 disabled:opacity-60"
                 type="submit"
                 disabled={!canManageCustomers || createMutation.isPending}
               >
-                {createMutation.isPending ? "Creando..." : "Crear cliente"}
+                <span className="inline-flex items-center gap-2">
+                  <UserPlus className="h-4 w-4" />
+                  {createMutation.isPending ? t("Creando...") : t("Crear cliente")}
+                </span>
               </button>
             </div>
           </form>

@@ -71,6 +71,8 @@ No son prioridad absoluta antes de estabilizar backend y modelo de datos.
 - `Vitest`
 - `React Testing Library`
 - `Playwright` con Chromium para flujos criticos en 768 y 1024 px
+- tests del selector ES/EN y persistencia de idioma
+- tests de interfaz para acciones destructivas y permisos visibles
 
 ## Testcontainers
 
@@ -258,6 +260,10 @@ Casos minimos:
 - `WAITER` no puede editar configuracion
 - `MANAGER` puede crear reservas
 - `RESTAURANT_OWNER` puede editar su restaurante
+- `WAITER` no puede eliminar clientes
+- manager puede eliminar clientes sin reservas
+- no se puede eliminar un cliente de otro restaurante
+- un cliente con reservas asociadas devuelve conflicto y conserva sus datos
 - usuario de restaurante A no puede acceder a datos de restaurante B
 - `PLATFORM_ADMIN` puede operar globalmente segun politica
 

@@ -13,6 +13,8 @@ import { StatusMessage } from "@/features/restaurant-config/components/StatusMes
 import { useActiveRestaurant } from "@/features/restaurant-config/hooks/useActiveRestaurant";
 import type { RestaurantTableResponse } from "@/features/restaurant-config/types";
 import { getErrorMessage } from "@/features/restaurant-config/utils/errorMessage";
+import { Pencil, Power } from "lucide-react";
+import { useI18n } from "@/features/i18n/I18nProvider";
 
 const emptyForm = {
   diningRoomId: "",
@@ -31,6 +33,7 @@ const emptyForm = {
 
 export function TablesPage() {
   const queryClient = useQueryClient();
+  const { t } = useI18n();
   const { activeRestaurantId } = useActiveRestaurant();
   const [selected, setSelected] = useState<RestaurantTableResponse | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -154,19 +157,19 @@ export function TablesPage() {
 
   function validateForm() {
     if (form.tableType !== "STORAGE" && !form.diningRoomId) {
-      return "Selecciona un salon para la mesa.";
+      return t("Selecciona un salon para la mesa.");
     }
 
     if (!form.code.trim()) {
-      return "El codigo de la mesa es obligatorio.";
+      return t("El codigo de la mesa es obligatorio.");
     }
 
     if (Number(form.minCapacity) <= 0 || Number(form.maxCapacity) <= 0) {
-      return "Las capacidades deben ser mayores que cero.";
+      return t("Las capacidades deben ser mayores que cero.");
     }
 
     if (Number(form.minCapacity) > Number(form.maxCapacity)) {
-      return "La capacidad minima no puede ser mayor que la maxima.";
+      return t("La capacidad minima no puede ser mayor que la maxima.");
     }
 
     if (
@@ -175,7 +178,7 @@ export function TablesPage() {
       Number(form.width) < 20 ||
       Number(form.height) < 20
     ) {
-      return "Revisa posicion y tamaño de la mesa antes de guardar.";
+      return t("Revisa la posicion y tamaño de la mesa.");
     }
 
     if (form.tableType === "STORAGE" && form.active) {
@@ -185,17 +188,12 @@ export function TablesPage() {
     return null;
   }
 
-  const storageTables = tablesQuery.data?.filter((table) => table.tableType === "STORAGE") ?? [];
-
   return (
-    <ConfigShell
-      title="Mesas del restaurante"
-      description="Configura las mesas del restaurante con capacidad, forma, salon y posicion visual. Las validaciones de capacidad y pertenencia al salon viven en backend."
-    >
+    <ConfigShell title={t("Mesas")}>
       <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-        <ConfigCard title="Mesas configuradas">
+        <ConfigCard title={t("Mesas configuradas")}>
           {tablesQuery.isLoading ? (
-            <StatusMessage tone="info">Cargando mesas...</StatusMessage>
+            <StatusMessage tone="info">{t("Cargando mesas...")}</StatusMessage>
           ) : null}
           {tablesQuery.error ? (
             <StatusMessage tone="error">{getErrorMessage(tablesQuery.error)}</StatusMessage>
@@ -206,7 +204,7 @@ export function TablesPage() {
               <article
                 key={table.id}
                 className={[
-                  "rounded-3xl border p-4 transition",
+                  "rounded-lg border p-4 transition",
                   selected?.id === table.id
                     ? "border-brand-400/60 bg-brand-500/10"
                     : "border-white/10 bg-white/5",
@@ -220,30 +218,36 @@ export function TablesPage() {
                     </h3>
                     <p className="mt-2 text-sm text-slate-400">
                       {table.tableType === "STORAGE"
-                        ? "Almacen"
-                        : `Salon ${roomsById.get(table.diningRoomId ?? 0) ?? table.diningRoomId}`} ·{" "}
-                      {table.minCapacity}-{table.maxCapacity} pax · {table.shape}
+                        ? t("Almacen")
+                        : `${t("Salon")} ${roomsById.get(table.diningRoomId ?? 0) ?? table.diningRoomId}`} ·{" "}
+                      {table.minCapacity}-{table.maxCapacity} {t("personas")} · {t(table.shape)}
                     </p>
                     <p className="mt-1 text-sm text-slate-500">
-                      Tipo {table.tableType} · Posicion {table.x},{table.y} · {table.width} × {table.height} ·{" "}
-                      {table.active ? "Activa" : "Inactiva"}
+                      {t("Tipo")} {t(table.tableType)} · {t("Posicion")} {table.x},{table.y} · {table.width} × {table.height} ·{" "}
+                      {table.active ? t("Activa") : t("Inactiva")}
                     </p>
                   </div>
 
                   <div className="flex flex-wrap gap-2">
                     <button
-                      className="h-11 rounded-2xl border border-white/10 bg-slate-900/70 px-4 text-sm font-medium text-white transition hover:border-brand-400/40 hover:bg-brand-500/10"
+                      className="h-11 rounded-lg border border-white/10 bg-slate-900/70 px-4 text-sm font-medium text-white transition hover:border-brand-400/40 hover:bg-brand-500/10"
                       type="button"
                       onClick={() => setSelected(table)}
                     >
-                      Editar
+                      <span className="inline-flex items-center gap-2">
+                        <Pencil className="h-4 w-4" />
+                        {t("Editar")}
+                      </span>
                     </button>
                     <button
-                      className="h-11 rounded-2xl border border-white/10 bg-rose-500/10 px-4 text-sm font-medium text-rose-100 transition hover:border-rose-400/40"
+                      className="h-11 rounded-lg border border-white/10 bg-rose-500/10 px-4 text-sm font-medium text-rose-100 transition hover:border-rose-400/40"
                       type="button"
                       onClick={() => deactivateMutation.mutate(table.id)}
                     >
-                      Desactivar
+                      <span className="inline-flex items-center gap-2">
+                        <Power className="h-4 w-4" />
+                        {t("Desactivar")}
+                      </span>
                     </button>
                   </div>
                 </div>
@@ -252,16 +256,13 @@ export function TablesPage() {
 
             {tablesQuery.data?.length === 0 ? (
               <StatusMessage tone="info">
-                Todavia no hay mesas creadas para este restaurante.
+                {t("Todavia no hay mesas configuradas.")}
               </StatusMessage>
             ) : null}
           </div>
         </ConfigCard>
 
-        <ConfigCard
-          title={selected ? "Editar mesa" : "Crear mesa"}
-          subtitle="Para facilitar el uso en tablet, los campos mas frecuentes quedan visibles sin abrir paneles secundarios."
-        >
+        <ConfigCard title={selected ? t("Editar mesa") : t("Crear mesa")}>
           {feedbackError ? (
             <StatusMessage tone="error">{getErrorMessage(feedbackError)}</StatusMessage>
           ) : null}
@@ -287,7 +288,7 @@ export function TablesPage() {
             }}
           >
             <SelectField
-              label="Salon"
+              label={t("Salon")}
               value={form.diningRoomId}
               disabled={form.tableType === "STORAGE"}
               onChange={(event) =>
@@ -295,7 +296,7 @@ export function TablesPage() {
               }
             >
               <option value="" disabled>
-                Selecciona un salon
+                {t("Selecciona un salon")}
               </option>
               {(diningRoomsQuery.data ?? []).map((room) => (
                 <option key={room.id} value={room.id}>
@@ -304,7 +305,7 @@ export function TablesPage() {
               ))}
             </SelectField>
             <SelectField
-              label="Tipo de mesa"
+              label={t("Tipo de mesa")}
               value={form.tableType}
               onChange={(event) =>
                 setForm((current) => ({
@@ -314,19 +315,19 @@ export function TablesPage() {
                 }))
               }
             >
-              <option value="FIXED">FIXED</option>
-              <option value="MOVABLE">MOVABLE</option>
-              <option value="STORAGE">STORAGE</option>
-              <option value="TEMPORARY">TEMPORARY</option>
+              <option value="FIXED">{t("FIXED")}</option>
+              <option value="MOVABLE">{t("MOVABLE")}</option>
+              <option value="STORAGE">{t("STORAGE")}</option>
+              <option value="TEMPORARY">{t("TEMPORARY")}</option>
             </SelectField>
             {form.tableType === "STORAGE" ? (
               <StatusMessage tone="info">
-                Las mesas STORAGE quedan registradas en inventario y no aparecen como mesas normales del planning.
+                {t("Las mesas de almacen solo aparecen en inventario.")}
               </StatusMessage>
             ) : null}
             <div className="grid gap-4 sm:grid-cols-2">
               <TextField
-                label="Codigo"
+                label={t("Codigo")}
                 value={form.code}
                 onChange={(event) =>
                   setForm((current) => ({ ...current, code: event.target.value }))
@@ -334,7 +335,7 @@ export function TablesPage() {
                 required
               />
               <TextField
-                label="Etiqueta"
+                label={t("Etiqueta")}
                 value={form.label}
                 onChange={(event) =>
                   setForm((current) => ({ ...current, label: event.target.value }))
@@ -343,7 +344,7 @@ export function TablesPage() {
             </div>
             <div className="grid gap-4 sm:grid-cols-3">
               <TextField
-                label="Capacidad min"
+                label={t("Capacidad minima")}
                 type="number"
                 min={1}
                 value={form.minCapacity}
@@ -356,7 +357,7 @@ export function TablesPage() {
                 required
               />
               <TextField
-                label="Capacidad max"
+                label={t("Capacidad maxima")}
                 type="number"
                 min={1}
                 value={form.maxCapacity}
@@ -369,15 +370,15 @@ export function TablesPage() {
                 required
               />
               <SelectField
-                label="Forma"
+                label={t("Forma")}
                 value={form.shape}
                 onChange={(event) =>
                   setForm((current) => ({ ...current, shape: event.target.value }))
                 }
               >
-                <option value="RECTANGLE">RECTANGLE</option>
-                <option value="ROUND">ROUND</option>
-                <option value="SQUARE">SQUARE</option>
+                <option value="RECTANGLE">{t("RECTANGLE")}</option>
+                <option value="ROUND">{t("ROUND")}</option>
+                <option value="SQUARE">{t("SQUARE")}</option>
               </SelectField>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -404,7 +405,7 @@ export function TablesPage() {
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <TextField
-                label="Ancho"
+                label={t("Ancho")}
                 type="number"
                 min={20}
                 value={form.width}
@@ -414,7 +415,7 @@ export function TablesPage() {
                 required
               />
               <TextField
-                label="Alto"
+                label={t("Alto")}
                 type="number"
                 min={20}
                 value={form.height}
@@ -425,7 +426,7 @@ export function TablesPage() {
               />
             </div>
             <CheckboxField
-              label="Mesa activa"
+              label={t("Mesa activa")}
               checked={form.active}
               onChange={(checked) =>
                 setForm((current) => ({ ...current, active: checked }))
@@ -435,28 +436,28 @@ export function TablesPage() {
             <div className="flex flex-wrap justify-end gap-3">
               {selected ? (
                 <button
-                  className="h-12 rounded-2xl border border-white/10 bg-white/5 px-5 text-sm font-medium text-white transition hover:border-white/20"
+                  className="h-12 rounded-lg border border-white/10 bg-white/5 px-5 text-sm font-medium text-white transition hover:border-white/20"
                   type="button"
                   onClick={() => {
                     setSelected(null);
                     setValidationError(null);
                   }}
                 >
-                  Cancelar
+                  {t("Cancelar")}
                 </button>
               ) : null}
               <button
-                className="h-12 rounded-2xl bg-brand-500 px-6 text-sm font-semibold text-slate-950 transition hover:bg-brand-400 disabled:opacity-60"
+                className="h-12 rounded-lg bg-brand-500 px-6 text-sm font-semibold text-slate-950 transition hover:bg-brand-400 disabled:opacity-60"
                 type="submit"
                 disabled={createMutation.isPending || updateMutation.isPending}
               >
                 {selected
                   ? updateMutation.isPending
-                    ? "Guardando..."
-                    : "Guardar mesa"
+                    ? t("Guardando...")
+                    : t("Guardar mesa")
                   : createMutation.isPending
-                    ? "Creando..."
-                    : "Crear mesa"}
+                    ? t("Creando...")
+                    : t("Crear mesa")}
               </button>
             </div>
           </form>
@@ -464,7 +465,6 @@ export function TablesPage() {
 
         <StorageInventory
           activeRestaurantId={activeRestaurantId}
-          storageTableCodes={storageTables.map((table) => table.code)}
         />
       </div>
     </ConfigShell>

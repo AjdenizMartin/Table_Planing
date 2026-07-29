@@ -1,9 +1,12 @@
 import { Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "@/features/auth/context/AuthContext";
+import { LanguageSwitcher } from "@/features/i18n/LanguageSwitcher";
+import { useI18n } from "@/features/i18n/I18nProvider";
 
 export function RestaurantSelectorPage() {
   const navigate = useNavigate();
   const { status, session, setActiveRestaurantId } = useAuth();
+  const { t } = useI18n();
 
   if (status !== "authenticated") {
     return <Navigate to="/login" replace />;
@@ -18,44 +21,36 @@ export function RestaurantSelectorPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4 py-10 sm:px-6">
-      <section className="w-full max-w-4xl rounded-[2rem] border border-white/10 bg-slate-950/70 p-6 shadow-2xl shadow-black/40 sm:p-8">
-        <p className="text-sm uppercase tracking-[0.3em] text-brand-300">
-          Contexto Activo
-        </p>
-        <h1 className="mt-4 text-3xl font-semibold text-white sm:text-4xl">
-          Elige el restaurante con el que quieres trabajar
-        </h1>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400 sm:text-base">
-          Tu usuario tiene acceso a varios restaurantes. Selecciona uno para
-          cargar el contexto operativo y activar las rutas protegidas.
-        </p>
+    <main className="grid min-h-screen place-items-center bg-[#0c0f0e] px-4 py-8">
+      <section className="w-full max-w-2xl">
+        <div className="mb-6 flex items-center justify-between">
+          <h1 className="text-2xl font-semibold text-white">
+            {t("Selecciona un restaurante")}
+          </h1>
+          <LanguageSwitcher compact />
+        </div>
 
-        <div className="mt-8 grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2">
           {session.restaurants.map((restaurant) => (
             <button
               key={restaurant.id}
               type="button"
-              className="rounded-[1.75rem] border border-white/10 bg-white/5 p-5 text-left transition hover:border-brand-400/40 hover:bg-brand-500/10"
+              className="rounded-lg border border-white/10 bg-[#111614] p-5 text-left transition hover:border-emerald-400/50 hover:bg-[#151d19]"
               onClick={() => {
                 setActiveRestaurantId(restaurant.id);
                 navigate("/", { replace: true });
               }}
             >
-              <p className="text-xs uppercase tracking-[0.3em] text-brand-300">
-                {restaurant.slug}
-              </p>
-              <h2 className="mt-3 text-2xl font-semibold text-white">
+              <h2 className="text-lg font-semibold text-white">
                 {restaurant.name}
               </h2>
-              <p className="mt-3 text-sm leading-6 text-slate-400">
-                Roles: {restaurant.roles.join(", ")}
+              <p className="mt-2 text-sm text-slate-400">
+                {restaurant.roles.map((role) => t(role)).join(", ")}
               </p>
             </button>
           ))}
         </div>
       </section>
-    </div>
+    </main>
   );
 }
-

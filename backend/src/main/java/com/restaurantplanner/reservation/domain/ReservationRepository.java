@@ -10,6 +10,8 @@ import org.springframework.data.repository.query.Param;
 
 public interface ReservationRepository extends JpaRepository<Reservation, Long> {
 
+    boolean existsByRestaurantIdAndCustomerId(Long restaurantId, Long customerId);
+
     @EntityGraph(attributePaths = {"restaurant", "customer"})
     Optional<Reservation> findByIdAndRestaurantId(Long id, Long restaurantId);
 

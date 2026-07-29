@@ -1,71 +1,15 @@
-import { NavLink } from "react-router-dom";
 import type { PropsWithChildren } from "react";
-import { useActiveRestaurant } from "@/features/restaurant-config/hooks/useActiveRestaurant";
-
-const sections = [
-  { to: "/settings/restaurant", label: "Restaurante" },
-  { to: "/settings/dining-rooms", label: "Salones" },
-  { to: "/settings/tables", label: "Mesas" },
-  { to: "/settings/layout", label: "Plano visual" },
-  { to: "/settings/table-combinations", label: "Combinaciones" },
-];
 
 export function ConfigShell({
   title,
-  description,
   children,
-}: PropsWithChildren<{ title: string; description: string }>) {
-  const { activeRestaurant } = useActiveRestaurant();
-
+}: PropsWithChildren<{ title: string }>) {
   return (
-    <section className="grid min-w-0 gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
-      <aside className="min-w-0 rounded-[2rem] border border-white/10 bg-slate-950/65 p-5 shadow-2xl shadow-black/20">
-        <p className="text-xs uppercase tracking-[0.3em] text-brand-300">
-          Configuracion
-        </p>
-        <h2 className="mt-3 text-2xl font-semibold text-white">
-          {activeRestaurant?.name ?? "Restaurante activo"}
-        </h2>
-        <p className="mt-2 text-sm leading-6 text-slate-400">
-          Navega entre la configuracion estructural del restaurante desde una
-          interfaz pensada para tablet.
-        </p>
-
-        <nav className="mt-6 grid gap-2">
-          {sections.map((section) => (
-            <NavLink
-              key={section.to}
-              to={section.to}
-              className={({ isActive }) =>
-                [
-                  "rounded-2xl px-4 py-3 text-sm font-medium transition",
-                  isActive
-                    ? "bg-brand-500 text-slate-950"
-                    : "border border-white/10 bg-white/5 text-slate-200 hover:border-brand-400/40 hover:bg-brand-500/10",
-                ].join(" ")
-              }
-            >
-              {section.label}
-            </NavLink>
-          ))}
-        </nav>
-      </aside>
-
-      <div className="grid min-w-0 gap-6">
-        <header className="rounded-[2rem] border border-white/10 bg-white/5 p-6 shadow-2xl shadow-black/20 sm:p-8">
-          <p className="text-xs uppercase tracking-[0.3em] text-brand-300">
-            Configuracion Operativa
-          </p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-            {title}
-          </h1>
-          <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-300 sm:text-base">
-            {description}
-          </p>
-        </header>
-
-        {children}
-      </div>
+    <section className="grid min-w-0 gap-5">
+      <header className="flex min-h-11 items-center border-b border-white/8 pb-4">
+        <h1 className="text-2xl font-semibold text-white sm:text-3xl">{title}</h1>
+      </header>
+      {children}
     </section>
   );
 }

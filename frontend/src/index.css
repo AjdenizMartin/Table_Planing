@@ -11,9 +11,7 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background:
-    radial-gradient(circle at top left, rgba(120, 149, 69, 0.18), transparent 30%),
-    linear-gradient(180deg, #020617 0%, #0f172a 100%);
+  background: #0c0f0e;
   color: #e5e7eb;
 }
 
@@ -23,10 +21,44 @@ body {
 
 * {
   box-sizing: border-box;
+  letter-spacing: 0 !important;
 }
 
 button,
 input,
 select {
   font: inherit;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #34d399;
+  outline-offset: 2px;
+}
+
+::selection {
+  background: rgba(52, 211, 153, 0.28);
+  color: #ffffff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }

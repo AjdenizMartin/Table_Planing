@@ -280,6 +280,12 @@ Endpoints:
 - `GET /api/restaurants/{restaurantId}/customers` - `IMPLEMENTED`
 - `GET /api/restaurants/{restaurantId}/customers/{customerId}` - `IMPLEMENTED`
 - `PATCH /api/restaurants/{restaurantId}/customers/{customerId}` - `IMPLEMENTED`
+- `DELETE /api/restaurants/{restaurantId}/customers/{customerId}` - `IMPLEMENTED`
+
+El borrado fisico exige rol `PLATFORM_ADMIN`, `RESTAURANT_OWNER` o `MANAGER`,
+respeta el aislamiento por restaurante y registra `customer.deleted` en auditoria.
+Devuelve `204` cuando se aplica y `409` con `reason=HAS_RESERVATIONS` si existen
+reservas asociadas; `WAITER` puede consultar la ficha, pero no eliminarla.
 
 Filtros previstos:
 

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
+import { CalendarSearch, Plus } from "lucide-react";
 import * as frontdeskApi from "@/features/frontdesk/api/frontdeskApi";
 import type { SearchReservationsParams } from "@/features/frontdesk/api/frontdeskApi";
 import { OperationsShell } from "@/features/frontdesk/components/OperationsShell";
@@ -19,9 +20,11 @@ import { SelectField, TextField } from "@/features/restaurant-config/components/
 import { StatusMessage } from "@/features/restaurant-config/components/StatusMessage";
 import { getErrorMessage } from "@/features/restaurant-config/utils/errorMessage";
 import { useAuth } from "@/features/auth/context/AuthContext";
+import { useI18n } from "@/features/i18n/I18nProvider";
 
 export function ReservationsPage() {
   const queryClient = useQueryClient();
+  const { t } = useI18n();
   const [searchParams, setSearchParams] = useSearchParams();
   const createReservationSectionRef = useRef<HTMLDivElement | null>(null);
   const { session } = useAuth();
@@ -135,18 +138,15 @@ export function ReservationsPage() {
   }
 
   return (
-    <OperationsShell
-      title="Agenda manual de reservas"
-      description="Crea reservas manuales, consulta el servicio por fecha y actualiza estados operativos desde una sola vista."
-    >
+    <OperationsShell title={t("Reservas")}>
       <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
         <div className="grid gap-6">
-          <ConfigCard title={searchMode ? "Buscar reservas" : "Reservas del dia"}>
+          <ConfigCard title={searchMode ? t("Buscar reservas") : t("Reservas del dia")}>
             <div className="mb-5 grid gap-4 sm:grid-cols-[220px_auto] sm:items-end">
               {searchMode ? (
                 <TextField
-                  label="Buscar cliente"
-                  placeholder="Nombre, apellido..."
+                  label={t("Buscar cliente")}
+                  placeholder={t("Nombre o apellidos")}
                   value={searchFilters.customerQuery ?? ""}
                   onChange={(event) =>
                     setSearchFilters((prev) => ({ ...prev, customerQuery: event.target.value }))
@@ -154,7 +154,7 @@ export function ReservationsPage() {
                 />
               ) : (
                 <TextField
-                  label="Fecha"
+                  label={t("Fecha")}
                   type="date"
                   value={selectedDate}
                   onChange={(event) => {
@@ -173,17 +173,20 @@ export function ReservationsPage() {
               )}
               <div className="flex flex-wrap gap-3">
                 <button
-                  className="h-12 rounded-2xl border border-white/10 bg-white/5 px-5 text-sm font-medium text-white transition hover:border-brand-400/40 hover:bg-brand-500/10"
+                  className="h-12 rounded-lg border border-white/10 bg-white/5 px-5 text-sm font-medium text-white transition hover:border-brand-400/40 hover:bg-brand-500/10"
                   type="button"
                   onClick={() => {
                     setSearchMode(!searchMode);
                     setSelectedReservationId(null);
                   }}
                 >
-                  {searchMode ? "Ver por fecha" : "Buscar"}
+                  <span className="inline-flex items-center gap-2">
+                    <CalendarSearch className="h-4 w-4" />
+                    {searchMode ? t("Ver por fecha") : t("Buscar")}
+                  </span>
                 </button>
                 <button
-                  className="h-12 rounded-2xl border border-white/10 bg-white/5 px-5 text-sm font-medium text-white transition hover:border-brand-400/40 hover:bg-brand-500/10"
+                  className="h-12 rounded-lg border border-white/10 bg-white/5 px-5 text-sm font-medium text-white transition hover:border-brand-400/40 hover:bg-brand-500/10"
                   type="button"
                   onClick={() => {
                     setMode("create");
@@ -196,7 +199,10 @@ export function ReservationsPage() {
                     });
                   }}
                 >
-                  Nueva reserva
+                  <span className="inline-flex items-center gap-2">
+                    <Plus className="h-4 w-4" />
+                    {t("Nueva reserva")}
+                  </span>
                 </button>
               </div>
             </div>
@@ -204,22 +210,22 @@ export function ReservationsPage() {
             {searchMode ? (
               <div className="mb-5 grid gap-4 sm:grid-cols-3">
                 <SelectField
-                  label="Estado"
+                  label={t("Estado")}
                   value={searchFilters.status ?? ""}
                   onChange={(event) =>
                     setSearchFilters((prev) => ({ ...prev, status: event.target.value }))
                   }
                 >
-                  <option value="">Todos</option>
-                  <option value="PENDING">Pendiente</option>
-                  <option value="CONFIRMED">Confirmada</option>
-                  <option value="SEATED">Sentada</option>
-                  <option value="COMPLETED">Completada</option>
-                  <option value="CANCELLED">Cancelada</option>
-                  <option value="NO_SHOW">No show</option>
+                  <option value="">{t("Todos")}</option>
+                  <option value="PENDING">{t("Pendiente")}</option>
+                  <option value="CONFIRMED">{t("Confirmada")}</option>
+                  <option value="SEATED">{t("Sentada")}</option>
+                  <option value="COMPLETED">{t("Completada")}</option>
+                  <option value="CANCELLED">{t("Cancelada")}</option>
+                  <option value="NO_SHOW">{t("No presentado")}</option>
                 </SelectField>
                 <TextField
-                  label="Desde"
+                  label={t("Desde")}
                   type="date"
                   value={searchFilters.dateFrom ?? ""}
                   onChange={(event) =>
@@ -227,7 +233,7 @@ export function ReservationsPage() {
                   }
                 />
                 <TextField
-                  label="Hasta"
+                  label={t("Hasta")}
                   type="date"
                   value={searchFilters.dateTo ?? ""}
                   onChange={(event) =>
@@ -238,7 +244,7 @@ export function ReservationsPage() {
             ) : null}
 
             {reservationsQuery.isLoading || searchQuery.isLoading ? (
-              <StatusMessage tone="info">Cargando reservas...</StatusMessage>
+              <StatusMessage tone="info">{t("Cargando reservas...")}</StatusMessage>
             ) : null}
             {reservationsQuery.error || searchQuery.error ? (
               <StatusMessage tone="error">
@@ -251,7 +257,7 @@ export function ReservationsPage() {
                 <button
                   key={reservation.id}
                   className={[
-                    "w-full rounded-3xl border p-4 text-left transition",
+                    "w-full rounded-lg border p-4 text-left transition",
                     selectedReservationId === reservation.id
                       ? "border-brand-400/60 bg-brand-500/10"
                       : "border-white/10 bg-white/5 hover:border-brand-400/30",
@@ -281,7 +287,7 @@ export function ReservationsPage() {
                         {reservation.endTime
                           ? ` - ${normalizeTimeForInput(reservation.endTime)}`
                           : ""}
-                        {` · ${reservation.partySize} pax · ${reservation.channel}`}
+                        {` · ${reservation.partySize} ${t("personas")} · ${reservation.channel}`}
                       </p>
                       {reservation.specialRequests ? (
                         <p className="mt-2 line-clamp-2 text-sm text-slate-500">
@@ -295,7 +301,7 @@ export function ReservationsPage() {
 
               {reservations.length === 0 ? (
                 <StatusMessage tone="info">
-                  No hay reservas para la fecha seleccionada.
+                  {t("No hay reservas para la fecha seleccionada.")}
                 </StatusMessage>
               ) : null}
             </div>
@@ -304,8 +310,7 @@ export function ReservationsPage() {
 
         <div ref={createReservationSectionRef}>
           <ConfigCard
-            title={selectedReservation ? "Detalle de reserva" : "Crear reserva manual"}
-            subtitle="La operativa vive en backend; esta vista solo acelera el flujo del front desk."
+            title={selectedReservation ? t("Detalle de reserva") : t("Crear reserva manual")}
           >
             {selectedReservation ? (
               <ReservationDetailPanel

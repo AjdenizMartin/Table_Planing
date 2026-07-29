@@ -8,6 +8,8 @@ import { useActiveRestaurant } from "@/features/restaurant-config/hooks/useActiv
 import * as configApi from "@/features/restaurant-config/api/configApi";
 import { getErrorMessage } from "@/features/restaurant-config/utils/errorMessage";
 import type { DiningRoomResponse } from "@/features/restaurant-config/types";
+import { Pencil, Power } from "lucide-react";
+import { useI18n } from "@/features/i18n/I18nProvider";
 
 const emptyForm = {
   name: "",
@@ -20,6 +22,7 @@ const emptyForm = {
 
 export function DiningRoomsPage() {
   const queryClient = useQueryClient();
+  const { t } = useI18n();
   const { activeRestaurantId } = useActiveRestaurant();
   const [selected, setSelected] = useState<DiningRoomResponse | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -98,29 +101,26 @@ export function DiningRoomsPage() {
 
   function validateForm() {
     if (!form.name.trim()) {
-      return "El nombre del salon es obligatorio.";
+      return t("El nombre del salon es obligatorio.");
     }
 
     if (Number(form.priority) <= 0) {
-      return "La prioridad debe ser mayor que cero.";
+      return t("La prioridad debe ser mayor que cero.");
     }
 
     if (Number(form.layoutWidth) < 100 || Number(form.layoutHeight) < 100) {
-      return "El layout debe tener un ancho y alto razonables.";
+      return t("El plano debe tener un ancho y alto validos.");
     }
 
     return null;
   }
 
   return (
-    <ConfigShell
-      title="Salones y zonas"
-      description="Crea y edita los salones del restaurante con prioridad, accesibilidad y dimensiones del plano. La desactivacion es logica y queda controlada por backend."
-    >
+    <ConfigShell title={t("Salones")}>
       <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-        <ConfigCard title="Salones configurados">
+        <ConfigCard title={t("Salones configurados")}>
           {diningRoomsQuery.isLoading ? (
-            <StatusMessage tone="info">Cargando salones...</StatusMessage>
+            <StatusMessage tone="info">{t("Cargando salones...")}</StatusMessage>
           ) : null}
           {diningRoomsQuery.error ? (
             <StatusMessage tone="error">
@@ -133,7 +133,7 @@ export function DiningRoomsPage() {
               <article
                 key={room.id}
                 className={[
-                  "rounded-3xl border p-4 transition",
+                  "rounded-lg border p-4 transition",
                   selected?.id === room.id
                     ? "border-brand-400/60 bg-brand-500/10"
                     : "border-white/10 bg-white/5",
@@ -143,29 +143,35 @@ export function DiningRoomsPage() {
                   <div>
                     <h3 className="text-lg font-semibold text-white">{room.name}</h3>
                     <p className="mt-2 text-sm text-slate-400">
-                      Prioridad {room.priority} ·{" "}
-                      {room.accessible ? "Accesible" : "No accesible"} ·{" "}
-                      {room.active ? "Activo" : "Inactivo"}
+                      {t("Prioridad")} {room.priority} ·{" "}
+                      {room.accessible ? t("Accesible") : t("No accesible")} ·{" "}
+                      {room.active ? t("Activo") : t("Inactivo")}
                     </p>
                     <p className="mt-1 text-sm text-slate-500">
-                      Plano {room.layoutWidth} × {room.layoutHeight}
+                      {t("Plano")} {room.layoutWidth} × {room.layoutHeight}
                     </p>
                   </div>
 
                   <div className="flex flex-wrap gap-2">
                     <button
-                      className="h-11 rounded-2xl border border-white/10 bg-slate-900/70 px-4 text-sm font-medium text-white transition hover:border-brand-400/40 hover:bg-brand-500/10"
+                      className="h-11 rounded-lg border border-white/10 bg-slate-900/70 px-4 text-sm font-medium text-white transition hover:border-brand-400/40 hover:bg-brand-500/10"
                       type="button"
                       onClick={() => setSelected(room)}
                     >
-                      Editar
+                      <span className="inline-flex items-center gap-2">
+                        <Pencil className="h-4 w-4" />
+                        {t("Editar")}
+                      </span>
                     </button>
                     <button
-                      className="h-11 rounded-2xl border border-white/10 bg-rose-500/10 px-4 text-sm font-medium text-rose-100 transition hover:border-rose-400/40"
+                      className="h-11 rounded-lg border border-white/10 bg-rose-500/10 px-4 text-sm font-medium text-rose-100 transition hover:border-rose-400/40"
                       type="button"
                       onClick={() => deactivateMutation.mutate(room.id)}
                     >
-                      Desactivar
+                      <span className="inline-flex items-center gap-2">
+                        <Power className="h-4 w-4" />
+                        {t("Desactivar")}
+                      </span>
                     </button>
                   </div>
                 </div>
@@ -174,16 +180,13 @@ export function DiningRoomsPage() {
 
             {diningRoomsQuery.data?.length === 0 ? (
               <StatusMessage tone="info">
-                Todavia no hay salones configurados para este restaurante.
+                {t("Todavia no hay salones configurados.")}
               </StatusMessage>
             ) : null}
           </div>
         </ConfigCard>
 
-        <ConfigCard
-          title={selected ? "Editar salon" : "Crear salon"}
-          subtitle="Los campos minimos y las validaciones de rango siguen definidos por el backend."
-        >
+        <ConfigCard title={selected ? t("Editar salon") : t("Crear salon")}>
           {feedbackError ? (
             <StatusMessage tone="error">{getErrorMessage(feedbackError)}</StatusMessage>
           ) : null}
@@ -209,7 +212,7 @@ export function DiningRoomsPage() {
             }}
           >
             <TextField
-              label="Nombre"
+              label={t("Nombre")}
               value={form.name}
               onChange={(event) =>
                 setForm((current) => ({ ...current, name: event.target.value }))
@@ -217,7 +220,7 @@ export function DiningRoomsPage() {
               required
             />
             <TextField
-              label="Prioridad"
+              label={t("Prioridad")}
               type="number"
               min={1}
               value={form.priority}
@@ -228,7 +231,7 @@ export function DiningRoomsPage() {
             />
             <div className="grid gap-4 sm:grid-cols-2">
               <TextField
-                label="Ancho del layout"
+                label={t("Ancho del plano")}
                 type="number"
                 min={100}
                 value={form.layoutWidth}
@@ -241,7 +244,7 @@ export function DiningRoomsPage() {
                 required
               />
               <TextField
-                label="Alto del layout"
+                label={t("Alto del plano")}
                 type="number"
                 min={100}
                 value={form.layoutHeight}
@@ -255,14 +258,14 @@ export function DiningRoomsPage() {
               />
             </div>
             <CheckboxField
-              label="Salon accesible"
+              label={t("Salon accesible")}
               checked={form.accessible}
               onChange={(checked) =>
                 setForm((current) => ({ ...current, accessible: checked }))
               }
             />
             <CheckboxField
-              label="Salon activo"
+              label={t("Salon activo")}
               checked={form.active}
               onChange={(checked) =>
                 setForm((current) => ({ ...current, active: checked }))
@@ -272,28 +275,28 @@ export function DiningRoomsPage() {
             <div className="flex flex-wrap justify-end gap-3">
               {selected ? (
                 <button
-                  className="h-12 rounded-2xl border border-white/10 bg-white/5 px-5 text-sm font-medium text-white transition hover:border-white/20"
+                  className="h-12 rounded-lg border border-white/10 bg-white/5 px-5 text-sm font-medium text-white transition hover:border-white/20"
                   type="button"
                   onClick={() => {
                     setSelected(null);
                     setValidationError(null);
                   }}
                 >
-                  Cancelar
+                  {t("Cancelar")}
                 </button>
               ) : null}
               <button
-                className="h-12 rounded-2xl bg-brand-500 px-6 text-sm font-semibold text-slate-950 transition hover:bg-brand-400 disabled:opacity-60"
+                className="h-12 rounded-lg bg-brand-500 px-6 text-sm font-semibold text-slate-950 transition hover:bg-brand-400 disabled:opacity-60"
                 type="submit"
                 disabled={createMutation.isPending || updateMutation.isPending}
               >
                 {selected
                   ? updateMutation.isPending
-                    ? "Guardando..."
-                    : "Guardar salon"
+                    ? t("Guardando...")
+                    : t("Guardar salon")
                   : createMutation.isPending
-                    ? "Creando..."
-                    : "Crear salon"}
+                    ? t("Creando...")
+                    : t("Crear salon")}
               </button>
             </div>
           </form>

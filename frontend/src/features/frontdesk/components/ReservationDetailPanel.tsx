@@ -10,6 +10,7 @@ import { StatusPill } from "@/features/frontdesk/components/StatusPill";
 import { StatusMessage } from "@/features/restaurant-config/components/StatusMessage";
 import { getErrorMessage } from "@/features/restaurant-config/utils/errorMessage";
 import { useActiveRestaurant } from "@/features/restaurant-config/hooks/useActiveRestaurant";
+import { useI18n } from "@/features/i18n/I18nProvider";
 
 interface AvailabilityConflictDetails {
   reservationId?: number;
@@ -29,6 +30,7 @@ export function ReservationDetailPanel({
   canOperateReservations,
   onChanged,
 }: ReservationDetailPanelProps) {
+  const { t } = useI18n();
   const { activeRestaurantId } = useActiveRestaurant();
   const [error, setError] = useState<string | null>(null);
   const [availabilityConflict, setAvailabilityConflict] =
@@ -74,17 +76,17 @@ export function ReservationDetailPanel({
         <AvailabilityConflictCard details={availabilityConflict} />
       ) : null}
 
-      <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
+      <div className="rounded-lg border border-white/10 bg-white/5 p-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-xs uppercase tracking-[0.25em] text-slate-500">
-              Reserva #{reservation.id}
+            <p className="text-xs uppercase text-slate-500">
+              {t("Reserva")} #{reservation.id}
             </p>
             <h3 className="mt-2 text-2xl font-semibold text-white">
               {formatReservationCustomerName(reservation)}
             </h3>
             <p className="mt-2 text-sm text-slate-400">
-              {reservation.partySize} pax · {reservation.reservationDate} ·{" "}
+              {reservation.partySize} {t("personas")} · {reservation.reservationDate} ·{" "}
               {normalizeTimeForInput(reservation.startTime)}
               {reservation.endTime ? ` - ${normalizeTimeForInput(reservation.endTime)}` : ""}
             </p>
@@ -94,38 +96,38 @@ export function ReservationDetailPanel({
       </div>
 
       <dl className="grid gap-3 sm:grid-cols-2">
-        <div className="rounded-2xl border border-white/10 bg-slate-950/55 p-4">
-          <dt className="text-xs uppercase tracking-[0.2em] text-slate-500">Canal</dt>
+        <div className="rounded-lg border border-white/10 bg-slate-950/55 p-4">
+          <dt className="text-xs uppercase text-slate-500">{t("Canal")}</dt>
           <dd className="mt-2 text-sm text-slate-200">{reservation.channel}</dd>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-slate-950/55 p-4">
-          <dt className="text-xs uppercase tracking-[0.2em] text-slate-500">Accesibilidad</dt>
+        <div className="rounded-lg border border-white/10 bg-slate-950/55 p-4">
+          <dt className="text-xs uppercase text-slate-500">{t("Accesibilidad")}</dt>
           <dd className="mt-2 text-sm text-slate-200">
-            {reservation.accessibilityRequired ? "Si" : "No"}
+            {reservation.accessibilityRequired ? t("Si") : t("No")}
           </dd>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-slate-950/55 p-4">
-          <dt className="text-xs uppercase tracking-[0.2em] text-slate-500">Duracion</dt>
+        <div className="rounded-lg border border-white/10 bg-slate-950/55 p-4">
+          <dt className="text-xs uppercase text-slate-500">{t("Duracion")}</dt>
           <dd className="mt-2 text-sm text-slate-200">
-            {reservation.estimatedDurationMin} min + {reservation.cleaningBufferMin} min limpieza
+            {reservation.estimatedDurationMin} min + {reservation.cleaningBufferMin} min {t("limpieza")}
           </dd>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-slate-950/55 p-4">
-          <dt className="text-xs uppercase tracking-[0.2em] text-slate-500">Estado temporal</dt>
+        <div className="rounded-lg border border-white/10 bg-slate-950/55 p-4">
+          <dt className="text-xs uppercase text-slate-500">{t("Estado")}</dt>
           <dd className="mt-2 text-sm text-slate-200">
             {reservation.confirmedAt
-              ? `Confirmada ${new Date(reservation.confirmedAt).toLocaleString()}`
+              ? `${t("Confirmada")} ${new Date(reservation.confirmedAt).toLocaleString()}`
               : reservation.cancelledAt
-                ? `Cancelada ${new Date(reservation.cancelledAt).toLocaleString()}`
-                : "Sin marca adicional"}
+                ? `${t("Cancelada")} ${new Date(reservation.cancelledAt).toLocaleString()}`
+                : t("Sin actividad registrada")}
           </dd>
         </div>
       </dl>
 
       {reservation.specialRequests ? (
-        <div className="rounded-3xl border border-white/10 bg-slate-950/55 p-5">
-          <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
-            Peticiones especiales
+        <div className="rounded-lg border border-white/10 bg-slate-950/55 p-5">
+          <p className="text-xs uppercase text-slate-500">
+            {t("Peticiones especiales")}
           </p>
           <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-200">
             {reservation.specialRequests}
@@ -136,73 +138,73 @@ export function ReservationDetailPanel({
       <div className="grid gap-3">
         {!canOperateReservations ? (
           <StatusMessage tone="info">
-            Tu rol actual puede consultar reservas, pero no operar cambios de estado.
+            {t("Tu rol puede consultar reservas, pero no cambiar su estado.")}
           </StatusMessage>
         ) : null}
 
         <div className="flex flex-wrap gap-3">
           {reservation.status === "PENDING" ? (
             <button
-              className="h-12 rounded-2xl bg-brand-500 px-5 text-sm font-semibold text-slate-950 transition hover:bg-brand-400 disabled:opacity-60"
+              className="h-12 rounded-lg bg-brand-500 px-5 text-sm font-semibold text-slate-950 transition hover:bg-brand-400 disabled:opacity-60"
               type="button"
               disabled={!canOperateReservations || pendingAction !== null}
               onClick={() => {
                 void runAction("confirm");
               }}
             >
-              {pendingAction === "confirm" ? "Confirmando..." : "Confirmar"}
+              {pendingAction === "confirm" ? t("Confirmando...") : t("Confirmar")}
             </button>
           ) : null}
 
           {reservation.status === "CONFIRMED" ? (
             <button
-              className="h-12 rounded-2xl bg-emerald-500 px-5 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400 disabled:opacity-60"
+              className="h-12 rounded-lg bg-emerald-500 px-5 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400 disabled:opacity-60"
               type="button"
               disabled={!canOperateReservations || pendingAction !== null}
               onClick={() => {
                 void runAction("seat");
               }}
             >
-              {pendingAction === "seat" ? "Marcando..." : "Marcar sentado"}
+              {pendingAction === "seat" ? t("Guardando...") : t("Sentar")}
             </button>
           ) : null}
 
           {reservation.status === "SEATED" ? (
             <button
-              className="h-12 rounded-2xl bg-sky-500 px-5 text-sm font-semibold text-slate-950 transition hover:bg-sky-400 disabled:opacity-60"
+              className="h-12 rounded-lg bg-sky-500 px-5 text-sm font-semibold text-slate-950 transition hover:bg-sky-400 disabled:opacity-60"
               type="button"
               disabled={!canOperateReservations || pendingAction !== null}
               onClick={() => {
                 void runAction("complete");
               }}
             >
-              {pendingAction === "complete" ? "Cerrando..." : "Marcar completada"}
+              {pendingAction === "complete" ? t("Guardando...") : t("Completar")}
             </button>
           ) : null}
 
           {(reservation.status === "PENDING" || reservation.status === "CONFIRMED") ? (
             <button
-              className="h-12 rounded-2xl border border-white/10 bg-rose-500/10 px-5 text-sm font-semibold text-rose-100 transition hover:border-rose-400/40 disabled:opacity-60"
+              className="h-12 rounded-lg border border-white/10 bg-rose-500/10 px-5 text-sm font-semibold text-rose-100 transition hover:border-rose-400/40 disabled:opacity-60"
               type="button"
               disabled={!canOperateReservations || pendingAction !== null}
               onClick={() => {
                 void runAction("cancel");
               }}
             >
-              {pendingAction === "cancel" ? "Cancelando..." : "Cancelar"}
+              {pendingAction === "cancel" ? t("Cancelando...") : t("Cancelar")}
             </button>
           ) : null}
 
           {(reservation.status === "PENDING" || reservation.status === "CONFIRMED") ? (
             <button
-              className="h-12 rounded-2xl border border-white/10 bg-fuchsia-500/10 px-5 text-sm font-semibold text-fuchsia-100 transition hover:border-fuchsia-400/40 disabled:opacity-60"
+              className="h-12 rounded-lg border border-white/10 bg-fuchsia-500/10 px-5 text-sm font-semibold text-fuchsia-100 transition hover:border-fuchsia-400/40 disabled:opacity-60"
               type="button"
               disabled={!canOperateReservations || pendingAction !== null}
               onClick={() => {
                 void runAction("no-show");
               }}
             >
-              {pendingAction === "no-show" ? "Guardando..." : "Marcar no-show"}
+              {pendingAction === "no-show" ? t("Guardando...") : t("No presentado")}
             </button>
           ) : null}
         </div>
@@ -245,26 +247,27 @@ function extractAvailabilityConflict(error: unknown): AvailabilityConflictDetail
 }
 
 function AvailabilityConflictCard({ details }: { details: AvailabilityConflictDetails }) {
+  const { t } = useI18n();
   return (
-    <div className="rounded-3xl border border-rose-300/30 bg-rose-500/10 p-5 text-sm text-rose-50">
-      <p className="font-semibold text-white">No hay mesa disponible para confirmar</p>
+    <div className="rounded-lg border border-rose-300/30 bg-rose-500/10 p-5 text-sm text-rose-50">
+      <p className="font-semibold text-white">{t("No hay mesa disponible para confirmar")}</p>
       <p className="mt-2 text-rose-100/90">
-        Esta reserva no se ha confirmado porque no puede asignarse a ninguna mesa o combinacion en la hora solicitada.
+        {t("La reserva no puede asignarse en la hora solicitada.")}
       </p>
 
       {details.reasons?.length ? (
         <ul className="mt-3 grid gap-2">
           {details.reasons.map((reason) => (
-            <li key={reason} className="rounded-2xl border border-rose-200/15 bg-slate-950/35 px-3 py-2">
-              {humanizeAvailabilityReason(reason)}
+            <li key={reason} className="rounded-lg border border-rose-200/15 bg-slate-950/35 px-3 py-2">
+              {t(humanizeAvailabilityReason(reason))}
             </li>
           ))}
         </ul>
       ) : null}
 
-      <div className="mt-4 rounded-2xl border border-brand-300/30 bg-brand-400/10 p-3 text-brand-50">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-200">
-          Proxima opcion
+      <div className="mt-4 rounded-lg border border-brand-300/30 bg-brand-400/10 p-3 text-brand-50">
+        <p className="text-xs font-semibold uppercase text-brand-200">
+          {t("Proxima opcion")}
         </p>
         {details.recommendedStartTime ? (
           <>
@@ -272,12 +275,12 @@ function AvailabilityConflictCard({ details }: { details: AvailabilityConflictDe
               {normalizeTimeForInput(details.recommendedStartTime)}
             </p>
             <p className="mt-1 text-sm text-brand-100">
-              Si el cliente acepta, cambia la hora manualmente y vuelve a confirmar.
+              {t("Cambia la hora y vuelve a confirmar.")}
             </p>
           </>
         ) : (
           <p className="mt-2 text-sm text-brand-100">
-            No se encontro una opcion posterior en el mismo dia.
+            {t("No se encontro otra opcion para este dia.")}
           </p>
         )}
       </div>

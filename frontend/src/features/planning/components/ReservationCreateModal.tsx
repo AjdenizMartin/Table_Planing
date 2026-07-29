@@ -4,6 +4,8 @@ import * as planningApi from "@/features/planning/api/planningApi";
 import { getErrorMessage } from "@/features/restaurant-config/utils/errorMessage";
 import { notify } from "@/features/notifications/components/NotificationToast";
 import type { AssignReservationResponse } from "@/features/planning/types";
+import { X } from "lucide-react";
+import { useI18n } from "@/features/i18n/I18nProvider";
 
 interface Props {
   open: boolean;
@@ -13,15 +15,22 @@ interface Props {
   onCreated: (reservationId: number) => void;
 }
 
-function formatMinutesDiff(requested: string, alternative: string): string {
+function formatMinutesDiff(
+  requested: string,
+  alternative: string,
+  language: "es" | "en",
+): string {
   const [rh, rm] = requested.split(":").map(Number);
   const [ah, am] = alternative.split(":").map(Number);
   const diff = (ah * 60 + am) - (rh * 60 + rm);
-  if (diff === 0) return "same time";
+  if (diff === 0) return language === "es" ? "misma hora" : "same time";
   const abs = Math.abs(diff);
   const label = abs >= 60
     ? `${Math.floor(abs / 60)}h ${abs % 60 > 0 ? `${abs % 60} min` : ""}`
     : `${abs} min`;
+  if (language === "es") {
+    return diff < 0 ? `${label} antes` : `${label} despues`;
+  }
   return diff < 0 ? `${label} earlier` : `${label} later`;
 }
 
@@ -32,6 +41,7 @@ export function ReservationCreateModal({
   onClose,
   onCreated,
 }: Props) {
+  const { t, language } = useI18n();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
@@ -68,14 +78,14 @@ export function ReservationCreateModal({
 
   function validate(): string | null {
     if (!firstName.trim() && !lastName.trim() && !phone.trim()) {
-      return "Enter at least a name or phone.";
+      return t("Introduce al menos un nombre o telefono.");
     }
     const size = Number(partySize);
     if (!Number.isInteger(size) || size < 1) {
-      return "Party size must be at least 1.";
+      return t("El numero de comensales debe ser mayor que cero.");
     }
     if (!startTime) {
-      return "Start time is required.";
+      return t("La hora de inicio es obligatoria.");
     }
     return null;
   }
@@ -120,7 +130,7 @@ export function ReservationCreateModal({
       setAssignResult(assignResponse);
 
       if (assignResponse.assigned) {
-        notify("Reservation created and table assigned.", "");
+        notify(t("Reserva creada y mesa asignada."), "");
         onCreated(reservation.id);
         onClose();
       }
@@ -145,7 +155,7 @@ export function ReservationCreateModal({
       setAssignResult(assignResponse);
 
       if (assignResponse.assigned) {
-        notify("Reservation created and table assigned.", "");
+        notify(t("Reserva creada y mesa asignada."), "");
         onCreated(createdReservationId);
         onClose();
       }
@@ -167,24 +177,24 @@ export function ReservationCreateModal({
       <div className="absolute inset-0" onClick={isSubmitting || retryingWithTime ? undefined : onClose} />
 
       <div
-        className="relative mx-4 flex max-h-[90vh] w-full max-w-lg flex-col rounded-[2rem] border border-white/10 bg-slate-950 shadow-2xl shadow-black/50"
+        className="relative mx-4 flex max-h-[90vh] w-full max-w-lg flex-col rounded-lg border border-white/10 bg-slate-950 shadow-2xl shadow-black/50"
         role="dialog"
-        aria-label="New reservation"
+        aria-label={t("Nueva reserva")}
       >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-white/10 px-6 pb-4 pt-5">
           <div>
-            <h2 className="text-xl font-semibold text-white">New reservation</h2>
+            <h2 className="text-xl font-semibold text-white">{t("Nueva reserva")}</h2>
             <p className="mt-1 text-xs text-slate-400">{selectedDate}</p>
           </div>
           <button
             type="button"
-            className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-base text-white transition hover:border-brand-400/40 hover:bg-brand-500/10"
+            className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-base text-white transition hover:border-brand-400/40 hover:bg-brand-500/10"
             onClick={onClose}
             disabled={isSubmitting || retryingWithTime}
-            aria-label="Close modal"
+            aria-label={t("Cerrar")}
           >
-            ✕
+            <X className="h-5 w-5" />
           </button>
         </div>
 
@@ -193,31 +203,31 @@ export function ReservationCreateModal({
           {assignResult && !assignResult.assigned && alternativeTime ? (
             /* --- Alternatives view --- */
             <div className="space-y-5">
-              <div className="rounded-3xl border border-amber-300/25 bg-amber-400/10 p-4 text-sm text-amber-100">
-                <p className="font-semibold text-white">No table available at {requestedTime}</p>
+              <div className="rounded-lg border border-amber-300/25 bg-amber-400/10 p-4 text-sm text-amber-100">
+                <p className="font-semibold text-white">{t("No hay mesa disponible a las")} {requestedTime}</p>
                 <p className="mt-2">
-                  {assignResult.recommendationSummary ?? "The system could not find a suitable table for the requested time."}
+                  {assignResult.recommendationSummary ?? t("No se encontro una mesa para la hora solicitada.")}
                 </p>
               </div>
 
               <div>
-                <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-                  Alternative times
+                <p className="mb-3 text-xs font-semibold uppercase text-slate-500">
+                  {t("Horas alternativas")}
                 </p>
                 <button
                   type="button"
-                  className="w-full rounded-2xl border border-brand-300/40 bg-brand-500/15 px-4 py-4 text-left transition hover:bg-brand-500/25"
+                  className="w-full rounded-lg border border-brand-300/40 bg-brand-500/15 px-4 py-4 text-left transition hover:bg-brand-500/25"
                   disabled={retryingWithTime}
                   onClick={() => handleRetryWithAlternative(alternativeTime)}
                 >
                   <p className="text-lg font-semibold text-white">{alternativeTime}</p>
                   <p className="mt-1 text-sm text-slate-300">
-                    {formatMinutesDiff(requestedTime, alternativeTime)}
+                    {formatMinutesDiff(requestedTime, alternativeTime, language)}
                   </p>
                 </button>
               </div>
 
-              <div className="rounded-2xl border border-white/10 bg-slate-900/50 p-3 text-xs text-slate-400">
+              <div className="rounded-lg border border-white/10 bg-slate-900/50 p-3 text-xs text-slate-400">
                 {assignResult.reasons?.map((reason) => (
                   <p key={reason} className="mt-1 first:mt-0">{reason}</p>
                 ))}
@@ -225,73 +235,73 @@ export function ReservationCreateModal({
 
               <button
                 type="button"
-                className="w-full h-12 rounded-2xl border border-white/10 bg-white/5 text-sm font-semibold text-white transition hover:border-white/30"
+                className="w-full h-12 rounded-lg border border-white/10 bg-white/5 text-sm font-semibold text-white transition hover:border-white/30"
                 onClick={onClose}
               >
-                Close
+                {t("Cerrar")}
               </button>
             </div>
           ) : assignResult && !assignResult.assigned && !alternativeTime ? (
             /* --- No alternatives available --- */
             <div className="space-y-4">
-              <div className="rounded-3xl border border-rose-300/30 bg-rose-500/10 p-4 text-sm text-rose-100">
-                <p className="font-semibold text-white">Could not find a table</p>
-                <p className="mt-2">{assignResult.summary ?? "No table is available for the requested parameters."}</p>
+              <div className="rounded-lg border border-rose-300/30 bg-rose-500/10 p-4 text-sm text-rose-100">
+                <p className="font-semibold text-white">{t("No se encontro una mesa")}</p>
+                <p className="mt-2">{assignResult.summary ?? t("No hay mesas disponibles para esta reserva.")}</p>
               </div>
               <button
                 type="button"
-                className="w-full h-12 rounded-2xl border border-white/10 bg-white/5 text-sm font-semibold text-white transition hover:border-white/30"
+                className="w-full h-12 rounded-lg border border-white/10 bg-white/5 text-sm font-semibold text-white transition hover:border-white/30"
                 onClick={onClose}
               >
-                Close
+                {t("Cerrar")}
               </button>
             </div>
           ) : (
             /* --- Form view --- */
             <div className="space-y-5">
               {error ? (
-                <div className="rounded-3xl border border-rose-300/30 bg-rose-500/10 p-4 text-sm text-rose-100">
+                <div className="rounded-lg border border-rose-300/30 bg-rose-500/10 p-4 text-sm text-rose-100">
                   {error}
                 </div>
               ) : null}
 
               {/* Customer */}
               <section>
-                <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-                  Customer
+                <p className="mb-3 text-xs font-semibold uppercase text-slate-500">
+                  {t("Cliente")}
                 </p>
                 <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-3">
                     <label className="grid gap-2">
-                      <span className="text-sm font-medium text-slate-200">First name</span>
+                      <span className="text-sm font-medium text-slate-200">{t("Nombre")}</span>
                       <input
-                        className="h-12 rounded-2xl border border-white/10 bg-slate-900/90 px-4 text-sm text-white outline-none transition focus:border-brand-400/70 focus:ring-2 focus:ring-brand-400/30"
+                        className="h-12 rounded-lg border border-white/10 bg-slate-900/90 px-4 text-sm text-white outline-none transition focus:border-brand-400/70 focus:ring-2 focus:ring-brand-400/30"
                         value={firstName}
                         onChange={(e) => setFirstName(e.target.value)}
                       />
                     </label>
                     <label className="grid gap-2">
-                      <span className="text-sm font-medium text-slate-200">Last name</span>
+                      <span className="text-sm font-medium text-slate-200">{t("Apellidos")}</span>
                       <input
-                        className="h-12 rounded-2xl border border-white/10 bg-slate-900/90 px-4 text-sm text-white outline-none transition focus:border-brand-400/70 focus:ring-2 focus:ring-brand-400/30"
+                        className="h-12 rounded-lg border border-white/10 bg-slate-900/90 px-4 text-sm text-white outline-none transition focus:border-brand-400/70 focus:ring-2 focus:ring-brand-400/30"
                         value={lastName}
                         onChange={(e) => setLastName(e.target.value)}
                       />
                     </label>
                   </div>
                   <label className="grid gap-2">
-                    <span className="text-sm font-medium text-slate-200">Phone</span>
+                    <span className="text-sm font-medium text-slate-200">{t("Telefono")}</span>
                     <input
-                      className="h-12 rounded-2xl border border-white/10 bg-slate-900/90 px-4 text-sm text-white outline-none transition focus:border-brand-400/70 focus:ring-2 focus:ring-brand-400/30"
+                      className="h-12 rounded-lg border border-white/10 bg-slate-900/90 px-4 text-sm text-white outline-none transition focus:border-brand-400/70 focus:ring-2 focus:ring-brand-400/30"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       type="tel"
                     />
                   </label>
                   <label className="grid gap-2">
-                    <span className="text-sm font-medium text-slate-200">Notes</span>
+                    <span className="text-sm font-medium text-slate-200">{t("Notas")}</span>
                     <textarea
-                      className="min-h-20 rounded-2xl border border-white/10 bg-slate-900/90 px-4 py-3 text-sm text-white outline-none transition focus:border-brand-400/70 focus:ring-2 focus:ring-brand-400/30"
+                      className="min-h-20 rounded-lg border border-white/10 bg-slate-900/90 px-4 py-3 text-sm text-white outline-none transition focus:border-brand-400/70 focus:ring-2 focus:ring-brand-400/30"
                       value={customerNotes}
                       onChange={(e) => setCustomerNotes(e.target.value)}
                       maxLength={4000}
@@ -302,15 +312,15 @@ export function ReservationCreateModal({
 
               {/* Reservation */}
               <section>
-                <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-                  Reservation
+                <p className="mb-3 text-xs font-semibold uppercase text-slate-500">
+                  {t("Reserva")}
                 </p>
                 <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-3">
                     <label className="grid gap-2">
-                      <span className="text-sm font-medium text-slate-200">Party size</span>
+                      <span className="text-sm font-medium text-slate-200">{t("Comensales")}</span>
                       <input
-                        className="h-12 rounded-2xl border border-white/10 bg-slate-900/90 px-4 text-sm text-white outline-none transition focus:border-brand-400/70 focus:ring-2 focus:ring-brand-400/30"
+                        className="h-12 rounded-lg border border-white/10 bg-slate-900/90 px-4 text-sm text-white outline-none transition focus:border-brand-400/70 focus:ring-2 focus:ring-brand-400/30"
                         type="number"
                         min={1}
                         value={partySize}
@@ -318,9 +328,9 @@ export function ReservationCreateModal({
                       />
                     </label>
                     <label className="grid gap-2">
-                      <span className="text-sm font-medium text-slate-200">Time</span>
+                      <span className="text-sm font-medium text-slate-200">{t("Hora")}</span>
                       <input
-                        className="h-12 rounded-2xl border border-white/10 bg-slate-900/90 px-4 text-sm text-white outline-none transition focus:border-brand-400/70 focus:ring-2 focus:ring-brand-400/30"
+                        className="h-12 rounded-lg border border-white/10 bg-slate-900/90 px-4 text-sm text-white outline-none transition focus:border-brand-400/70 focus:ring-2 focus:ring-brand-400/30"
                         type="time"
                         value={startTime}
                         onChange={(e) => setStartTime(e.target.value)}
@@ -328,22 +338,22 @@ export function ReservationCreateModal({
                     </label>
                   </div>
                   <label className="grid gap-2">
-                    <span className="text-sm font-medium text-slate-200">Special requests</span>
+                    <span className="text-sm font-medium text-slate-200">{t("Peticiones especiales")}</span>
                     <textarea
-                      className="min-h-20 rounded-2xl border border-white/10 bg-slate-900/90 px-4 py-3 text-sm text-white outline-none transition focus:border-brand-400/70 focus:ring-2 focus:ring-brand-400/30"
+                      className="min-h-20 rounded-lg border border-white/10 bg-slate-900/90 px-4 py-3 text-sm text-white outline-none transition focus:border-brand-400/70 focus:ring-2 focus:ring-brand-400/30"
                       value={specialRequests}
                       onChange={(e) => setSpecialRequests(e.target.value)}
                       maxLength={4000}
                     />
                   </label>
-                  <label className="flex min-h-12 items-center gap-3 rounded-2xl border border-white/10 bg-slate-900/70 px-4 py-3">
+                  <label className="flex min-h-12 items-center gap-3 rounded-lg border border-white/10 bg-slate-900/70 px-4 py-3">
                     <input
                       className="h-5 w-5 accent-brand-400"
                       type="checkbox"
                       checked={accessibilityRequired}
                       onChange={(e) => setAccessibilityRequired(e.target.checked)}
                     />
-                    <span className="text-sm font-medium text-slate-200">Accessibility required</span>
+                    <span className="text-sm font-medium text-slate-200">{t("Requiere accesibilidad")}</span>
                   </label>
                 </div>
               </section>
@@ -356,19 +366,19 @@ export function ReservationCreateModal({
           <div className="flex gap-3 border-t border-white/10 px-6 pb-5 pt-4">
             <button
               type="button"
-              className="flex-1 h-12 rounded-2xl border border-white/10 bg-white/5 text-sm font-semibold text-white transition hover:border-white/30"
+              className="flex-1 h-12 rounded-lg border border-white/10 bg-white/5 text-sm font-semibold text-white transition hover:border-white/30"
               onClick={onClose}
               disabled={isSubmitting}
             >
-              Cancel
+              {t("Cancelar")}
             </button>
             <button
               type="button"
-              className="flex-1 h-12 rounded-2xl bg-brand-500 text-sm font-semibold text-slate-950 transition hover:bg-brand-400 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex-1 h-12 rounded-lg bg-brand-500 text-sm font-semibold text-slate-950 transition hover:bg-brand-400 disabled:cursor-not-allowed disabled:opacity-50"
               disabled={isSubmitting}
               onClick={() => { void handleCreate(); }}
             >
-              {isSubmitting ? "Creating..." : "Create and find table"}
+              {isSubmitting ? t("Creando...") : t("Crear y buscar mesa")}
             </button>
           </div>
         ) : null}

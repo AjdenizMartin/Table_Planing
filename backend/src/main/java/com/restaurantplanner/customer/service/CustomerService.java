@@ -2,9 +2,11 @@ package com.restaurantplanner.customer.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.restaurantplanner.audit.AuditService;
 import com.restaurantplanner.auth.domain.Role;
 import com.restaurantplanner.auth.domain.RoleAssignmentRepository;
 import com.restaurantplanner.auth.security.AuthenticatedUser;
+import com.restaurantplanner.common.api.ConflictException;
 import com.restaurantplanner.common.api.NotFoundException;
 import com.restaurantplanner.customer.api.CreateCustomerRequest;
 import com.restaurantplanner.customer.api.CustomerMapper;
@@ -14,7 +16,9 @@ import com.restaurantplanner.customer.domain.Customer;
 import com.restaurantplanner.customer.domain.CustomerRepository;
 import com.restaurantplanner.restaurant.domain.Restaurant;
 import com.restaurantplanner.restaurant.domain.RestaurantRepository;
+import com.restaurantplanner.reservation.domain.ReservationRepository;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 import org.springframework.security.access.AccessDeniedException;
@@ -28,21 +32,27 @@ public class CustomerService {
     private final CustomerRepository customerRepository;
     private final RestaurantRepository restaurantRepository;
     private final RoleAssignmentRepository roleAssignmentRepository;
+    private final ReservationRepository reservationRepository;
     private final CustomerMapper customerMapper;
     private final ObjectMapper objectMapper;
+    private final AuditService auditService;
 
     public CustomerService(
         CustomerRepository customerRepository,
         RestaurantRepository restaurantRepository,
         RoleAssignmentRepository roleAssignmentRepository,
+        ReservationRepository reservationRepository,
         CustomerMapper customerMapper,
-        ObjectMapper objectMapper
+        ObjectMapper objectMapper,
+        AuditService auditService
     ) {
         this.customerRepository = customerRepository;
         this.restaurantRepository = restaurantRepository;
         this.roleAssignmentRepository = roleAssignmentRepository;
+        this.reservationRepository = reservationRepository;
         this.customerMapper = customerMapper;
         this.objectMapper = objectMapper;
+        this.auditService = auditService;
     }
 
     @Transactional
@@ -111,6 +121,31 @@ public class CustomerService {
         return customerMapper.toResponse(customer);
     }
 
+    @Transactional
+    public void delete(Long restaurantId, Long customerId, AuthenticatedUser authenticatedUser) {
+        findAccessibleRestaurantOrThrow(restaurantId, authenticatedUser);
+        requireOwnerManagerOrAdmin(authenticatedUser, restaurantId);
+
+        Customer customer = findCustomerOrThrow(restaurantId, customerId);
+        if (reservationRepository.existsByRestaurantIdAndCustomerId(restaurantId, customerId)) {
+            throw new ConflictException(
+                "Customer cannot be deleted while reservations are linked",
+                Map.of("reason", "HAS_RESERVATIONS")
+            );
+        }
+
+        String metadata = toDeleteMetadata(customer);
+        customerRepository.delete(customer);
+        auditService.record(
+            restaurantId,
+            "Customer",
+            customerId,
+            "customer.deleted",
+            authenticatedUser.userId(),
+            metadata
+        );
+    }
+
     private Restaurant findAccessibleRestaurantOrThrow(Long restaurantId, AuthenticatedUser authenticatedUser) {
         if (authenticatedUser.hasRole(Role.PLATFORM_ADMIN)) {
             return restaurantRepository.findById(restaurantId)
@@ -157,6 +192,18 @@ public class CustomerService {
             objectMapper.readTree(tagsJson);
         } catch (JsonProcessingException ex) {
             throw new IllegalArgumentException("tagsJson must be valid JSON");
+        }
+    }
+
+    private String toDeleteMetadata(Customer customer) {
+        try {
+            return objectMapper.writeValueAsString(Map.of(
+                "firstName", Objects.toString(customer.getFirstName(), ""),
+                "lastName", Objects.toString(customer.getLastName(), ""),
+                "phone", Objects.toString(customer.getPhone(), "")
+            ));
+        } catch (JsonProcessingException exception) {
+            return null;
         }
     }
 

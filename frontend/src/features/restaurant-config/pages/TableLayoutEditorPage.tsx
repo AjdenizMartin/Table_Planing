@@ -15,6 +15,7 @@ import type {
   RestaurantTableResponse,
 } from "@/features/restaurant-config/types";
 import { getErrorMessage } from "@/features/restaurant-config/utils/errorMessage";
+import { useI18n } from "@/features/i18n/I18nProvider";
 
 interface UpdateLayoutVariables {
   tableId: number;
@@ -53,6 +54,7 @@ function clampLayoutToRoom(layout: TableLayoutDraft, room: DiningRoomResponse) {
 
 export function TableLayoutEditorPage() {
   const queryClient = useQueryClient();
+  const { t } = useI18n();
   const { activeRestaurantId } = useActiveRestaurant();
   const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null);
   const [selectedTableId, setSelectedTableId] = useState<number | null>(null);
@@ -236,15 +238,9 @@ export function TableLayoutEditorPage() {
   }
 
   return (
-    <ConfigShell
-      title="Editor de plano visual"
-      description="Arrastra mesas directamente sobre el plano del salon. El backend valida permisos, tenant y limites del layout antes de guardar."
-    >
+    <ConfigShell title={t("Plano")}>
       <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-        <ConfigCard
-          title="Plano del salon"
-          subtitle="Modo edicion activo: drag tables to reposition them. Mouse, touch y lapiz usan la misma interaccion directa."
-        >
+        <ConfigCard title={t("Plano del salon")}>
           {diningRoomsQuery.error || tablesQuery.error ? (
             <StatusMessage tone="error">
               {getErrorMessage(diningRoomsQuery.error ?? tablesQuery.error)}
@@ -253,7 +249,7 @@ export function TableLayoutEditorPage() {
 
           <div className="mb-5 grid gap-4 sm:grid-cols-2">
             <SelectField
-              label="Salon"
+              label={t("Salon")}
               value={roomId ?? ""}
               onChange={(event) => {
                 setSelectedRoomId(Number(event.target.value));
@@ -268,7 +264,7 @@ export function TableLayoutEditorPage() {
             </SelectField>
 
             <SelectField
-              label="Mesa"
+              label={t("Mesa")}
               value={selectedTable?.id ?? ""}
               onChange={(event) => setSelectedTableId(Number(event.target.value))}
             >
@@ -281,9 +277,9 @@ export function TableLayoutEditorPage() {
             </SelectField>
           </div>
 
-          <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-brand-300/20 bg-brand-500/10 px-4 py-3">
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-brand-300/20 bg-brand-500/10 px-4 py-3">
             <p className="text-sm text-brand-100">
-              Pulsa una mesa y arrastrala. Se guarda automaticamente al soltar.
+              {t("Arrastra una mesa para moverla.")}
             </p>
             <label className="inline-flex items-center gap-3 text-sm font-medium text-slate-200">
               <input
@@ -292,7 +288,7 @@ export function TableLayoutEditorPage() {
                 checked={snapToGrid}
                 onChange={(event) => setSnapToGrid(event.target.checked)}
               />
-              Snap 10px
+              {t("Ajustar a cuadricula")}
             </label>
           </div>
 
@@ -301,9 +297,9 @@ export function TableLayoutEditorPage() {
           ) : null}
 
           {selectedRoom ? (
-            <div className="overflow-auto rounded-[1.75rem] border border-white/10 bg-slate-950/80 p-4">
+            <div className="overflow-auto rounded-lg border border-white/10 bg-slate-950/80 p-4">
               <div
-                className="relative overflow-hidden rounded-[1.5rem] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.03),transparent)]"
+                className="relative overflow-hidden rounded-lg border border-white/10 bg-[#0d1210]"
                 style={{
                   width: selectedRoom.layoutWidth * boardScale,
                   height: selectedRoom.layoutHeight * boardScale,
@@ -331,12 +327,12 @@ export function TableLayoutEditorPage() {
             </div>
           ) : (
             <StatusMessage tone="info">
-              Crea un salon y al menos una mesa para empezar a editar el layout.
+              {t("Crea un salon y una mesa para editar el plano.")}
             </StatusMessage>
           )}
         </ConfigCard>
 
-        <ConfigCard title="Controles de posicion">
+        <ConfigCard title={t("Posicion y tamaño")}>
           {updateLayoutMutation.error ? (
             <StatusMessage tone="error">
               {getErrorMessage(updateLayoutMutation.error)}
@@ -348,23 +344,19 @@ export function TableLayoutEditorPage() {
 
           {selectedTable ? (
             <div className="grid gap-5">
-              <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
+              <div className="rounded-lg border border-white/10 bg-white/5 p-4">
                 <h3 className="text-lg font-semibold text-white">
                   {selectedTable.code}
                   {selectedTable.label ? ` · ${selectedTable.label}` : ""}
                 </h3>
                 <p className="mt-2 text-sm text-slate-400">
-                  Posicion {selectedTable.x},{selectedTable.y} · Tamaño {selectedTable.width} × {selectedTable.height}
+                  {t("Posicion")} {selectedTable.x},{selectedTable.y} · {t("Tamaño")} {selectedTable.width} × {selectedTable.height}
                 </p>
               </div>
 
-              <StatusMessage tone="info">
-                Para mover la mesa, arrastrala directamente en el plano. Estos campos quedan para ajustes exactos de tamaño y coordenadas.
-              </StatusMessage>
-
               <div className="grid gap-4 sm:grid-cols-2">
                 <TextField
-                  label="Posicion X"
+                  label={`${t("Posicion")} X`}
                   type="number"
                   value={draft.x}
                   onChange={(event) =>
@@ -372,7 +364,7 @@ export function TableLayoutEditorPage() {
                   }
                 />
                 <TextField
-                  label="Posicion Y"
+                  label={`${t("Posicion")} Y`}
                   type="number"
                   value={draft.y}
                   onChange={(event) =>
@@ -383,7 +375,7 @@ export function TableLayoutEditorPage() {
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <TextField
-                  label="Ancho"
+                  label={t("Ancho")}
                   type="number"
                   value={draft.width}
                   onChange={(event) =>
@@ -391,7 +383,7 @@ export function TableLayoutEditorPage() {
                   }
                 />
                 <TextField
-                  label="Alto"
+                  label={t("Alto")}
                   type="number"
                   value={draft.height}
                   onChange={(event) =>
@@ -401,17 +393,17 @@ export function TableLayoutEditorPage() {
               </div>
 
               <button
-                className="h-12 rounded-2xl bg-brand-500 px-6 text-sm font-semibold text-slate-950 transition hover:bg-brand-400 disabled:opacity-60"
+                className="h-12 rounded-lg bg-brand-500 px-6 text-sm font-semibold text-slate-950 transition hover:bg-brand-400 disabled:opacity-60"
                 type="button"
                 disabled={updateLayoutMutation.isPending}
                 onClick={applyDraft}
               >
-                {updateLayoutMutation.isPending ? "Aplicando..." : "Aplicar layout"}
+                {updateLayoutMutation.isPending ? t("Aplicando...") : t("Aplicar cambios")}
               </button>
             </div>
           ) : (
             <StatusMessage tone="info">
-              Selecciona una mesa para ajustar su posicion dentro del plano.
+              {t("Selecciona una mesa para editarla.")}
             </StatusMessage>
           )}
         </ConfigCard>
@@ -441,6 +433,7 @@ function DraggableTable({
   onPreview: (tableId: number, layout: TableLayoutDraft) => void;
   onCommit: (tableId: number, previous: TableLayoutDraft, next: TableLayoutDraft) => void;
 }) {
+  const { t } = useI18n();
   const layout = layoutFromTable(table);
   const { isDragging, dragHandlers } = useDraggableTable({
     tableId: table.id,
@@ -459,10 +452,10 @@ function DraggableTable({
   return (
     <button
       type="button"
-      aria-label={`Move ${table.code}`}
-      title="Drag to reposition table"
+      aria-label={`${t("Mover mesa")} ${table.code}`}
+      title={t("Arrastra para mover")}
       className={[
-        "absolute z-10 touch-none select-none rounded-2xl border text-xs font-semibold transition-transform duration-100",
+        "absolute z-10 touch-none select-none rounded-lg border text-xs font-semibold transition-transform duration-100",
         "cursor-grab active:cursor-grabbing",
         selected
           ? "border-brand-300 bg-brand-500 text-slate-950"
@@ -481,7 +474,7 @@ function DraggableTable({
       <span className="grid gap-1">
         <span>{table.code}</span>
         <span className="text-[0.65rem] opacity-70">
-          {saving ? "Saving..." : `${table.minCapacity}-${table.maxCapacity} pax`}
+          {saving ? t("Guardando...") : `${table.minCapacity}-${table.maxCapacity} ${t("personas")}`}
         </span>
       </span>
     </button>

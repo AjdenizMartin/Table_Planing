@@ -40,7 +40,7 @@ export function NotificationToast() {
       {toasts.map((toast) => (
         <div
           key={toast.id}
-          className="min-w-[280px] max-w-sm animate-slide-up rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 shadow-2xl"
+          className="min-w-[280px] max-w-sm animate-slide-up rounded-lg border border-white/10 bg-slate-900 px-4 py-3 shadow-2xl"
         >
           <p className="text-sm font-medium text-white">{toast.title}</p>
           {toast.message && (

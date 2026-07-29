@@ -1,4 +1,5 @@
 import type { AiInsight, AiInsightSummary, AiSeverity } from "@/features/ai/types";
+import { useI18n } from "@/features/i18n/I18nProvider";
 
 function severityBadgeTone(severity: AiSeverity) {
   switch (severity) {
@@ -22,28 +23,29 @@ export function InsightBar({
   insights: AiInsight[];
   onOpenPanel: () => void;
 }) {
+  const { t } = useI18n();
   const activeCount = insights.filter((insight) => !insight.dismissed).length;
   const topInsights = insights.filter((insight) => !insight.dismissed).slice(0, 3);
 
   return (
-    <section className="rounded-[2rem] border border-white/10 bg-slate-950/65 p-5 shadow-2xl shadow-black/20">
+    <section className="rounded-lg border border-white/10 bg-[#111614] p-5">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-brand-300">AI Insights</p>
+          <p className="text-xs uppercase text-brand-300">{t("Sugerencias")}</p>
           <h2 className="mt-2 text-2xl font-semibold text-white">
-            {activeCount} recomendaciones activas
+            {activeCount} {t("recomendaciones activas")}
           </h2>
           <p className="mt-2 text-sm text-slate-400">
-            Alto {summary?.HIGH ?? 0} · Medio {summary?.MEDIUM ?? 0} · Bajo {summary?.LOW ?? 0}
+            {t("Alta")} {summary?.HIGH ?? 0} · {t("Media")} {summary?.MEDIUM ?? 0} · {t("Baja")} {summary?.LOW ?? 0}
           </p>
         </div>
 
         <button
           type="button"
-          className="h-12 rounded-2xl bg-brand-500 px-5 text-sm font-semibold text-slate-950 transition hover:bg-brand-400"
+          className="h-12 rounded-lg bg-brand-500 px-5 text-sm font-semibold text-slate-950 transition hover:bg-brand-400"
           onClick={onOpenPanel}
         >
-          Ver recomendaciones
+          {t("Ver recomendaciones")}
         </button>
       </div>
 
@@ -52,13 +54,13 @@ export function InsightBar({
           topInsights.map((insight) => (
             <article
               key={insight.id}
-              className="rounded-3xl border border-white/10 bg-white/5 p-4"
+              className="rounded-lg border border-white/10 bg-white/5 p-4"
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <h3 className="text-sm font-semibold text-white">{insight.title}</h3>
                 <span
                   className={[
-                    "rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em]",
+                    "rounded-full border px-3 py-1 text-[10px] font-semibold uppercase",
                     severityBadgeTone(insight.severity),
                   ].join(" ")}
                 >
@@ -71,8 +73,8 @@ export function InsightBar({
             </article>
           ))
         ) : (
-          <div className="lg:col-span-3 rounded-3xl border border-emerald-400/25 bg-emerald-500/10 p-4 text-sm text-emerald-100">
-            No hay insights activos para esta fecha. El planning actual no presenta oportunidades destacadas.
+          <div className="lg:col-span-3 rounded-lg border border-emerald-400/25 bg-emerald-500/10 p-4 text-sm text-emerald-100">
+            {t("No hay recomendaciones activas para esta fecha.")}
           </div>
         )}
       </div>

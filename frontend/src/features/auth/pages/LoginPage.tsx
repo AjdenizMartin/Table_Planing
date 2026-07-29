@@ -1,9 +1,12 @@
 import { useMutation } from "@tanstack/react-query";
+import { ArrowRight, LockKeyhole } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { ApiError } from "@/services/api/client";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { registrationEnabled } from "@/features/auth/registration";
+import { LanguageSwitcher } from "@/features/i18n/LanguageSwitcher";
+import { useI18n } from "@/features/i18n/I18nProvider";
 
 interface LocationState {
   from?: {
@@ -15,6 +18,7 @@ export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { login, status, session } = useAuth();
+  const { t } = useI18n();
   const [email, setEmail] = useState(import.meta.env.DEV ? "demo@restaurant.com" : "");
   const [password, setPassword] = useState(import.meta.env.DEV ? "Demo1234!" : "");
 
@@ -24,7 +28,7 @@ export function LoginPage() {
       const nextPath =
         nextSession.restaurants.length > 1 && nextSession.activeRestaurantId === null
           ? "/select-restaurant"
-          : ((location.state as LocationState | null)?.from?.pathname ?? "/");
+          : ((location.state as LocationState | null)?.from?.pathname ?? "/planning");
       navigate(nextPath, { replace: true });
     },
   });
@@ -35,164 +39,126 @@ export function LoginPage() {
         to={
           session.restaurants.length > 1 && session.activeRestaurantId === null
             ? "/select-restaurant"
-            : "/"
+            : "/planning"
         }
         replace
       />
     );
   }
 
-  const errorMessage = getLoginErrorMessage(mutation.error);
+  const errorMessage = getLoginErrorMessage(mutation.error, t);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    mutation.mutate({
-      email,
-      password,
-    });
+    mutation.mutate({ email, password });
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4 py-10 sm:px-6">
-      <div className="grid w-full max-w-6xl gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <section className="rounded-[2rem] border border-white/10 bg-white/5 p-8 shadow-2xl shadow-black/30 sm:p-10">
-          <p className="text-sm uppercase tracking-[0.35em] text-brand-300">
-            Restaurant Table Planning
-          </p>
-          <h1 className="mt-5 max-w-xl text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-            Opera reservas y planning diario con una sesion centralizada.
-          </h1>
-          <p className="mt-5 max-w-2xl text-base leading-7 text-slate-300 sm:text-lg">
-            Esta base de autenticacion prepara el frontend para trabajar con varios
-            restaurantes, mantener sesion y proteger rutas operativas desde tablet
-            o escritorio.
-          </p>
-
-          <div className="mt-8 grid gap-4 sm:grid-cols-3">
-            <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
-              <h2 className="text-sm font-semibold text-white">Sesion persistente</h2>
-              <p className="mt-2 text-sm text-slate-400">
-                Refresh token para recuperar sesion sin rehacer login a cada recarga.
-              </p>
+    <main className="grid min-h-screen place-items-center bg-[#0c0f0e] px-4 py-8">
+      <section className="w-full max-w-sm">
+        <div className="mb-8 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="grid h-10 w-10 place-items-center rounded-lg bg-emerald-400 text-sm font-black text-[#0b110e]">
+              TP
             </div>
-            <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
-              <h2 className="text-sm font-semibold text-white">Multi-restaurante</h2>
-              <p className="mt-2 text-sm text-slate-400">
-                Seleccion de restaurante activo cuando el usuario tiene varios accesos.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
-              <h2 className="text-sm font-semibold text-white">Ruta protegida</h2>
-              <p className="mt-2 text-sm text-slate-400">
-                El frontend limpia sesion al recibir `401` y vuelve al flujo de acceso.
-              </p>
+            <div>
+              <p className="text-sm font-semibold text-white">Table Planning</p>
+              <p className="text-xs text-slate-500">Restaurant OS</p>
             </div>
           </div>
-        </section>
+          <LanguageSwitcher compact />
+        </div>
 
-        <section className="rounded-[2rem] border border-white/10 bg-slate-950/70 p-6 shadow-2xl shadow-black/40 sm:p-8">
-          <div className="mx-auto max-w-md">
-            <p className="text-sm uppercase tracking-[0.3em] text-brand-300">
-              Iniciar Sesion
-            </p>
-            <h2 className="mt-4 text-3xl font-semibold text-white">
-              Accede a tu operativa diaria
-            </h2>
-            <p className="mt-3 text-sm leading-6 text-slate-400">
-              Usa las credenciales creadas en backend. El restaurante activo se
-              resolvera despues del login si hace falta.
-            </p>
+        <div className="rounded-lg border border-white/10 bg-[#111614] p-6 shadow-2xl shadow-black/25 sm:p-7">
+          <LockKeyhole className="mb-5 h-6 w-6 text-emerald-300" />
+          <h1 className="text-2xl font-semibold text-white">
+            {t("Accede a Table Planning")}
+          </h1>
 
-            {import.meta.env.DEV ? (
-              <div className="mt-5 rounded-2xl border border-emerald-400/25 bg-emerald-500/10 px-4 py-4 text-sm text-emerald-100">
-                <p className="font-semibold">Acceso demo local</p>
-                <p className="mt-2">
-                  Email: <span className="font-mono">demo@restaurant.com</span>
-                </p>
-                <p className="mt-1">
-                  Password: <span className="font-mono">Demo1234!</span>
-                </p>
+          <form className="mt-7 grid gap-4" onSubmit={handleSubmit}>
+            <label className="grid gap-2">
+              <span className="text-sm font-medium text-slate-300">{t("Email")}</span>
+              <input
+                className="h-11 rounded-lg border border-white/10 bg-[#0c100e] px-3 text-sm text-white outline-none transition focus:border-emerald-400/70 focus:ring-2 focus:ring-emerald-400/20"
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="manager@restaurant.com"
+                required
+              />
+            </label>
+
+            <label className="grid gap-2">
+              <span className="text-sm font-medium text-slate-300">
+                {t("Contraseña")}
+              </span>
+              <input
+                className="h-11 rounded-lg border border-white/10 bg-[#0c100e] px-3 text-sm text-white outline-none transition focus:border-emerald-400/70 focus:ring-2 focus:ring-emerald-400/20"
+                type="password"
+                autoComplete="current-password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="••••••••••••"
+                required
+              />
+            </label>
+
+            {errorMessage ? (
+              <div
+                className="rounded-lg border border-rose-400/25 bg-rose-500/10 px-3 py-3 text-sm text-rose-200"
+                role="alert"
+              >
+                {errorMessage}
               </div>
             ) : null}
 
-            <form className="mt-8 grid gap-5" onSubmit={handleSubmit}>
-              <label className="grid gap-2">
-                <span className="text-sm font-medium text-slate-200">Email</span>
-                <input
-                  className="h-14 rounded-2xl border border-white/10 bg-slate-900/80 px-4 text-base text-white outline-none transition focus:border-brand-400/70 focus:ring-2 focus:ring-brand-400/30"
-                  type="email"
-                  inputMode="email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  placeholder="manager@restaurant.com"
-                  required
-                />
-              </label>
+            <button
+              className="mt-2 flex h-11 items-center justify-center gap-2 rounded-lg bg-emerald-400 px-4 text-sm font-semibold text-[#0b110e] transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-60"
+              type="submit"
+              disabled={mutation.isPending}
+            >
+              {mutation.isPending ? t("Entrando...") : t("Entrar")}
+              {!mutation.isPending ? <ArrowRight className="h-4 w-4" /> : null}
+            </button>
+          </form>
 
-              <label className="grid gap-2">
-                <span className="text-sm font-medium text-slate-200">Password</span>
-                <input
-                  className="h-14 rounded-2xl border border-white/10 bg-slate-900/80 px-4 text-base text-white outline-none transition focus:border-brand-400/70 focus:ring-2 focus:ring-brand-400/30"
-                  type="password"
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  placeholder="********"
-                  required
-                />
-              </label>
-
-              {errorMessage ? (
-                <div className="rounded-2xl border border-rose-400/25 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
-                  {errorMessage}
-                </div>
-              ) : null}
-
-              <button
-                className="mt-2 h-14 rounded-2xl bg-brand-500 px-5 text-base font-semibold text-slate-950 transition hover:bg-brand-400 disabled:cursor-not-allowed disabled:opacity-60"
-                type="submit"
-                disabled={mutation.isPending}
-              >
-                {mutation.isPending ? "Entrando..." : "Entrar"}
-              </button>
-            </form>
-
-            {registrationEnabled ? (
-              <p className="mt-6 text-center text-sm text-slate-400">
-                No tienes una cuenta?{" "}
-                <Link to="/register" className="font-medium text-brand-400 hover:text-brand-300 transition">
-                  Crea tu restaurante
-                </Link>
-              </p>
-            ) : null}
-          </div>
-        </section>
-      </div>
-    </div>
+          {registrationEnabled ? (
+            <Link
+              to="/register"
+              className="mt-5 block text-center text-sm font-medium text-emerald-300 hover:text-emerald-200"
+            >
+              {t("Crear cuenta")}
+            </Link>
+          ) : null}
+        </div>
+      </section>
+    </main>
   );
 }
 
-function getLoginErrorMessage(error: unknown) {
+function getLoginErrorMessage(
+  error: unknown,
+  t: (key: string) => string,
+) {
   if (!error) {
     return null;
   }
 
   if (error instanceof ApiError) {
     if (error.status === 401 || error.status === 403) {
-      return "Credenciales incorrectas. Revisa el email y la contrasena.";
+      return t("Credenciales incorrectas. Revisa el email y la contraseña.");
     }
-
     if (error.status >= 500) {
-      return "El backend no esta disponible o ha devuelto un error. Revisa que este arrancado en http://localhost:8080.";
+      return t("El servicio no esta disponible. Intentalo de nuevo en unos minutos.");
     }
-
-    return error.message || "No se pudo iniciar sesion.";
+    return error.message || t("No se pudo iniciar sesion.");
   }
 
   if (error instanceof TypeError) {
-    return "No se pudo conectar con el backend. Revisa Docker, el puerto 8080 y la configuracion CORS.";
+    return t("No se pudo conectar con el servicio.");
   }
 
-  return "Error inesperado al iniciar sesion.";
+  return t("Error inesperado al iniciar sesion.");
 }

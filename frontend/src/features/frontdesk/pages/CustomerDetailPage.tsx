@@ -1,9 +1,21 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  Mail,
+  Phone,
+  Save,
+  Trash2,
+} from "lucide-react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as frontdeskApi from "@/features/frontdesk/api/frontdeskApi";
 import { OperationsShell } from "@/features/frontdesk/components/OperationsShell";
-import { formatCustomerName, normalizeTagsForInput, tagsInputToJson } from "@/features/frontdesk/utils/frontdeskUtils";
+import {
+  formatCustomerName,
+  normalizeTagsForInput,
+  tagsInputToJson,
+} from "@/features/frontdesk/utils/frontdeskUtils";
 import { useActiveRestaurant } from "@/features/restaurant-config/hooks/useActiveRestaurant";
 import { ConfigCard } from "@/features/restaurant-config/components/ConfigCard";
 import {
@@ -13,6 +25,7 @@ import {
 import { StatusMessage } from "@/features/restaurant-config/components/StatusMessage";
 import { getErrorMessage } from "@/features/restaurant-config/utils/errorMessage";
 import { useAuth } from "@/features/auth/context/AuthContext";
+import { useI18n } from "@/features/i18n/I18nProvider";
 
 const emptyForm = {
   firstName: "",
@@ -25,12 +38,15 @@ const emptyForm = {
 };
 
 export function CustomerDetailPage() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { customerId } = useParams();
   const { session } = useAuth();
+  const { t, language } = useI18n();
   const { activeRestaurantId } = useActiveRestaurant();
   const parsedCustomerId = Number(customerId);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
 
   const activeRoles =
@@ -49,7 +65,6 @@ export function CustomerDetailPage() {
     if (!customerQuery.data) {
       return;
     }
-
     setForm({
       firstName: customerQuery.data.firstName ?? "",
       lastName: customerQuery.data.lastName ?? "",
@@ -74,168 +89,269 @@ export function CustomerDetailPage() {
       }),
     onSuccess: async () => {
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["customer", activeRestaurantId, parsedCustomerId] }),
+        queryClient.invalidateQueries({
+          queryKey: ["customer", activeRestaurantId, parsedCustomerId],
+        }),
         queryClient.invalidateQueries({ queryKey: ["customers", activeRestaurantId] }),
       ]);
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: () =>
+      frontdeskApi.deleteCustomer(activeRestaurantId!, parsedCustomerId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["customers", activeRestaurantId],
+      });
+      navigate("/customers", { replace: true });
+    },
+  });
+
   function validateForm() {
     if (!form.phone.trim() && !form.firstName.trim() && !form.lastName.trim()) {
-      return "Introduce telefono o al menos un nombre para este cliente.";
+      return t("Introduce telefono o al menos un nombre para este cliente.");
     }
-
     return null;
   }
 
   return (
-    <OperationsShell
-      title="Ficha de cliente"
-      description="Consulta y actualiza la informacion operativa del cliente para futuras reservas."
-    >
-      <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-        <ConfigCard title="Resumen">
-          <Link
-            className="inline-flex h-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-4 text-sm font-medium text-white transition hover:border-brand-400/40 hover:bg-brand-500/10"
-            to="/customers"
+    <OperationsShell title={t("Ficha de cliente")}>
+      <div className="flex items-center justify-between gap-3">
+        <Link
+          className="inline-flex h-10 items-center gap-2 rounded-lg px-3 text-sm font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"
+          to="/customers"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          {t("Volver a clientes")}
+        </Link>
+        {canManageCustomers && customerQuery.data ? (
+          <button
+            type="button"
+            className="inline-flex h-10 items-center gap-2 rounded-lg border border-rose-400/20 px-3 text-sm font-medium text-rose-300 transition hover:bg-rose-500/10"
+            onClick={() => setDeleteDialogOpen(true)}
           >
-            Volver a clientes
-          </Link>
+            <Trash2 className="h-4 w-4" />
+            {t("Eliminar cliente")}
+          </button>
+        ) : null}
+      </div>
 
-          {customerQuery.isLoading ? (
-            <div className="mt-5">
-              <StatusMessage tone="info">Cargando ficha del cliente...</StatusMessage>
+      {customerQuery.isLoading ? (
+        <StatusMessage tone="info">{t("Cargando ficha...")}</StatusMessage>
+      ) : null}
+      {customerQuery.error ? (
+        <StatusMessage tone="error">{getErrorMessage(customerQuery.error)}</StatusMessage>
+      ) : null}
+
+      {customerQuery.data ? (
+        <div className="grid gap-5 xl:grid-cols-[320px_minmax(0,1fr)]">
+          <ConfigCard title={t("Resumen")}>
+            <h2 className="text-xl font-semibold text-white">
+              {formatCustomerName(customerQuery.data)}
+            </h2>
+            <div className="mt-5 grid gap-3 text-sm">
+              <div className="flex items-center gap-3 text-slate-300">
+                <Phone className="h-4 w-4 text-slate-500" />
+                <span>{customerQuery.data.phone || t("Sin telefono")}</span>
+              </div>
+              <div className="flex items-center gap-3 text-slate-300">
+                <Mail className="h-4 w-4 text-slate-500" />
+                <span className="truncate">
+                  {customerQuery.data.email || t("Sin email")}
+                </span>
+              </div>
             </div>
-          ) : null}
-          {customerQuery.error ? (
-            <div className="mt-5">
-              <StatusMessage tone="error">
-                {getErrorMessage(customerQuery.error)}
+            <div className="mt-6 border-t border-white/8 pt-4">
+              <p className="text-xs text-slate-500">{t("Actualizado")}</p>
+              <p className="mt-1 text-sm text-slate-300">
+                {new Date(customerQuery.data.updatedAt).toLocaleString(
+                  language === "es" ? "es-ES" : "en-GB",
+                )}
+              </p>
+            </div>
+          </ConfigCard>
+
+          <ConfigCard title={t("Datos del cliente")}>
+            {!canManageCustomers ? (
+              <StatusMessage tone="info">
+                {t("Tu rol permite consultar, pero no editar clientes.")}
               </StatusMessage>
-            </div>
-          ) : null}
+            ) : null}
+            {validationError ? (
+              <StatusMessage tone="error">{validationError}</StatusMessage>
+            ) : null}
+            {updateMutation.error ? (
+              <StatusMessage tone="error">
+                {getErrorMessage(updateMutation.error)}
+              </StatusMessage>
+            ) : null}
 
-          {customerQuery.data ? (
-            <div className="mt-5 grid gap-4">
-              <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
-                <h3 className="text-2xl font-semibold text-white">
-                  {formatCustomerName(customerQuery.data)}
-                </h3>
-                <p className="mt-2 text-sm text-slate-400">
-                  {customerQuery.data.phone || "Sin telefono"}
-                  {customerQuery.data.email ? ` · ${customerQuery.data.email}` : ""}
-                </p>
+            <form
+              className="grid gap-4"
+              onSubmit={(event) => {
+                event.preventDefault();
+                const nextValidationError = validateForm();
+                if (nextValidationError) {
+                  setValidationError(nextValidationError);
+                  return;
+                }
+                setValidationError(null);
+                updateMutation.mutate();
+              }}
+            >
+              <div className="grid gap-4 sm:grid-cols-2">
+                <TextField
+                  label={t("Nombre")}
+                  value={form.firstName}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      firstName: event.target.value,
+                    }))
+                  }
+                />
+                <TextField
+                  label={t("Apellidos")}
+                  value={form.lastName}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      lastName: event.target.value,
+                    }))
+                  }
+                />
+                <TextField
+                  label={t("Telefono")}
+                  value={form.phone}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, phone: event.target.value }))
+                  }
+                />
+                <TextField
+                  label={t("Email")}
+                  type="email"
+                  value={form.email}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, email: event.target.value }))
+                  }
+                />
               </div>
+              <TextField
+                label={t("Etiquetas")}
+                value={form.tags}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, tags: event.target.value }))
+                }
+              />
+              <TextField
+                label={t("Necesidades de movilidad")}
+                value={form.mobilityNeeds}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    mobilityNeeds: event.target.value,
+                  }))
+                }
+              />
+              <TextAreaField
+                label={t("Notas")}
+                value={form.notes}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, notes: event.target.value }))
+                }
+              />
 
-              <div className="rounded-3xl border border-white/10 bg-slate-950/55 p-5">
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
-                  Actualizado
-                </p>
-                <p className="mt-2 text-sm text-slate-200">
-                  {new Date(customerQuery.data.updatedAt).toLocaleString()}
-                </p>
+              <div className="flex justify-end">
+                <button
+                  className="inline-flex h-10 items-center gap-2 rounded-lg bg-emerald-400 px-4 text-sm font-semibold text-[#0b110e] transition hover:bg-emerald-300 disabled:opacity-60"
+                  type="submit"
+                  disabled={!canManageCustomers || updateMutation.isPending}
+                >
+                  <Save className="h-4 w-4" />
+                  {updateMutation.isPending
+                    ? t("Guardando...")
+                    : t("Guardar cliente")}
+                </button>
               </div>
-            </div>
-          ) : null}
-        </ConfigCard>
+            </form>
+          </ConfigCard>
+        </div>
+      ) : null}
 
-        <ConfigCard title="Editar cliente">
-          {!canManageCustomers ? (
-            <StatusMessage tone="info">
-              Tu rol actual puede consultar clientes, pero no editar esta ficha.
-            </StatusMessage>
-          ) : null}
-          {validationError ? <StatusMessage tone="error">{validationError}</StatusMessage> : null}
-          {updateMutation.error ? (
-            <StatusMessage tone="error">
-              {getErrorMessage(updateMutation.error)}
-            </StatusMessage>
-          ) : null}
-
-          <form
-            className="grid gap-4"
-            onSubmit={(event) => {
-              event.preventDefault();
-              const nextValidationError = validateForm();
-              if (nextValidationError) {
-                setValidationError(nextValidationError);
-                return;
-              }
-              setValidationError(null);
-              updateMutation.mutate();
-            }}
+      {deleteDialogOpen && customerQuery.data ? (
+        <div
+          className="fixed inset-0 z-[70] grid place-items-center bg-black/70 p-4"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.currentTarget === event.target) {
+              setDeleteDialogOpen(false);
+            }
+          }}
+        >
+          <div
+            className="w-full max-w-md rounded-lg border border-white/10 bg-[#151a18] p-5 shadow-2xl"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="delete-customer-title"
           >
-            <div className="grid gap-4 sm:grid-cols-2">
-              <TextField
-                label="Nombre"
-                value={form.firstName}
-                onChange={(event) =>
-                  setForm((current) => ({ ...current, firstName: event.target.value }))
-                }
-              />
-              <TextField
-                label="Apellidos"
-                value={form.lastName}
-                onChange={(event) =>
-                  setForm((current) => ({ ...current, lastName: event.target.value }))
-                }
-              />
+            <div className="flex gap-3">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-rose-500/10 text-rose-300">
+                <AlertTriangle className="h-5 w-5" />
+              </span>
+              <div>
+                <h2 id="delete-customer-title" className="text-lg font-semibold text-white">
+                  {t("Eliminar cliente")}
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-slate-400">
+                  {t("Esta accion no se puede deshacer.")}
+                </p>
+              </div>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <TextField
-                label="Telefono"
-                value={form.phone}
-                onChange={(event) =>
-                  setForm((current) => ({ ...current, phone: event.target.value }))
-                }
-              />
-              <TextField
-                label="Email"
-                type="email"
-                value={form.email}
-                onChange={(event) =>
-                  setForm((current) => ({ ...current, email: event.target.value }))
-                }
-              />
-            </div>
-            <TextField
-              label="Etiquetas"
-              value={form.tags}
-              onChange={(event) =>
-                setForm((current) => ({ ...current, tags: event.target.value }))
-              }
-              hint="Separadas por comas"
-            />
-            <TextField
-              label="Necesidades de movilidad"
-              value={form.mobilityNeeds}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  mobilityNeeds: event.target.value,
-                }))
-              }
-            />
-            <TextAreaField
-              label="Notas"
-              value={form.notes}
-              onChange={(event) =>
-                setForm((current) => ({ ...current, notes: event.target.value }))
-              }
-            />
 
-            <div className="flex justify-end">
+            {deleteMutation.error ? (
+              <div className="mt-4">
+                <StatusMessage tone="error">
+                  {getDeleteErrorMessage(deleteMutation.error, t)}
+                </StatusMessage>
+              </div>
+            ) : null}
+
+            <div className="mt-6 flex justify-end gap-3">
               <button
-                className="h-12 rounded-2xl bg-brand-500 px-6 text-sm font-semibold text-slate-950 transition hover:bg-brand-400 disabled:opacity-60"
-                type="submit"
-                disabled={!canManageCustomers || updateMutation.isPending}
+                type="button"
+                className="h-10 rounded-lg px-4 text-sm font-medium text-slate-300 hover:bg-white/5"
+                onClick={() => setDeleteDialogOpen(false)}
+                disabled={deleteMutation.isPending}
               >
-                {updateMutation.isPending ? "Guardando..." : "Guardar cliente"}
+                {t("Cancelar")}
+              </button>
+              <button
+                type="button"
+                className="inline-flex h-10 items-center gap-2 rounded-lg bg-rose-500 px-4 text-sm font-semibold text-white hover:bg-rose-400 disabled:opacity-60"
+                onClick={() => deleteMutation.mutate()}
+                disabled={deleteMutation.isPending}
+              >
+                <Trash2 className="h-4 w-4" />
+                {deleteMutation.isPending
+                  ? t("Eliminando...")
+                  : t("Eliminar definitivamente")}
               </button>
             </div>
-          </form>
-        </ConfigCard>
-      </div>
+          </div>
+        </div>
+      ) : null}
     </OperationsShell>
   );
+}
+
+function getDeleteErrorMessage(
+  error: unknown,
+  t: (key: string) => string,
+) {
+  const message = getErrorMessage(error);
+  if (message.includes("reservations are linked")) {
+    return t("No puedes eliminar un cliente con reservas asociadas.");
+  }
+  return message;
 }
