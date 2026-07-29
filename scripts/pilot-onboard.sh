@@ -19,7 +19,6 @@ esac
 docker compose --env-file "$env_file" -f "$compose_file" run \
   --rm \
   --no-deps \
-  --user "$(id -u):$(id -g)" \
   -e SPRING_PROFILES_ACTIVE=prod,onboarding \
   -e APP_ONBOARDING_MANIFEST=/run/onboarding/manifest.json \
   -e SERVER_PORT=0 \
