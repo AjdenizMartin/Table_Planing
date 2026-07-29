@@ -7,7 +7,7 @@
 3. Crear DNS `A` para `APP_DOMAIN` apuntando al VPS.
 4. Copiar `.env.production.example` a `.env.production`, completar dominio, tag, email, rutas y repositorio Restic, y aplicar `chmod 600 .env.production`.
 5. Crear todos los archivos bajo `secrets/` con valores aleatorios y permisos `0600`.
-6. Crear `logs/`, hacer checkout de `v0.1.0-rc.5` y no desplegar una rama flotante.
+6. Crear `logs/`, hacer checkout de `v0.1.0-rc.6` y no desplegar una rama flotante.
 7. Ejecutar `./scripts/production-preflight.sh`; debe validar Ubuntu, tag, DNS, secretos, disco, puertos y Compose.
 8. Exportar `.env.production` y ejecutar `scripts/bootstrap-tls.sh` antes del primer arranque.
 9. Validar Compose y levantar el tag aprobado:

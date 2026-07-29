@@ -39,9 +39,9 @@ docker compose --env-file "$env_file" -f "$compose_file" run \
       [ -e "$password_file" ] || continue
       cp "$password_file" "/target/$(basename "$password_file")"
     done
-    chown -R 10001:10001 /target
     find /target -type d -exec chmod 700 {} +
     find /target -type f -exec chmod 600 {} +
+    chown -R 10001:10001 /target
   '
 
 docker compose --env-file "$env_file" -f "$compose_file" run \
