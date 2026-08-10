@@ -303,7 +303,7 @@ class RestaurantTableIntegrationTest {
                     {
                       "tableType": "STORAGE",
                       "code": "STORE-1",
-                      "label": "Mesa plegable almacen",
+                      "label": "Storage folding table",
                       "minCapacity": 2,
                       "maxCapacity": 6,
                       "shape": "RECTANGLE",

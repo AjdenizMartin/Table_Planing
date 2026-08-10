@@ -1,95 +1,95 @@
 # Planning Panel Vision
 
-## 1. Objetivo del panel
+## 1. Panel objective
 
-El panel de planning debe ser la pantalla principal del producto: una cabina de mando tactil para que el restaurante vea salones, mesas, reservas, disponibilidad, conflictos y oportunidades de mejora durante el servicio.
+The planning panel should be the product's main screen: a touch-friendly command center where the restaurant can view dining rooms, tables, reservations, availability, conflicts, and improvement opportunities during service.
 
-La experiencia debe comunicar que Restaurant Table Planning no es una agenda de reservas, sino una herramienta inteligente para organizar el servicio como un puzzle operativo.
+The experience should convey that Restaurant Table Planning is not a reservation calendar, but an intelligent tool for organizing service as an operational puzzle.
 
-## 2. Problemas que resuelve
+## 2. Problems it solves
 
-- Evita asignaciones simples que desperdician mesas grandes.
-- Hace visibles reservas pendientes, sin asignar y con riesgo operativo.
-- Permite entender la ocupacion por salon y por franja horaria.
-- Reduce decisiones manuales repetitivas durante el servicio.
-- Da al manager una vista tactil clara para operar desde tablet.
-- Prepara futuras sugerencias de optimizacion sin delegar decisiones criticas en IA.
+- Prevents simplistic assignments that waste large tables.
+- Makes pending, unassigned, and operationally at-risk reservations visible.
+- Makes it possible to understand occupancy by dining room and time slot.
+- Reduces repetitive manual decisions during service.
+- Gives the manager a clear, touch-friendly view for operating from a tablet.
+- Prepares for future optimization suggestions without delegating critical decisions to AI.
 
-## 3. Regla critica: cambiar mesa, no hora
+## 3. Critical rule: change the table, not the time
 
-La aplicacion nunca debe cambiar automaticamente la hora de una reserva existente.
+The application must never automatically change the time of an existing reservation.
 
-Permitido:
+Allowed:
 
-- Mover una reserva entre mesas manteniendo exactamente `reservation_date`, `start_time` y `end_time`.
-- Mover una reserva entre salones si se conserva la hora original.
-- Reasignar una reserva a una combinacion valida de mesas.
-- Optimizar asignaciones de mesas sin tocar horarios.
+- Move a reservation between tables while retaining exactly the same `reservation_date`, `start_time`, and `end_time`.
+- Move a reservation between dining rooms if the original time is retained.
+- Reassign a reservation to a valid table combination.
+- Optimize table assignments without altering schedules.
 
-No permitido:
+Not allowed:
 
-- Arrastrar una reserva a otra hora.
-- Optimizar desplazando reservas.
-- Recomendar que un cliente cambie de hora como accion automatica.
-- Cambiar hora fuera del formulario explicito de edicion de reserva.
+- Drag a reservation to another time.
+- Optimize by shifting reservations.
+- Recommend that a customer change time as an automatic action.
+- Change the time outside the explicit reservation edit form.
 
-El frontend debe mostrar esta regla de forma clara, pero la validacion definitiva debe vivir en backend.
+The frontend must clearly communicate this rule, but definitive validation must reside in the backend.
 
-## 4. Vistas necesarias
+## 4. Required views
 
-- Vista principal de plano visual por salon.
-- Vista lista de reservas del dia con busqueda y filtros.
-- Vista timeline por mesa y hora de solo lectura para horarios.
-- Vista de reservas sin asignar.
-- Vista de detalle de mesa o reserva seleccionada.
-- Vista futura de editor de layout.
-- Vista futura de servicio en vivo.
-- Vista futura de sugerencias de optimizacion.
+- Main visual floor plan view by dining room.
+- List view of the day's reservations with search and filters.
+- Read-only timeline view by table and time.
+- Unassigned reservations view.
+- Selected table or reservation details view.
+- Future layout editor view.
+- Future live service view.
+- Future optimization suggestions view.
 
-## 5. UX propuesta
+## 5. Proposed UX
 
-La pantalla se organiza en cuatro zonas:
+The screen is organized into four areas:
 
-- Header superior: fecha, turno, salon, ocupacion, reservas, comensales, pendientes, acciones principales y estado realtime.
-- Panel izquierdo: reservas del dia, filtros, busqueda, pendientes y sin asignar.
-- Panel central: plano tactil del salon con mesas, estados, reservas y alertas.
-- Panel derecho: detalle contextual de mesa o reserva con acciones rapidas.
-- Timeline inferior: lectura por hora, reservas, buffers y huecos, sin drag horizontal.
+- Top header: date, shift, dining room, occupancy, reservations, guests, pending items, primary actions, and realtime status.
+- Left panel: the day's reservations, filters, search, pending items, and unassigned reservations.
+- Central panel: touch-friendly dining room floor plan with tables, states, reservations, and alerts.
+- Right panel: contextual table or reservation details with quick actions.
+- Bottom timeline: reservations, buffers, and gaps by time, without horizontal dragging.
 
-Principios UX:
+UX principles:
 
-- Acciones grandes y claras para tablet.
-- Estados con color, etiqueta e icono textual.
-- Seleccion inmediata de mesa o reserva.
-- Informacion importante siempre visible.
-- Microinteracciones suaves, sin saturar.
-- Separacion clara entre modo servicio y modo edicion.
+- Large, clear actions for tablets.
+- States represented by color, label, and textual icon.
+- Immediate table or reservation selection.
+- Important information always visible.
+- Subtle microinteractions without visual overload.
+- Clear separation between service mode and edit mode.
 
-## 6. Comparacion entre 2D, 2.5D y 3D
+## 6. Comparison of 2D, 2.5D, and 3D
 
-| Opcion | Impacto visual | Tablet | Complejidad | Mantenibilidad | Recomendacion |
+| Option | Visual impact | Tablet | Complexity | Maintainability | Recommendation |
 | --- | --- | --- | --- | --- | --- |
-| 2D premium HTML/SVG | Alto | Excelente | Baja-media | Alta | Ideal para Fase 1 |
-| 2.5D isometrico CSS/SVG | Muy alto | Muy buena | Media | Buena | Ideal para MVP avanzado |
-| Canvas/Konva/Fabric | Alto | Buena | Media-alta | Media | Valioso para editor tactil avanzado |
-| React Flow | Medio | Media | Media | Buena | Mejor para grafos, no para floor plan |
-| Three.js/R3F | Muy alto | Variable | Alta | Media-baja | Futuro showroom, no MVP operativo |
+| Premium 2D HTML/SVG | High | Excellent | Low-medium | High | Ideal for Phase 1 |
+| 2.5D isometric CSS/SVG | Very high | Very good | Medium | Good | Ideal for an advanced MVP |
+| Canvas/Konva/Fabric | High | Good | Medium-high | Medium | Valuable for an advanced touch editor |
+| React Flow | Medium | Medium | Medium | Good | Better for graphs, not for a floor plan |
+| Three.js/R3F | Very high | Variable | High | Medium-low | Future showroom, not an operational MVP |
 
-## 7. Recomendacion tecnica final
+## 7. Final technical recommendation
 
-Construir primero un plano 2D premium con lenguaje visual preparado para evolucionar a 2.5D. Usar HTML/CSS/SVG nativo para Fase 1 y mantener los datos en modelos TypeScript claros.
+First build a premium 2D floor plan with a visual language designed to evolve into 2.5D. Use native HTML/CSS/SVG for Phase 1 and keep the data in clear TypeScript models.
 
-No introducir Three.js ni React Three Fiber todavia. El valor de demo se consigue mejor con una interfaz estable, tactil y bonita que con una escena 3D dificil de operar.
+Do not introduce Three.js or React Three Fiber yet. Demo value is better achieved with a stable, touch-friendly, attractive interface than with a 3D scene that is difficult to operate.
 
-## 8. Librerias recomendadas y por que
+## 8. Recommended libraries and rationale
 
-- Fase 1: sin librerias nuevas. React, TypeScript, Tailwind y TanStack Query son suficientes.
-- Fase 2/3: `dnd-kit` para mover mesas y reservas entre mesas, porque funciona bien con React y permite restricciones de eje/zonas.
-- Fase 2/3 opcional: `react-konva` si el editor necesita multi-select, snap, rotacion, paredes y objetos decorativos complejos.
-- Timeline: CSS Grid propio. FullCalendar es potente, pero tiende a imponer semantica de calendario con drag temporal, justo lo que queremos evitar.
-- 3D futuro: React Three Fiber solo para modo presentacion, no para operativa diaria.
+- Phase 1: no new libraries. React, TypeScript, Tailwind, and TanStack Query are sufficient.
+- Phase 2/3: `dnd-kit` for moving tables and reservations between tables, because it works well with React and supports axis/zone constraints.
+- Optional for Phase 2/3: `react-konva` if the editor needs multi-select, snap, rotation, walls, and complex decorative objects.
+- Timeline: custom CSS Grid. FullCalendar is powerful, but tends to impose calendar semantics with temporal dragging, precisely what we want to avoid.
+- Future 3D: React Three Fiber only for presentation mode, not for daily operations.
 
-## 9. Estructura frontend propuesta
+## 9. Proposed frontend structure
 
 ```text
 frontend/src/features/planning/
@@ -109,7 +109,7 @@ frontend/src/features/planning/
     planningStatus.ts
 ```
 
-Futuro:
+Future:
 
 ```text
 features/floor-plan/
@@ -117,16 +117,16 @@ features/live-service/
 features/optimization/
 ```
 
-## 10. Endpoints backend necesarios
+## 10. Required backend endpoints
 
-Ya existen:
+Already exist:
 
 - `GET /api/restaurants/{restaurantId}/planning?date=YYYY-MM-DD`
 - `POST /api/restaurants/{restaurantId}/planning/recalculate`
 - `POST /api/restaurants/{restaurantId}/planning/move-reservation`
 - `POST /api/restaurants/{restaurantId}/reservations/{reservationId}/assign`
 
-Necesarios para fases futuras:
+Required for future phases:
 
 - `POST /api/restaurants/{restaurantId}/planning/validate-table-move`
 - `POST /api/restaurants/{restaurantId}/planning/simulate`
@@ -136,11 +136,11 @@ Necesarios para fases futuras:
 - `POST /api/restaurants/{restaurantId}/tables/{tableId}/unblock`
 - `GET /api/restaurants/{restaurantId}/optimization/suggestions?date=YYYY-MM-DD`
 
-No se deben crear endpoints duplicados si los existentes cubren el caso.
+Duplicate endpoints must not be created if the existing ones cover the use case.
 
-## 11. Modelo de datos necesario
+## 11. Required data model
 
-Necesario actual:
+Currently required:
 
 - `DiningRoom`
 - `RestaurantTable`
@@ -149,7 +149,7 @@ Necesario actual:
 - `PlanningDayResponse`
 - `PlanningConflict`
 
-Futuro:
+Future:
 
 - `TableBlock`
 - `TableStatusEvent`
@@ -158,66 +158,66 @@ Futuro:
 - `PlanningSimulation`
 - `WaitlistEntry`
 
-## 12. Fases de implementacion
+## 12. Implementation phases
 
-1. Planning funcional y estable.
-2. Editor visual de salones y mesas tactil.
-3. Drag and drop de reservas entre mesas manteniendo hora.
-4. Vista 2.5D/isometrica premium.
-5. Modo servicio en vivo.
-6. Optimizacion visual y sugerencias sin cambios de hora.
-7. Pulido tablet y modos de uso.
+1. Functional and stable planning.
+2. Touch-friendly visual dining room and table editor.
+3. Drag and drop reservations between tables while retaining the time.
+4. Premium 2.5D/isometric view.
+5. Live service mode.
+6. Visual optimization and suggestions without time changes.
+7. Tablet polish and usage modes.
 
-## 13. Que incluir en MVP
+## 13. What to include in the MVP
 
-- Login demo.
-- Planning diario con fecha y salon.
-- Plano visual por salon.
-- Lista de reservas y reservas sin asignar.
-- Estados visuales claros.
-- Panel de detalle.
-- Timeline de solo lectura.
-- Accion de asignacion automatica existente.
-- Mensajes de error claros.
+- Demo login.
+- Daily planning with date and dining room.
+- Visual floor plan by dining room.
+- Reservation list and unassigned reservations.
+- Clear visual states.
+- Details panel.
+- Read-only timeline.
+- Existing automatic assignment action.
+- Clear error messages.
 
-## 14. Que dejar para futuras fases
+## 14. What to leave for future phases
 
 - Drag and drop.
-- Editor avanzado de paredes, objetos y rotacion.
-- 2.5D completo.
-- Modo live service profundo.
-- Simulaciones what-if.
-- Comparacion antes/despues.
+- Advanced editor for walls, objects, and rotation.
+- Full 2.5D.
+- Comprehensive live service mode.
+- What-if simulations.
+- Before/after comparison.
 - WhatsApp.
-- IA generativa.
-- Prediccion de ocupacion.
+- Generative AI.
+- Occupancy prediction.
 
-## 15. Riesgos tecnicos
+## 15. Technical risks
 
-- Planning backend lento o bloqueante si las queries cargan demasiadas relaciones.
-- Drag and drop accidental que cambie hora si se usa un calendario generico.
-- Exceso visual que reduzca claridad en tablet.
-- Estado duplicado entre plano, timeline y panel lateral.
-- Reglas de negocio en frontend que no coincidan con backend.
-- Reasignaciones sin validacion tenant/rol.
+- Slow or blocking planning backend if queries load too many relationships.
+- Accidental drag and drop that changes the time if a generic calendar is used.
+- Excessive visual elements that reduce clarity on tablets.
+- Duplicated state across the floor plan, timeline, and side panel.
+- Frontend business rules that do not match the backend.
+- Reassignments without tenant/role validation.
 
-Mitigacion:
+Mitigation:
 
-- Backend como fuente de verdad.
-- Timeline read-only.
-- Mutaciones solo por endpoints de reasignacion.
-- Tipos compartidos claros.
-- Componentes pequenos y testeables.
-- No introducir librerias pesadas antes de necesitarlas.
+- Backend as the source of truth.
+- Read-only timeline.
+- Mutations only through reassignment endpoints.
+- Clear shared types.
+- Small, testable components.
+- Do not introduce heavy libraries before they are needed.
 
-## 16. Como validarlo en demo
+## 16. How to validate it in a demo
 
-- Entrar con `demo@restaurant.com`.
-- Abrir `Planning`.
-- Cambiar fecha y salon.
-- Ver 3 salones y mesas demo.
-- Seleccionar mesa y reserva.
-- Ver pendientes y sin asignar.
-- Mostrar que la timeline no permite cambiar horarios.
-- Explicar que la optimizacion solo mueve mesas.
-- Mostrar estados, ocupacion y comensales.
+- Log in with `demo@restaurant.com`.
+- Open `Planning`.
+- Change the date and dining room.
+- View 3 demo dining rooms and tables.
+- Select a table and reservation.
+- View pending and unassigned reservations.
+- Show that the timeline does not allow schedule changes.
+- Explain that optimization only moves reservations between tables.
+- Show states, occupancy, and guests.

@@ -3,7 +3,6 @@ import { useState, type FormEvent } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { ApiError } from "@/services/api/client";
 import { useAuth } from "@/features/auth/context/AuthContext";
-import { LanguageSwitcher } from "@/features/i18n/LanguageSwitcher";
 import { useI18n } from "@/features/i18n/I18nProvider";
 
 export function RegisterPage() {
@@ -69,17 +68,16 @@ export function RegisterPage() {
               <p className="text-xs text-slate-500">Restaurant OS</p>
             </div>
           </div>
-          <LanguageSwitcher compact />
         </div>
 
         <div className="rounded-lg border border-white/10 bg-[#111614] p-6 shadow-2xl shadow-black/25 sm:p-7">
           <h1 className="text-2xl font-semibold text-white">
-            {t("Crear cuenta")}
+            {t("Create account")}
           </h1>
 
             <form className="mt-7 grid gap-4" onSubmit={handleSubmit}>
               <label className="grid gap-2">
-                <span className="text-sm font-medium text-slate-300">{t("Tu nombre")}</span>
+                <span className="text-sm font-medium text-slate-300">{t("Your name")}</span>
                 <input
                   className="h-11 rounded-lg border border-white/10 bg-[#0c100e] px-3 text-sm text-white outline-none transition focus:border-emerald-400/70 focus:ring-2 focus:ring-emerald-400/20"
                   type="text"
@@ -106,47 +104,47 @@ export function RegisterPage() {
               </label>
 
               <label className="grid gap-2">
-                <span className="text-sm font-medium text-slate-300">{t("Nombre del restaurante")}</span>
+                <span className="text-sm font-medium text-slate-300">{t("Restaurant name")}</span>
                 <input
                   className="h-11 rounded-lg border border-white/10 bg-[#0c100e] px-3 text-sm text-white outline-none transition focus:border-emerald-400/70 focus:ring-2 focus:ring-emerald-400/20"
                   type="text"
                   value={restaurantName}
                   onChange={(event) => setRestaurantName(event.target.value)}
-                  placeholder="Mi Restaurante"
+                  placeholder="My Restaurant"
                   required
                 />
               </label>
 
               <label className="grid gap-2">
-                <span className="text-sm font-medium text-slate-300">{t("Contraseña")}</span>
+                <span className="text-sm font-medium text-slate-300">{t("Password")}</span>
                 <input
                   className="h-11 rounded-lg border border-white/10 bg-[#0c100e] px-3 text-sm text-white outline-none transition focus:border-emerald-400/70 focus:ring-2 focus:ring-emerald-400/20"
                   type="password"
                   autoComplete="new-password"
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
-                  placeholder={t("Minimo 8 caracteres")}
+                  placeholder={t("At least 8 characters")}
                   minLength={8}
                   required
                 />
               </label>
 
               <label className="grid gap-2">
-                <span className="text-sm font-medium text-slate-300">{t("Confirmar contraseña")}</span>
+                <span className="text-sm font-medium text-slate-300">{t("Confirm password")}</span>
                 <input
                   className="h-11 rounded-lg border border-white/10 bg-[#0c100e] px-3 text-sm text-white outline-none transition focus:border-emerald-400/70 focus:ring-2 focus:ring-emerald-400/20"
                   type="password"
                   autoComplete="new-password"
                   value={confirmPassword}
                   onChange={(event) => setConfirmPassword(event.target.value)}
-                  placeholder={t("Repite la contraseña")}
+                  placeholder={t("Repeat your password")}
                   required
                 />
               </label>
 
               {passwordMismatch ? (
                 <div className="rounded-lg border border-rose-400/25 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
-                  {t("Las contraseñas no coinciden.")}
+                  {t("Passwords do not match.")}
                 </div>
               ) : null}
 
@@ -161,14 +159,14 @@ export function RegisterPage() {
                 type="submit"
                 disabled={mutation.isPending || passwordMismatch}
               >
-                {mutation.isPending ? t("Creando cuenta...") : t("Crear cuenta")}
+                {mutation.isPending ? t("Creating account...") : t("Create account")}
               </button>
             </form>
 
             <p className="mt-6 text-center text-sm text-slate-400">
-              {t("Ya tienes una cuenta?")}{" "}
+              {t("Already have an account?")}{" "}
               <Link to="/login" className="font-medium text-emerald-300 transition hover:text-emerald-200">
-                {t("Iniciar sesion")}
+                {t("Sign in")}
               </Link>
             </p>
         </div>
@@ -184,19 +182,19 @@ function getRegisterErrorMessage(error: unknown, t: (key: string) => string) {
 
   if (error instanceof ApiError) {
     if (error.status === 409) {
-      return t("Ese email ya esta registrado.");
+      return t("That email is already registered.");
     }
 
     if (error.status >= 500) {
-      return t("El servicio no esta disponible. Intentalo de nuevo en unos minutos.");
+      return t("The service is unavailable. Try again in a few minutes.");
     }
 
-    return error.message || t("No se pudo completar el registro.");
+    return error.message || t("Could not complete registration.");
   }
 
   if (error instanceof TypeError) {
-    return t("No se pudo conectar con el servicio.");
+    return t("Could not connect to the service.");
   }
 
-  return t("Error inesperado al registrarse.");
+  return t("Unexpected registration error.");
 }

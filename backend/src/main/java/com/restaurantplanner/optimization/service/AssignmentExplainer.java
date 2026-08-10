@@ -24,33 +24,33 @@ public class AssignmentExplainer {
         List<String> reasons = new ArrayList<>();
         int wastedCapacity = scoredCandidate.candidate().maxCapacity() - reservation.getPartySize();
 
-        reasons.add("Capacidad ajustada para un grupo de " + reservation.getPartySize() + " comensales.");
+        reasons.add("Capacity is suitable for a party of " + reservation.getPartySize() + " guests.");
         if (wastedCapacity == 0) {
-            reasons.add("No desperdicia plazas en la asignacion.");
+            reasons.add("The assignment wastes no seats.");
         } else if (wastedCapacity <= 2) {
-            reasons.add("Mantiene un desperdicio de capacidad bajo.");
+            reasons.add("Unused capacity remains low.");
         }
 
         if (scoredCandidate.candidate().type().name().equals("TABLE")) {
-            reasons.add("Prioriza una mesa individual frente a una combinacion mas compleja.");
+            reasons.add("A single table is preferred over a more complex combination.");
         } else {
-            reasons.add("Usa una combinacion porque aporta la capacidad necesaria.");
+            reasons.add("A table combination provides the required capacity.");
         }
 
-        reasons.add("Respeta la prioridad operativa del salon seleccionado.");
+        reasons.add("The selected dining room's operational priority is respected.");
         if (reservation.isAccessibilityRequired()) {
-            reasons.add("Cumple el requisito de accesibilidad de la reserva.");
+            reasons.add("The reservation's accessibility requirement is satisfied.");
         }
         if (scoredCandidate.candidate().advanced()) {
             reasons.add(
-                "Requiere preparacion de " + scoredCandidate.candidate().setupTimeMinutes()
-                    + " minutos y coste operativo "
+                "Requires " + scoredCandidate.candidate().setupTimeMinutes()
+                    + " minutes of setup and an operational cost of "
                     + scoredCandidate.candidate().operationalCostLevel().name().toLowerCase() + "."
             );
         }
 
-        String summary = "Seleccionada " + scoredCandidate.candidate().displayName()
-            + " con score " + String.format(java.util.Locale.US, "%.2f", scoredCandidate.totalScore()) + ".";
+        String summary = "Selected " + scoredCandidate.candidate().displayName()
+            + " with a score of " + String.format(java.util.Locale.US, "%.2f", scoredCandidate.totalScore()) + ".";
 
         Map<String, Object> explanation = new LinkedHashMap<>();
         explanation.put("summary", summary);

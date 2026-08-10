@@ -31,12 +31,12 @@ export function InsightBar({
     <section className="rounded-lg border border-white/10 bg-[#111614] p-5">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <p className="text-xs uppercase text-brand-300">{t("Sugerencias")}</p>
+          <p className="text-xs uppercase text-brand-300">{t("Suggestions")}</p>
           <h2 className="mt-2 text-2xl font-semibold text-white">
-            {activeCount} {t("recomendaciones activas")}
+            {activeCount} {t("active recommendations")}
           </h2>
           <p className="mt-2 text-sm text-slate-400">
-            {t("Alta")} {summary?.HIGH ?? 0} · {t("Media")} {summary?.MEDIUM ?? 0} · {t("Baja")} {summary?.LOW ?? 0}
+            {t("High")} {summary?.HIGH ?? 0} · {t("Medium")} {summary?.MEDIUM ?? 0} · {t("Low")} {summary?.LOW ?? 0}
           </p>
         </div>
 
@@ -45,7 +45,7 @@ export function InsightBar({
           className="h-12 rounded-lg bg-brand-500 px-5 text-sm font-semibold text-slate-950 transition hover:bg-brand-400"
           onClick={onOpenPanel}
         >
-          {t("Ver recomendaciones")}
+          {t("View recommendations")}
         </button>
       </div>
 
@@ -74,7 +74,7 @@ export function InsightBar({
           ))
         ) : (
           <div className="lg:col-span-3 rounded-lg border border-emerald-400/25 bg-emerald-500/10 p-4 text-sm text-emerald-100">
-            {t("No hay recomendaciones activas para esta fecha.")}
+            {t("There are no active recommendations for this date.")}
           </div>
         )}
       </div>

@@ -13,7 +13,7 @@ const reservation = {
   estimatedDurationMin: 120,
   cleaningBufferMin: 15,
   accessibilityRequired: false,
-  specialRequests: "Mesa tranquila",
+  specialRequests: "Quiet table",
   assignmentType: null,
   tableId: null,
   tableCode: null,
@@ -25,17 +25,17 @@ const reservation = {
 };
 
 const suggestions = [
-  suggestion(31, "Mesa T12", "TABLE", false, 91, []),
-  suggestion(42, "Terraza ampliada", "TABLE_COMBINATION", true, 73.5, [{
+  suggestion(31, "Table T12", "TABLE", false, 91, []),
+  suggestion(42, "Extended terrace", "TABLE_COMBINATION", true, 73.5, [{
     storageResourceId: 7,
     resourceType: "EXTRA_CHAIR",
-    resourceName: "Sillas extra",
+    resourceName: "Extra chairs",
     requiredQuantity: 2,
     availableQuantity: 4,
     capacityPerUnit: 1,
     capacityContribution: 2,
   }]),
-  suggestion(43, "Salon privado", "TABLE_COMBINATION", true, 62, []),
+  suggestion(43, "Private dining room", "TABLE_COMBINATION", true, 62, []),
 ];
 
 test("manager logs in, compares top 3 and applies an advanced option", async ({ page }, testInfo) => {
@@ -43,19 +43,19 @@ test("manager logs in, compares top 3 and applies an advanced option", async ({ 
   await mockApi(page, "MANAGER", selections);
 
   await loginAndOpenReservation(page);
-  await page.getByRole("button", { name: "Ver sugerencias" }).click();
+  await page.getByRole("button", { name: "View suggestions" }).click();
 
-  const panel = page.getByRole("region", { name: "Sugerencias de asignacion" });
-  await expect(panel.getByText("Terraza ampliada")).toBeVisible();
-  await expect(panel.getByText("2 x Sillas extra")).toBeVisible();
-  await expect(panel.getByRole("button", { name: "Aplicar" })).toHaveCount(3);
+  const panel = page.getByRole("region", { name: "Assignment suggestions" });
+  await expect(panel.getByText("Extended terrace")).toBeVisible();
+  await expect(panel.getByText("2 x Extra chairs")).toBeVisible();
+  await expect(panel.getByRole("button", { name: "Apply" })).toHaveCount(3);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
     await page.evaluate(() => window.innerWidth),
   );
   await captureVisualAudit(page, testInfo.outputPath("assignment-suggestions.png"));
 
-  await panel.getByRole("article").filter({ hasText: "Terraza ampliada" }).getByRole("button", { name: "Aplicar" }).click();
-  await expect(page.getByText("Asignacion aplicada y recursos reservados.")).toBeVisible();
+  await panel.getByRole("article").filter({ hasText: "Extended terrace" }).getByRole("button", { name: "Apply" }).click();
+  await expect(page.getByText("Assignment applied and resources reserved.")).toBeVisible();
   expect(selections).toEqual([{ candidateType: "TABLE_COMBINATION", candidateId: 42 }]);
 });
 
@@ -63,8 +63,8 @@ test("staff can inspect the reservation but cannot approve suggestions", async (
   await mockApi(page, "WAITER", []);
   await loginAndOpenReservation(page);
 
-  await expect(page.getByRole("dialog", { name: "Detalle de reserva" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Ver sugerencias" })).toHaveCount(0);
+  await expect(page.getByRole("dialog", { name: "Reservation details" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "View suggestions" })).toHaveCount(0);
 });
 
 test("manager can delete a customer after explicit confirmation", async ({ page }, testInfo) => {
@@ -74,10 +74,10 @@ test("manager can delete a customer after explicit confirmation", async ({ page 
   await login(page);
   await openCustomer(page);
   await expect(page.getByRole("heading", { name: "Ada Rivera" })).toBeVisible();
-  await page.getByRole("button", { name: "Eliminar cliente" }).click();
-  await expect(page.getByRole("alertdialog", { name: "Eliminar cliente" })).toBeVisible();
+  await page.getByRole("button", { name: "Delete customer" }).click();
+  await expect(page.getByRole("alertdialog", { name: "Delete customer" })).toBeVisible();
   await captureVisualAudit(page, testInfo.outputPath("customer-delete-dialog.png"));
-  await page.getByRole("button", { name: "Eliminar definitivamente" }).click();
+  await page.getByRole("button", { name: "Delete permanently" }).click();
 
   await expect(page).toHaveURL(/\/customers$/);
   expect(deletions).toEqual([77]);
@@ -92,26 +92,25 @@ test("staff can inspect a customer but cannot delete it", async ({ page }) => {
   await login(page);
   await openCustomer(page);
   await expect(page.getByRole("heading", { name: "Ada Rivera" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Eliminar cliente" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Delete customer" })).toHaveCount(0);
 });
 
 async function loginAndOpenReservation(page: Page) {
   await login(page);
   await page.getByRole("link", { name: "Planning", exact: true }).click();
   await page.getByRole("button", { name: /Ada Rivera/ }).first().click();
-  await expect(page.getByRole("dialog", { name: "Detalle de reserva" })).toContainText("Ada Rivera");
+  await expect(page.getByRole("dialog", { name: "Reservation details" })).toContainText("Ada Rivera");
 }
 
 async function login(page: Page) {
   await page.goto("/login");
-  await page.getByRole("button", { name: /Spanish|Español/ }).click();
-  await page.getByRole("button", { name: "Entrar" }).click();
+  await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page).toHaveURL(/\/planning$/);
 }
 
 async function openCustomer(page: Page) {
-  await page.getByRole("link", { name: "Clientes" }).click();
-  await page.getByRole("link", { name: "Ver ficha" }).click();
+  await page.getByRole("link", { name: "Customers" }).click();
+  await page.getByRole("link", { name: "View profile" }).click();
 }
 
 async function captureVisualAudit(page: Page, path: string) {
@@ -162,9 +161,9 @@ async function mockApi(
         tableId: null,
         tableCode: null,
         tableCombinationId: 42,
-        tableCombinationName: "Terraza ampliada",
+        tableCombinationName: "Extended terrace",
         score: 73.5,
-        summary: "Seleccion manual avanzada",
+        summary: "Advanced manual selection",
         explanationJson: "{}",
         reasons: [],
         recommendedStartTime: null,
@@ -191,7 +190,7 @@ function planningFixture() {
     restaurant: { id: 1, name: "Pilot Restaurant", timezone: "Europe/Madrid" },
     diningRooms: [{
       id: 2,
-      name: "Sala principal",
+      name: "Main dining room",
       priority: 1,
       accessible: true,
       active: true,
@@ -235,7 +234,7 @@ function fullReservationFixture() {
     cleaningBufferMin: 15,
     confirmedAt: "2026-07-15T10:00:00Z",
     cancelledAt: null,
-    specialRequests: "Mesa tranquila",
+    specialRequests: "Quiet table",
     accessibilityRequired: false,
     createdAt: "2026-07-10T10:00:00Z",
     updatedAt: "2026-07-10T10:00:00Z",
@@ -287,8 +286,8 @@ function suggestion(
     setupTimeMinutes: advanced ? 20 : 0,
     resources,
     explanation: {
-      summary: "Capacidad suficiente y disponibilidad validada.",
-      reasons: ["Disponible"],
+      summary: "Sufficient capacity and validated availability.",
+      reasons: ["Available"],
       bonuses: {},
       penalties: {},
     },

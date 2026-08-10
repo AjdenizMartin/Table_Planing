@@ -41,88 +41,88 @@ interface StatusVisual {
 
 const STATUS_VISUALS: Record<ReservationStatus | "FREE" | "CONFLICT" | "UNASSIGNED" | "CLEANING", StatusVisual> = {
   FREE: {
-    label: "Libre",
+    label: "Free",
     tone: "border-emerald-300/25 bg-emerald-400/10 text-emerald-100",
     dot: "bg-emerald-300",
-    tooltip: "Mesa libre en el contexto seleccionado.",
-    action: "Asignar reserva disponible",
+    tooltip: "Table available for the selected service.",
+    action: "Assign available reservation",
   },
   PENDING: {
-    label: "Pendiente",
+    label: "Pending",
     tone: "border-amber-300/35 bg-amber-400/15 text-amber-100",
     dot: "bg-amber-300",
-    tooltip: "Reserva pendiente de confirmar.",
-    action: "Enviar recordatorio o llamar",
+    tooltip: "Reservation awaiting confirmation.",
+    action: "Send a reminder or call",
   },
   CONFIRMED: {
-    label: "Confirmada",
+    label: "Confirmed",
     tone: "border-sky-300/35 bg-sky-400/15 text-sky-100",
     dot: "bg-sky-300",
-    tooltip: "Reserva confirmada.",
-    action: "Preparar mesa",
+    tooltip: "Confirmed reservation.",
+    action: "Prepare table",
   },
   ARRIVED: {
-    label: "Llegado",
+    label: "Arrived",
     tone: "border-teal-300/35 bg-teal-400/15 text-teal-100",
     dot: "bg-teal-300",
-    tooltip: "Cliente ha llegado al restaurante.",
-    action: "Asignar mesa y sentar",
+    tooltip: "The customer has arrived.",
+    action: "Assign table and seat guests",
   },
   SEATED: {
-    label: "En servicio",
+    label: "In service",
     tone: "border-emerald-300/35 bg-emerald-400/15 text-emerald-100",
     dot: "bg-emerald-300",
-    tooltip: "Cliente sentado o en servicio.",
-    action: "Marcar finalizada cuando termine",
+    tooltip: "Customer seated or in service.",
+    action: "Mark as completed when service ends",
   },
   COMPLETED: {
-    label: "Finalizada",
+    label: "Finished",
     tone: "border-slate-300/25 bg-slate-400/10 text-slate-100",
     dot: "bg-slate-300",
-    tooltip: "Reserva finalizada.",
-    action: "Liberar o limpiar mesa",
+    tooltip: "Completed reservation.",
+    action: "Release or clean table",
   },
   CANCELLED: {
-    label: "Cancelada",
+    label: "Cancelled",
     tone: "border-rose-300/30 bg-rose-400/10 text-rose-100",
     dot: "bg-rose-300",
-    tooltip: "Reserva cancelada.",
-    action: "No ocupa mesa",
+    tooltip: "Cancelled reservation.",
+    action: "Does not occupy a table",
   },
   NO_SHOW: {
-    label: "No-show",
+    label: "No show",
     tone: "border-fuchsia-300/30 bg-fuchsia-400/10 text-fuchsia-100",
     dot: "bg-fuchsia-300",
-    tooltip: "Cliente no presentado.",
+    tooltip: "Customer did not show.",
     action: "Registrar historial",
   },
   CONFLICT: {
-    label: "Conflicto",
+    label: "Conflict",
     tone: "border-red-300/45 bg-red-500/15 text-red-100",
     dot: "bg-red-300",
-    tooltip: "Solapamiento o regla incumplida.",
+    tooltip: "Overlap or invalid rule.",
     action: "Resolver conflicto",
   },
   UNASSIGNED: {
-    label: "Sin asignar",
+    label: "Unassigned",
     tone: "border-violet-300/35 bg-violet-400/15 text-violet-100",
     dot: "bg-violet-300",
-    tooltip: "Reserva sin mesa asignada.",
-    action: "Asignar mesa",
+    tooltip: "Reservation without an assigned table.",
+    action: "Assign table",
   },
   CLEANING: {
-    label: "Limpieza",
+    label: "Cleaning",
     tone: "border-cyan-300/35 bg-cyan-400/15 text-cyan-100",
     dot: "bg-cyan-300",
-    tooltip: "Buffer de limpieza entre reservas.",
-    action: "Preparar siguiente reserva",
+    tooltip: "Cleaning time between reservations.",
+    action: "Prepare next reservation",
   },
 };
 
 const SERVICE_WINDOWS: Record<ServiceWindow, { label: string; start: number; end: number }> = {
-  all: { label: "Todo el dia", start: 0, end: 24 * 60 },
-  lunch: { label: "Comida", start: 11 * 60, end: 17 * 60 },
-  dinner: { label: "Cena", start: 17 * 60, end: 24 * 60 },
+  all: { label: "All day", start: 0, end: 24 * 60 },
+  lunch: { label: "Lunch", start: 11 * 60, end: 17 * 60 },
+  dinner: { label: "Dinner", start: 17 * 60, end: 24 * 60 },
 };
 
 const TIMELINE_START = 11 * 60;
@@ -167,8 +167,8 @@ function getTableVisual(table: PlanningTableResponse, serviceWindow: ServiceWind
       label: "Blocked",
       tone: "border-slate-500/40 bg-slate-800/70 text-slate-300",
       dot: "bg-slate-500",
-      tooltip: "Mesa inactiva o bloqueada.",
-      action: "Revisar configuracion",
+      tooltip: "Inactive or blocked table.",
+      action: "Review settings",
     };
   }
   return reservation ? getReservationVisual(reservation) : STATUS_VISUALS.FREE;
@@ -390,7 +390,7 @@ export function PlanningPage() {
             >
               <span className="inline-flex items-center gap-2">
                 <Plus className="h-4 w-4" />
-                {t("Nueva reserva")}
+                {t("New reservation")}
               </span>
             </button>
             <button
@@ -401,7 +401,7 @@ export function PlanningPage() {
             >
               <span className="inline-flex items-center gap-2">
                 <RefreshCw className={recalculateMutation.isPending ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
-                {recalculateMutation.isPending ? t("Optimizando...") : t("Optimizar")}
+                {recalculateMutation.isPending ? t("Optimizing...") : t("Optimize")}
               </span>
             </button>
             <button
@@ -411,7 +411,7 @@ export function PlanningPage() {
             >
               <span className="inline-flex items-center gap-2">
                 <Map className="h-4 w-4" />
-                {t("Plano")}
+                {t("Floor plan")}
               </span>
             </button>
           </div>
@@ -419,7 +419,7 @@ export function PlanningPage() {
 
         <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
           <label className="grid gap-1 rounded-lg border border-white/10 bg-slate-950/40 p-3">
-            <span className="text-[10px] font-semibold uppercase text-slate-500">{t("Fecha")}</span>
+            <span className="text-[10px] font-semibold uppercase text-slate-500">{t("Date")}</span>
             <input
               className="h-10 rounded-lg border border-white/10 bg-slate-950/70 px-3 text-sm text-white outline-none focus:border-brand-300/70"
               type="date"
@@ -428,7 +428,7 @@ export function PlanningPage() {
             />
           </label>
           <label className="grid gap-1 rounded-lg border border-white/10 bg-slate-950/40 p-3">
-            <span className="text-[10px] font-semibold uppercase text-slate-500">{t("Turno")}</span>
+            <span className="text-[10px] font-semibold uppercase text-slate-500">{t("Service")}</span>
             <select
               className="h-10 rounded-lg border border-white/10 bg-slate-950/70 px-3 text-sm text-white outline-none focus:border-brand-300/70"
               value={serviceWindow}
@@ -440,7 +440,7 @@ export function PlanningPage() {
             </select>
           </label>
           <label className="col-span-2 grid gap-1 rounded-lg border border-white/10 bg-slate-950/40 p-3">
-            <span className="text-[10px] font-semibold uppercase text-slate-500">{t("Salon")}</span>
+            <span className="text-[10px] font-semibold uppercase text-slate-500">{t("Dining room")}</span>
             <select
               className="h-10 rounded-lg border border-white/10 bg-slate-950/70 px-3 text-sm text-white outline-none focus:border-brand-300/70"
               value={selectedRoomId}
@@ -448,15 +448,15 @@ export function PlanningPage() {
                 setSelectedRoomId(event.target.value === "all" ? "all" : Number(event.target.value))
               }
             >
-              <option value="all">{t("Todos los salones")}</option>
+              <option value="all">{t("All dining rooms")}</option>
               {(planning?.diningRooms ?? []).map((room) => (
                 <option key={room.id} value={room.id}>{room.name}</option>
               ))}
             </select>
           </label>
-          <StatCardCompact label={t("Ocupacion")} value={`${stats.occupancy}%`} />
-          <StatCardCompact label={t("Reservas")} value={stats.reservations} />
-          <StatCardCompact label={t("Pendientes")} value={stats.pending} />
+          <StatCardCompact label={t("Occupancy")} value={`${stats.occupancy}%`} />
+          <StatCardCompact label={t("Reservations")} value={stats.reservations} />
+          <StatCardCompact label={t("Pending")} value={stats.pending} />
         </div>
       </header>
 
@@ -480,13 +480,13 @@ export function PlanningPage() {
       {planningQuery.isLoading ? (
         <div className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 px-6 py-5 text-slate-300">
           <span className="h-5 w-5 animate-spin rounded-full border-2 border-slate-400 border-t-transparent" />
-          <span className="text-sm">{t("Cargando planning...")}</span>
+          <span className="text-sm">{t("Loading planning...")}</span>
         </div>
       ) : null}
 
       {planningQuery.error ? (
         <div className="rounded-lg border border-rose-300/20 bg-rose-500/8 px-6 py-5">
-          <p className="text-sm font-medium text-rose-200">{t("No se pudo cargar el planning")}</p>
+          <p className="text-sm font-medium text-rose-200">{t("Could not load planning")}</p>
           <p className="mt-1 text-sm text-rose-300/80">{getErrorMessage(planningQuery.error)}</p>
         </div>
       ) : null}
@@ -560,7 +560,7 @@ export function PlanningPage() {
 
           {planning.conflicts.length > 0 ? (
             <section className="rounded-lg border border-red-300/25 bg-red-500/10 p-5">
-              <h2 className="text-xl font-semibold text-red-100">{t("Conflictos detectados")}</h2>
+              <h2 className="text-xl font-semibold text-red-100">{t("Conflicts")}</h2>
               <div className="mt-4 grid gap-3 md:grid-cols-2">
                 {planning.conflicts.map((conflict, index) => (
                   <article key={`${conflict.resourceId}-${index}`} className="rounded-lg border border-red-300/20 bg-slate-950/40 p-4 text-red-100">
@@ -650,9 +650,9 @@ function ReservationQueue({
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase text-brand-300">
-            {t("Reservas")}
+            {t("Reservations")}
           </p>
-          <h2 className="mt-2 text-xl font-semibold text-white">{t("Cola del dia")}</h2>
+          <h2 className="mt-2 text-xl font-semibold text-white">{t("Today's queue")}</h2>
         </div>
         <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-slate-300">
           {reservations.length}
@@ -663,7 +663,7 @@ function ReservationQueue({
         className="mt-4 h-12 w-full rounded-lg border border-white/10 bg-slate-900/80 px-4 text-sm text-white outline-none placeholder:text-slate-500 focus:border-brand-300/70"
         value={searchQuery}
         onChange={(event) => onSearchQueryChange(event.target.value)}
-        placeholder={t("Buscar nombre, hora o comensales")}
+        placeholder={t("Search name, time or guests")}
       />
 
       <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
@@ -679,7 +679,7 @@ function ReservationQueue({
             ].join(" ")}
             onClick={() => onStatusFilterChange(filter)}
           >
-            {filter === "all" ? t("Todos") : t(STATUS_VISUALS[filter].label)}
+            {filter === "all" ? t("All") : t(STATUS_VISUALS[filter].label)}
           </button>
         ))}
       </div>
@@ -709,7 +709,7 @@ function ReservationQueue({
                   <p className="mt-0.5 text-xs text-slate-500">
                     {normalizeTimeForInput(reservation.startTime)}
                     {reservation.tableCode ? ` · ${reservation.tableCode}` : ""}
-                    {isUnassigned ? ` · ${t("Sin mesa")}` : ""}
+                    {isUnassigned ? ` · ${t("No table")}` : ""}
                   </p>
                 </div>
                 <StatusPill status={reservation.status} />
@@ -720,7 +720,7 @@ function ReservationQueue({
 
         {reservations.length === 0 ? (
           <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-6 text-center">
-            <p className="text-sm text-slate-500">{t("No hay reservas con estos filtros.")}</p>
+            <p className="text-sm text-slate-500">{t("No reservations match these filters.")}</p>
           </div>
         ) : null}
       </div>
@@ -752,18 +752,18 @@ function FloorPlan({
             <div>
               <h2 className="text-2xl font-semibold text-white">{room.name}</h2>
               <p className="mt-1 text-sm text-slate-400">
-                {t("Prioridad")} {room.priority} · {room.accessible ? t("Accesible") : t("No accesible")} · {room.tables.length} {t("mesas")}
+                {t("Priority")} {room.priority} · {room.accessible ? t("Accessible") : t("Not accessible")} · {room.tables.length} {t("tables")}
               </p>
             </div>
             <span className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase text-slate-300">
-              {t("Servicio")}
+              {t("Service")}
             </span>
           </div>
 
           <div className="relative min-h-[520px] overflow-hidden bg-[#0d1210] p-4 sm:p-6">
             <div className="absolute inset-0 opacity-30 [background-image:linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] [background-size:32px_32px]" />
             <div className="absolute left-8 top-8 rounded-full border border-white/10 bg-slate-950/60 px-3 py-1 text-xs font-semibold uppercase text-slate-400">
-              {t("Plano")}
+              {t("Floor plan")}
             </div>
 
             {room.tables.map((table) => {
@@ -791,7 +791,7 @@ function FloorPlan({
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <p className="text-base font-black">{table.code}</p>
-                      <p className="text-xs opacity-80">{table.minCapacity}-{table.maxCapacity} {t("personas")}</p>
+                      <p className="text-xs opacity-80">{table.minCapacity}-{table.maxCapacity} {t("guests")}</p>
                     </div>
                     <span className={["mt-1 h-2.5 w-2.5 rounded-full", visual.dot].join(" ")} />
                   </div>
@@ -817,7 +817,7 @@ function FloorPlan({
                     </span>
                   ) : (
                     <span className="mt-3 rounded-lg bg-slate-950/30 px-3 py-2 text-xs font-semibold">
-                      {t("Libre")}
+                      {t("Free")}
                     </span>
                   )}
                 </button>
@@ -826,7 +826,7 @@ function FloorPlan({
 
             {room.tables.length === 0 ? (
               <div className="relative z-10 rounded-lg border border-white/10 bg-white/5 p-6 text-slate-300">
-                {t("Este salon no tiene mesas configuradas.")}
+                {t("This dining room has no tables.")}
               </div>
             ) : null}
           </div>
@@ -835,7 +835,7 @@ function FloorPlan({
 
       {rooms.length === 0 ? (
         <section className="rounded-lg border border-white/10 bg-white/5 p-8 text-slate-300">
-          {t("No hay salones para el filtro seleccionado.")}
+          {t("No dining rooms match the selected filter.")}
         </section>
       ) : null}
     </main>
@@ -846,9 +846,9 @@ function NoAssignmentCard({ response }: { response: AssignReservationResponse })
   const { t } = useI18n();
   return (
     <div className="rounded-lg border border-rose-300/30 bg-rose-500/10 p-4 text-sm text-rose-50">
-      <p className="font-semibold text-white">{t("No se puede asignar a la hora solicitada")}</p>
+      <p className="font-semibold text-white">{t("Cannot assign at the requested time")}</p>
       <p className="mt-2 text-rose-100/90">
-        {t("Ninguna mesa o combinacion cumple las condiciones.")}
+        {t("No table or combination meets the requirements.")}
       </p>
 
       {response.reasons.length > 0 ? (
@@ -863,7 +863,7 @@ function NoAssignmentCard({ response }: { response: AssignReservationResponse })
 
       <div className="mt-4 rounded-lg border border-brand-300/30 bg-brand-400/10 p-3 text-brand-50">
         <p className="text-xs font-semibold uppercase text-brand-200">
-          {t("Proxima opcion")}
+          {t("Next option")}
         </p>
         {response.recommendedStartTime ? (
           <>
@@ -871,12 +871,12 @@ function NoAssignmentCard({ response }: { response: AssignReservationResponse })
               {normalizeTimeForInput(response.recommendedStartTime)}
             </p>
             <p className="mt-1 text-sm text-brand-100">
-              {t("Hay una mesa posible a esa hora. Edita la reserva para cambiarla.")}
+              {t("A table is available at that time. Edit the reservation to change it.")}
             </p>
           </>
         ) : (
           <p className="mt-2 text-sm text-brand-100">
-            {t("No se encontro otra opcion para este dia.")}
+            {t("No other option was found for this date.")}
           </p>
         )}
       </div>
@@ -886,15 +886,15 @@ function NoAssignmentCard({ response }: { response: AssignReservationResponse })
 
 function humanizeAssignmentReason(reason: string) {
   return reason
-    .replace(/candidate\(s\) rejected due to insufficient_capacity/g, "opciones descartadas por capacidad insuficiente")
-    .replace(/candidate\(s\) rejected due to below_min_capacity/g, "opciones descartadas por capacidad minima demasiado alta")
-    .replace(/candidate\(s\) rejected due to time_overlap/g, "opciones descartadas por solapamiento con otra reserva")
-    .replace(/candidate\(s\) rejected due to accessibility_mismatch/g, "opciones descartadas por accesibilidad")
-    .replace(/candidate\(s\) rejected due to inactive_table/g, "opciones descartadas por mesa inactiva")
-    .replace(/candidate\(s\) rejected due to inactive_dining_room/g, "opciones descartadas por salon inactivo")
-    .replace(/candidate\(s\) rejected due to inactive_combination/g, "opciones descartadas por combinacion inactiva")
-    .replace("No active tables or combinations are configured for this restaurant", "No hay mesas ni combinaciones activas configuradas")
-    .replace("No candidate satisfied the hard constraints", "Ninguna mesa o combinacion cumple las reglas obligatorias");
+    .replace(/candidate\(s\) rejected due to insufficient_capacity/g, "options rejected due to insufficient capacity")
+    .replace(/candidate\(s\) rejected due to below_min_capacity/g, "options rejected due to minimum capacity")
+    .replace(/candidate\(s\) rejected due to time_overlap/g, "options rejected due to another reservation")
+    .replace(/candidate\(s\) rejected due to accessibility_mismatch/g, "options rejected due to accessibility")
+    .replace(/candidate\(s\) rejected due to inactive_table/g, "options rejected because a table is inactive")
+    .replace(/candidate\(s\) rejected due to inactive_dining_room/g, "options rejected because a dining room is inactive")
+    .replace(/candidate\(s\) rejected due to inactive_combination/g, "options rejected because a combination is inactive")
+    .replace("No active tables or combinations are configured for this restaurant", "No active tables or combinations are configured")
+    .replace("No candidate satisfied the hard constraints", "No table or combination satisfies the required rules");
 }
 
 function DetailPanel({
@@ -916,7 +916,7 @@ function DetailPanel({
   return (
     <aside className="rounded-lg border border-white/10 bg-slate-950/70 p-5 shadow-2xl shadow-black/20">
       <p className="text-xs font-semibold uppercase text-brand-300">
-        {t("Detalle")}
+        {t("Details")}
       </p>
 
       {assignError ? (
@@ -930,15 +930,15 @@ function DetailPanel({
           <div>
             <h2 className="text-3xl font-semibold text-white">{reservationName(selectedReservation)}</h2>
             <p className="mt-2 text-sm text-slate-400">
-              {selectedReservation.partySize} {t("personas")} · {formatRange(selectedReservation)}
+              {selectedReservation.partySize} {t("guests")} · {formatRange(selectedReservation)}
             </p>
           </div>
           <StatusPill status={selectedReservation.status} />
           <div className="grid gap-3 rounded-lg border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
-            <p>{t("Mesa")}: {selectedReservation.tableCode ?? selectedReservation.tableCombinationName ?? t("Sin asignar")}</p>
-            <p>{t("Limpieza")}: {selectedReservation.cleaningBufferMin} min</p>
-            <p>{t("Accesibilidad")}: {selectedReservation.accessibilityRequired ? t("Requerida") : t("No indicada")}</p>
-            <p>{t("Notas")}: {selectedReservation.specialRequests || t("Sin notas")}</p>
+            <p>{t("Table")}: {selectedReservation.tableCode ?? selectedReservation.tableCombinationName ?? t("Unassigned")}</p>
+            <p>{t("Cleaning")}: {selectedReservation.cleaningBufferMin} min</p>
+            <p>{t("Accessibility")}: {selectedReservation.accessibilityRequired ? t("Required") : t("Not specified")}</p>
+            <p>{t("Notes")}: {selectedReservation.specialRequests || t("No notes")}</p>
           </div>
           {assignResponse && !assignResponse.assigned ? (
             <NoAssignmentCard response={assignResponse} />
@@ -950,7 +950,7 @@ function DetailPanel({
               disabled={assignPending}
               onClick={() => onAssignAutomatically(selectedReservation.reservationId)}
             >
-              {assignPending ? t("Asignando...") : t("Buscar mejor mesa")}
+              {assignPending ? t("Assigning...") : t("Find best table")}
             </button>
           ) : null}
         </div>
@@ -959,7 +959,7 @@ function DetailPanel({
           <div>
             <h2 className="text-3xl font-semibold text-white">{tableName(selectedTable)}</h2>
             <p className="mt-2 text-sm text-slate-400">
-              {t("Capacidad")} {selectedTable.minCapacity}-{selectedTable.maxCapacity} {t("personas")}
+              {t("Capacity")} {selectedTable.minCapacity}-{selectedTable.maxCapacity} {t("guests")}
             </p>
           </div>
           <div className="grid gap-3">
@@ -968,7 +968,7 @@ function DetailPanel({
                 <div key={reservation.reservationId} className="rounded-lg border border-white/10 bg-white/5 p-4">
                   <p className="font-semibold text-white">{reservationName(reservation)}</p>
                   <p className="mt-1 text-sm text-slate-400">
-                    {formatRange(reservation)} · {reservation.partySize} {t("personas")}
+                    {formatRange(reservation)} · {reservation.partySize} {t("guests")}
                   </p>
                   <div className="mt-3">
                     <StatusPill status={reservation.status} />
@@ -977,14 +977,14 @@ function DetailPanel({
               ))
             ) : (
               <div className="rounded-lg border border-emerald-300/25 bg-emerald-400/10 p-4 text-sm text-emerald-100">
-                {t("Mesa libre para el turno seleccionado.")}
+                {t("Table available for this service.")}
               </div>
             )}
           </div>
         </div>
       ) : (
         <div className="mt-4 rounded-lg border border-white/10 bg-white/5 p-5 text-sm text-slate-300">
-          {t("Selecciona una mesa o reserva para ver el detalle.")}
+          {t("Select a table or reservation to view details.")}
         </div>
       )}
     </aside>
@@ -1012,16 +1012,16 @@ function ReadOnlyTimeline({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase text-brand-300">
-            {t("Horario")}
+            {t("Schedule")}
           </p>
-          <h2 className="mt-2 text-xl font-semibold text-white">{t("Horario de mesas")}</h2>
+          <h2 className="mt-2 text-xl font-semibold text-white">{t("Table schedule")}</h2>
         </div>
       </div>
 
       <div className="mt-5 overflow-x-auto">
         <div className="min-w-[980px]">
           <div className="grid grid-cols-[180px_minmax(760px,1fr)] border-b border-white/10 pb-2">
-            <div className="text-xs font-semibold uppercase text-slate-500">{t("Mesa")}</div>
+            <div className="text-xs font-semibold uppercase text-slate-500">{t("Table")}</div>
             <div className="relative grid" style={{ gridTemplateColumns: `repeat(${hourMarks.length}, minmax(0, 1fr))` }}>
               {hourMarks.map((hour) => (
                 <div key={hour} className="border-l border-white/10 pl-2 text-xs font-semibold text-slate-500">
@@ -1071,7 +1071,7 @@ function ReadOnlyTimeline({
                             <span
                               className="absolute bottom-0 right-0 top-0 rounded-r-2xl bg-cyan-300/20"
                               style={{ width: `${Math.min(bufferWidth * (100 / width), 35)}%` }}
-                              title={t("Limpieza")}
+                              title={t("Cleaning")}
                             />
                           ) : null}
                         </button>

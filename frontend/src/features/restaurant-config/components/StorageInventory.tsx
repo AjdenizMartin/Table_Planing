@@ -17,14 +17,14 @@ import { getErrorMessage } from "@/features/restaurant-config/utils/errorMessage
 import { useI18n } from "@/features/i18n/I18nProvider";
 
 const resourceTypes: Array<{ value: StorageResourceType; label: string }> = [
-  { value: "EXTRA_CHAIR", label: "Silla extra" },
-  { value: "EXTRA_TABLE", label: "Mesa extra" },
-  { value: "FOLDING_TABLE", label: "Mesa plegable" },
-  { value: "HIGH_CHAIR", label: "Trona" },
-  { value: "TABLE_EXTENSION", label: "Extension de mesa" },
-  { value: "BENCH", label: "Banco" },
-  { value: "STORAGE_TABLE", label: "Mesa de almacen" },
-  { value: "OTHER", label: "Otro" },
+  { value: "EXTRA_CHAIR", label: "Extra chair" },
+  { value: "EXTRA_TABLE", label: "Extra table" },
+  { value: "FOLDING_TABLE", label: "Folding table" },
+  { value: "HIGH_CHAIR", label: "High chair" },
+  { value: "TABLE_EXTENSION", label: "Table extension" },
+  { value: "BENCH", label: "Bench" },
+  { value: "STORAGE_TABLE", label: "Storage table" },
+  { value: "OTHER", label: "Other" },
 ];
 
 type ActiveFilter = "ALL" | "ACTIVE" | "INACTIVE";
@@ -155,12 +155,12 @@ export function StorageInventory({
 
   function validateForm() {
     if (!form.name.trim()) {
-      return t("El nombre es obligatorio.");
+      return t("Name is required.");
     }
 
     const numericValues = [form.quantity, form.capacityPerUnit, form.setupTimeMinutes];
     if (numericValues.some((value) => value === "" || !Number.isInteger(Number(value)) || Number(value) < 0)) {
-      return t("Cantidad, capacidad y preparacion deben ser numeros enteros positivos.");
+      return t("Quantity, capacity and setup must be non-negative whole numbers.");
     }
 
     return null;
@@ -169,14 +169,14 @@ export function StorageInventory({
   const mutationError = saveMutation.error ?? toggleActiveMutation.error;
 
   return (
-    <ConfigCard title={t("Inventario")}>
+    <ConfigCard title={t("Inventory")}>
 
       <dl className="mb-5 grid border-y border-white/10 sm:grid-cols-2 xl:grid-cols-4">
         {[
-          [t("Sillas extra"), summary.extraChairs],
-          [t("Mesas de almacen"), summary.storageTables],
-          [t("Recursos activos"), summary.activeResources],
-          [t("Recursos inactivos"), summary.inactiveResources],
+          [t("Extra chairs"), summary.extraChairs],
+          [t("Storage tables"), summary.storageTables],
+          [t("Active resources"), summary.activeResources],
+          [t("Inactive resources"), summary.inactiveResources],
         ].map(([label, value], index) => (
           <div
             key={label}
@@ -194,27 +194,27 @@ export function StorageInventory({
 
       <div className="mb-5 grid gap-4 sm:grid-cols-2">
         <SelectField
-          label={t("Tipo de recurso")}
+          label={t("Resource type")}
           value={resourceTypeFilter}
           onChange={(event) => setResourceTypeFilter(event.target.value as StorageResourceType | "ALL")}
         >
-          <option value="ALL">{t("Todos los tipos")}</option>
+          <option value="ALL">{t("All types")}</option>
           {resourceTypes.map((option) => (
             <option key={option.value} value={option.value}>{t(option.label)}</option>
           ))}
         </SelectField>
         <SelectField
-          label={t("Estado")}
+          label={t("Status")}
           value={activeFilter}
           onChange={(event) => setActiveFilter(event.target.value as ActiveFilter)}
         >
-          <option value="ALL">{t("Todos los recursos")}</option>
-          <option value="ACTIVE">{t("Activo")}</option>
-          <option value="INACTIVE">{t("Inactivo")}</option>
+          <option value="ALL">{t("All resources")}</option>
+          <option value="ACTIVE">{t("Active")}</option>
+          <option value="INACTIVE">{t("Inactive")}</option>
         </SelectField>
       </div>
 
-      {listQuery.isLoading ? <StatusMessage tone="info">{t("Cargando inventario...")}</StatusMessage> : null}
+      {listQuery.isLoading ? <StatusMessage tone="info">{t("Loading inventory...")}</StatusMessage> : null}
       {listQuery.error ? <StatusMessage tone="error">{getErrorMessage(listQuery.error)}</StatusMessage> : null}
       {mutationError ? <StatusMessage tone="error">{getErrorMessage(mutationError)}</StatusMessage> : null}
 
@@ -223,13 +223,13 @@ export function StorageInventory({
           <table className="w-full min-w-[860px] text-left text-sm">
             <thead className="text-xs uppercase text-slate-500">
               <tr>
-                <th className="px-3 py-3 font-medium">{t("Nombre")}</th>
-                <th className="px-3 py-3 font-medium">{t("Tipo")}</th>
-                <th className="px-3 py-3 text-right font-medium">{t("Cantidad")}</th>
-                <th className="px-3 py-3 text-right font-medium">{t("Capacidad por unidad")}</th>
-                <th className="px-3 py-3 text-right font-medium">{t("Preparacion")}</th>
-                <th className="px-3 py-3 font-medium">{t("Activo")}</th>
-                <th className="px-3 py-3 text-right font-medium">{t("Acciones")}</th>
+                <th className="px-3 py-3 font-medium">{t("First name")}</th>
+                <th className="px-3 py-3 font-medium">{t("Type")}</th>
+                <th className="px-3 py-3 text-right font-medium">{t("Quantity")}</th>
+                <th className="px-3 py-3 text-right font-medium">{t("Capacity per unit")}</th>
+                <th className="px-3 py-3 text-right font-medium">{t("Setup")}</th>
+                <th className="px-3 py-3 font-medium">{t("Active")}</th>
+                <th className="px-3 py-3 text-right font-medium">{t("Actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/10">
@@ -245,7 +245,7 @@ export function StorageInventory({
                   <td className="px-3 py-4 text-right tabular-nums text-slate-300">{resource.setupTimeMinutes} min</td>
                   <td className="px-3 py-4 text-slate-300">
                     <span className={resource.active ? "text-emerald-300" : "text-slate-500"}>
-                      {resource.active ? t("Activo") : t("Inactivo")}
+                      {resource.active ? t("Active") : t("Inactive")}
                     </span>
                   </td>
                   <td className="px-3 py-4">
@@ -255,7 +255,7 @@ export function StorageInventory({
                         className="h-10 rounded-lg border border-white/10 px-3 font-medium text-white hover:border-brand-400/50"
                         onClick={() => setSelected(resource)}
                       >
-                        {t("Editar")}
+                        {t("Edit")}
                       </button>
                       <button
                         type="button"
@@ -268,7 +268,7 @@ export function StorageInventory({
                         disabled={toggleActiveMutation.isPending}
                         onClick={() => toggleActiveMutation.mutate(resource)}
                       >
-                        {resource.active ? t("Desactivar") : t("Reactivar")}
+                        {resource.active ? t("Deactivate") : t("Reactivate")}
                       </button>
                     </div>
                   </td>
@@ -280,12 +280,12 @@ export function StorageInventory({
       ) : null}
 
       {displayedResources?.length === 0 ? (
-        <StatusMessage tone="info">{t("No hay recursos con estos filtros.")}</StatusMessage>
+        <StatusMessage tone="info">{t("No resources match these filters.")}</StatusMessage>
       ) : null}
 
       <section className="mt-6 border-t border-white/10 pt-5">
         <h3 className="mb-4 text-base font-semibold text-white">
-          {selected ? `${t("Editar")} ${selected.name}` : t("Añadir recurso")}
+          {selected ? `${t("Edit")} ${selected.name}` : t("Add resource")}
         </h3>
         {validationError ? <StatusMessage tone="error">{validationError}</StatusMessage> : null}
         <form
@@ -303,7 +303,7 @@ export function StorageInventory({
         >
           <div className="grid gap-4 sm:grid-cols-2">
             <SelectField
-              label={t("Tipo de recurso")}
+              label={t("Resource type")}
               value={form.resourceType}
               onChange={(event) => setForm((current) => ({
                 ...current,
@@ -315,7 +315,7 @@ export function StorageInventory({
               ))}
             </SelectField>
             <TextField
-              label={t("Nombre")}
+              label={t("First name")}
               value={form.name}
               maxLength={160}
               onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
@@ -324,7 +324,7 @@ export function StorageInventory({
           </div>
           <div className="grid gap-4 sm:grid-cols-3">
             <TextField
-              label={t("Cantidad")}
+              label={t("Quantity")}
               type="number"
               min={0}
               step={1}
@@ -333,7 +333,7 @@ export function StorageInventory({
               required
             />
             <TextField
-              label={t("Capacidad por unidad")}
+              label={t("Capacity per unit")}
               type="number"
               min={0}
               step={1}
@@ -342,7 +342,7 @@ export function StorageInventory({
               required
             />
             <TextField
-              label={`${t("Preparacion")} (${t("Minutos").toLowerCase()})`}
+              label={`${t("Setup")} (${t("Minutes").toLowerCase()})`}
               type="number"
               min={0}
               step={1}
@@ -352,14 +352,14 @@ export function StorageInventory({
             />
           </div>
           <TextAreaField
-            label={t("Notas")}
+            label={t("Notes")}
             value={form.notes}
             maxLength={2000}
             onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))}
-            placeholder={t("Ubicacion o instrucciones")}
+            placeholder={t("Location or instructions")}
           />
           <CheckboxField
-            label={t("Recurso activo")}
+            label={t("Active resource")}
             checked={form.active}
             onChange={(active) => setForm((current) => ({ ...current, active }))}
           />
@@ -373,7 +373,7 @@ export function StorageInventory({
                   setValidationError(null);
                 }}
               >
-                {t("Cancelar")}
+                {t("Cancel")}
               </button>
             ) : null}
             <button
@@ -381,7 +381,7 @@ export function StorageInventory({
               className="h-11 rounded-lg bg-brand-500 px-5 font-semibold text-slate-950 hover:bg-brand-400 disabled:opacity-60"
               disabled={saveMutation.isPending}
             >
-              {saveMutation.isPending ? t("Guardando...") : selected ? t("Guardar cambios") : t("Crear recurso")}
+              {saveMutation.isPending ? t("Saving...") : selected ? t("Save changes") : t("Create resource")}
             </button>
           </div>
         </form>

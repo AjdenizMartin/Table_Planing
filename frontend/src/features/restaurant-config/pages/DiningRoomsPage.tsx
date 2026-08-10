@@ -101,26 +101,26 @@ export function DiningRoomsPage() {
 
   function validateForm() {
     if (!form.name.trim()) {
-      return t("El nombre del salon es obligatorio.");
+      return t("Dining room name is required.");
     }
 
     if (Number(form.priority) <= 0) {
-      return t("La prioridad debe ser mayor que cero.");
+      return t("Priority must be greater than zero.");
     }
 
     if (Number(form.layoutWidth) < 100 || Number(form.layoutHeight) < 100) {
-      return t("El plano debe tener un ancho y alto validos.");
+      return t("The floor plan must have a valid width and height.");
     }
 
     return null;
   }
 
   return (
-    <ConfigShell title={t("Salones")}>
+    <ConfigShell title={t("Dining rooms")}>
       <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-        <ConfigCard title={t("Salones configurados")}>
+        <ConfigCard title={t("Dining rooms")}>
           {diningRoomsQuery.isLoading ? (
-            <StatusMessage tone="info">{t("Cargando salones...")}</StatusMessage>
+            <StatusMessage tone="info">{t("Loading dining rooms...")}</StatusMessage>
           ) : null}
           {diningRoomsQuery.error ? (
             <StatusMessage tone="error">
@@ -143,12 +143,12 @@ export function DiningRoomsPage() {
                   <div>
                     <h3 className="text-lg font-semibold text-white">{room.name}</h3>
                     <p className="mt-2 text-sm text-slate-400">
-                      {t("Prioridad")} {room.priority} ·{" "}
-                      {room.accessible ? t("Accesible") : t("No accesible")} ·{" "}
-                      {room.active ? t("Activo") : t("Inactivo")}
+                      {t("Priority")} {room.priority} ·{" "}
+                      {room.accessible ? t("Accessible") : t("Not accessible")} ·{" "}
+                      {room.active ? t("Active") : t("Inactive")}
                     </p>
                     <p className="mt-1 text-sm text-slate-500">
-                      {t("Plano")} {room.layoutWidth} × {room.layoutHeight}
+                      {t("Floor plan")} {room.layoutWidth} × {room.layoutHeight}
                     </p>
                   </div>
 
@@ -160,7 +160,7 @@ export function DiningRoomsPage() {
                     >
                       <span className="inline-flex items-center gap-2">
                         <Pencil className="h-4 w-4" />
-                        {t("Editar")}
+                        {t("Edit")}
                       </span>
                     </button>
                     <button
@@ -170,7 +170,7 @@ export function DiningRoomsPage() {
                     >
                       <span className="inline-flex items-center gap-2">
                         <Power className="h-4 w-4" />
-                        {t("Desactivar")}
+                        {t("Deactivate")}
                       </span>
                     </button>
                   </div>
@@ -180,13 +180,13 @@ export function DiningRoomsPage() {
 
             {diningRoomsQuery.data?.length === 0 ? (
               <StatusMessage tone="info">
-                {t("Todavia no hay salones configurados.")}
+                {t("No dining rooms have been configured.")}
               </StatusMessage>
             ) : null}
           </div>
         </ConfigCard>
 
-        <ConfigCard title={selected ? t("Editar salon") : t("Crear salon")}>
+        <ConfigCard title={selected ? t("Edit dining room") : t("Create dining room")}>
           {feedbackError ? (
             <StatusMessage tone="error">{getErrorMessage(feedbackError)}</StatusMessage>
           ) : null}
@@ -212,7 +212,7 @@ export function DiningRoomsPage() {
             }}
           >
             <TextField
-              label={t("Nombre")}
+              label={t("First name")}
               value={form.name}
               onChange={(event) =>
                 setForm((current) => ({ ...current, name: event.target.value }))
@@ -220,7 +220,7 @@ export function DiningRoomsPage() {
               required
             />
             <TextField
-              label={t("Prioridad")}
+              label={t("Priority")}
               type="number"
               min={1}
               value={form.priority}
@@ -231,7 +231,7 @@ export function DiningRoomsPage() {
             />
             <div className="grid gap-4 sm:grid-cols-2">
               <TextField
-                label={t("Ancho del plano")}
+                label={t("Floor plan width")}
                 type="number"
                 min={100}
                 value={form.layoutWidth}
@@ -244,7 +244,7 @@ export function DiningRoomsPage() {
                 required
               />
               <TextField
-                label={t("Alto del plano")}
+                label={t("Floor plan height")}
                 type="number"
                 min={100}
                 value={form.layoutHeight}
@@ -258,14 +258,14 @@ export function DiningRoomsPage() {
               />
             </div>
             <CheckboxField
-              label={t("Salon accesible")}
+              label={t("Accessible dining room")}
               checked={form.accessible}
               onChange={(checked) =>
                 setForm((current) => ({ ...current, accessible: checked }))
               }
             />
             <CheckboxField
-              label={t("Salon activo")}
+              label={t("Active dining room")}
               checked={form.active}
               onChange={(checked) =>
                 setForm((current) => ({ ...current, active: checked }))
@@ -282,7 +282,7 @@ export function DiningRoomsPage() {
                     setValidationError(null);
                   }}
                 >
-                  {t("Cancelar")}
+                  {t("Cancel")}
                 </button>
               ) : null}
               <button
@@ -292,11 +292,11 @@ export function DiningRoomsPage() {
               >
                 {selected
                   ? updateMutation.isPending
-                    ? t("Guardando...")
-                    : t("Guardar salon")
+                    ? t("Saving...")
+                    : t("Save dining room")
                   : createMutation.isPending
-                    ? t("Creando...")
-                    : t("Crear salon")}
+                    ? t("Creating...")
+                    : t("Create dining room")}
               </button>
             </div>
           </form>

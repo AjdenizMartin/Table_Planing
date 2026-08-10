@@ -164,7 +164,7 @@ The running local application is available at `http://localhost:5173`; backend h
 
 ## Sprint 2 Recommendation
 
-Sprint 2 should focus on Combinaciones Avanzadas while preserving current reservation times and deterministic explainability.
+Sprint 2 should focus on Advanced Combinations while preserving current reservation times and deterministic explainability.
 
 Before implementation, define:
 

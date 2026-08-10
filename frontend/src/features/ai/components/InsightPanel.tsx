@@ -41,14 +41,14 @@ export function InsightPanel({
       <aside className="h-full w-full max-w-2xl overflow-y-auto border-l border-white/10 bg-slate-950 p-6 shadow-2xl shadow-black/50">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs uppercase text-brand-300">{t("Sugerencias")}</p>
-            <h2 className="mt-2 text-2xl font-semibold text-white">{t("Recomendaciones del dia")}</h2>
+            <p className="text-xs uppercase text-brand-300">{t("Suggestions")}</p>
+            <h2 className="mt-2 text-2xl font-semibold text-white">{t("Today's recommendations")}</h2>
           </div>
           <button
             type="button"
             className="grid h-11 w-11 place-items-center rounded-lg border border-white/10 bg-white/5 text-white transition hover:border-brand-400/40 hover:bg-brand-500/10"
             onClick={onClose}
-            aria-label={t("Cerrar")}
+            aria-label={t("Close")}
           >
             <X className="h-5 w-5" />
           </button>
@@ -57,7 +57,7 @@ export function InsightPanel({
         <div className="mt-6 grid gap-4">
           {insights.filter((insight) => !insight.dismissed).length === 0 ? (
             <StatusMessage tone="info">
-              {t("No hay recomendaciones activas para esta fecha.")}
+              {t("There are no active recommendations for this date.")}
             </StatusMessage>
           ) : null}
 
@@ -98,10 +98,10 @@ export function InsightPanel({
                     onClick={() => onDismiss(insight.id)}
                   >
                     {!canDismiss
-                      ? t("Solo manager u owner")
+                      ? t("Manager or owner only")
                       : dismissingInsightId === insight.id
-                        ? t("Descartando...")
-                        : t("Descartar")}
+                        ? t("Dismissing...")
+                        : t("Dismiss")}
                   </button>
                 </div>
 

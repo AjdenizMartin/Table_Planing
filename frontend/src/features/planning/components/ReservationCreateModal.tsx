@@ -18,19 +18,15 @@ interface Props {
 function formatMinutesDiff(
   requested: string,
   alternative: string,
-  language: "es" | "en",
 ): string {
   const [rh, rm] = requested.split(":").map(Number);
   const [ah, am] = alternative.split(":").map(Number);
   const diff = (ah * 60 + am) - (rh * 60 + rm);
-  if (diff === 0) return language === "es" ? "misma hora" : "same time";
+  if (diff === 0) return "same time";
   const abs = Math.abs(diff);
   const label = abs >= 60
     ? `${Math.floor(abs / 60)}h ${abs % 60 > 0 ? `${abs % 60} min` : ""}`
     : `${abs} min`;
-  if (language === "es") {
-    return diff < 0 ? `${label} antes` : `${label} despues`;
-  }
   return diff < 0 ? `${label} earlier` : `${label} later`;
 }
 
@@ -41,7 +37,7 @@ export function ReservationCreateModal({
   onClose,
   onCreated,
 }: Props) {
-  const { t, language } = useI18n();
+  const { t } = useI18n();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
@@ -78,14 +74,14 @@ export function ReservationCreateModal({
 
   function validate(): string | null {
     if (!firstName.trim() && !lastName.trim() && !phone.trim()) {
-      return t("Introduce al menos un nombre o telefono.");
+      return t("Enter at least a name or phone.");
     }
     const size = Number(partySize);
     if (!Number.isInteger(size) || size < 1) {
-      return t("El numero de comensales debe ser mayor que cero.");
+      return t("The number of guests must be greater than zero.");
     }
     if (!startTime) {
-      return t("La hora de inicio es obligatoria.");
+      return t("Start time is required.");
     }
     return null;
   }
@@ -130,7 +126,7 @@ export function ReservationCreateModal({
       setAssignResult(assignResponse);
 
       if (assignResponse.assigned) {
-        notify(t("Reserva creada y mesa asignada."), "");
+        notify(t("Reservation created and table assigned."), "");
         onCreated(reservation.id);
         onClose();
       }
@@ -155,7 +151,7 @@ export function ReservationCreateModal({
       setAssignResult(assignResponse);
 
       if (assignResponse.assigned) {
-        notify(t("Reserva creada y mesa asignada."), "");
+        notify(t("Reservation created and table assigned."), "");
         onCreated(createdReservationId);
         onClose();
       }
@@ -179,12 +175,12 @@ export function ReservationCreateModal({
       <div
         className="relative mx-4 flex max-h-[90vh] w-full max-w-lg flex-col rounded-lg border border-white/10 bg-slate-950 shadow-2xl shadow-black/50"
         role="dialog"
-        aria-label={t("Nueva reserva")}
+        aria-label={t("New reservation")}
       >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-white/10 px-6 pb-4 pt-5">
           <div>
-            <h2 className="text-xl font-semibold text-white">{t("Nueva reserva")}</h2>
+            <h2 className="text-xl font-semibold text-white">{t("New reservation")}</h2>
             <p className="mt-1 text-xs text-slate-400">{selectedDate}</p>
           </div>
           <button
@@ -192,7 +188,7 @@ export function ReservationCreateModal({
             className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-base text-white transition hover:border-brand-400/40 hover:bg-brand-500/10"
             onClick={onClose}
             disabled={isSubmitting || retryingWithTime}
-            aria-label={t("Cerrar")}
+            aria-label={t("Close")}
           >
             <X className="h-5 w-5" />
           </button>
@@ -204,15 +200,15 @@ export function ReservationCreateModal({
             /* --- Alternatives view --- */
             <div className="space-y-5">
               <div className="rounded-lg border border-amber-300/25 bg-amber-400/10 p-4 text-sm text-amber-100">
-                <p className="font-semibold text-white">{t("No hay mesa disponible a las")} {requestedTime}</p>
+                <p className="font-semibold text-white">{t("No table available at")} {requestedTime}</p>
                 <p className="mt-2">
-                  {assignResult.recommendationSummary ?? t("No se encontro una mesa para la hora solicitada.")}
+                  {assignResult.recommendationSummary ?? t("No suitable table was found for the requested time.")}
                 </p>
               </div>
 
               <div>
                 <p className="mb-3 text-xs font-semibold uppercase text-slate-500">
-                  {t("Horas alternativas")}
+                  {t("Alternative times")}
                 </p>
                 <button
                   type="button"
@@ -222,7 +218,7 @@ export function ReservationCreateModal({
                 >
                   <p className="text-lg font-semibold text-white">{alternativeTime}</p>
                   <p className="mt-1 text-sm text-slate-300">
-                    {formatMinutesDiff(requestedTime, alternativeTime, language)}
+                    {formatMinutesDiff(requestedTime, alternativeTime)}
                   </p>
                 </button>
               </div>
@@ -238,22 +234,22 @@ export function ReservationCreateModal({
                 className="w-full h-12 rounded-lg border border-white/10 bg-white/5 text-sm font-semibold text-white transition hover:border-white/30"
                 onClick={onClose}
               >
-                {t("Cerrar")}
+                {t("Close")}
               </button>
             </div>
           ) : assignResult && !assignResult.assigned && !alternativeTime ? (
             /* --- No alternatives available --- */
             <div className="space-y-4">
               <div className="rounded-lg border border-rose-300/30 bg-rose-500/10 p-4 text-sm text-rose-100">
-                <p className="font-semibold text-white">{t("No se encontro una mesa")}</p>
-                <p className="mt-2">{assignResult.summary ?? t("No hay mesas disponibles para esta reserva.")}</p>
+                <p className="font-semibold text-white">{t("Could not find a table")}</p>
+                <p className="mt-2">{assignResult.summary ?? t("No tables are available for this reservation.")}</p>
               </div>
               <button
                 type="button"
                 className="w-full h-12 rounded-lg border border-white/10 bg-white/5 text-sm font-semibold text-white transition hover:border-white/30"
                 onClick={onClose}
               >
-                {t("Cerrar")}
+                {t("Close")}
               </button>
             </div>
           ) : (
@@ -268,12 +264,12 @@ export function ReservationCreateModal({
               {/* Customer */}
               <section>
                 <p className="mb-3 text-xs font-semibold uppercase text-slate-500">
-                  {t("Cliente")}
+                  {t("Customer")}
                 </p>
                 <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-3">
                     <label className="grid gap-2">
-                      <span className="text-sm font-medium text-slate-200">{t("Nombre")}</span>
+                      <span className="text-sm font-medium text-slate-200">{t("First name")}</span>
                       <input
                         className="h-12 rounded-lg border border-white/10 bg-slate-900/90 px-4 text-sm text-white outline-none transition focus:border-brand-400/70 focus:ring-2 focus:ring-brand-400/30"
                         value={firstName}
@@ -281,7 +277,7 @@ export function ReservationCreateModal({
                       />
                     </label>
                     <label className="grid gap-2">
-                      <span className="text-sm font-medium text-slate-200">{t("Apellidos")}</span>
+                      <span className="text-sm font-medium text-slate-200">{t("Last name")}</span>
                       <input
                         className="h-12 rounded-lg border border-white/10 bg-slate-900/90 px-4 text-sm text-white outline-none transition focus:border-brand-400/70 focus:ring-2 focus:ring-brand-400/30"
                         value={lastName}
@@ -290,7 +286,7 @@ export function ReservationCreateModal({
                     </label>
                   </div>
                   <label className="grid gap-2">
-                    <span className="text-sm font-medium text-slate-200">{t("Telefono")}</span>
+                    <span className="text-sm font-medium text-slate-200">{t("Phone")}</span>
                     <input
                       className="h-12 rounded-lg border border-white/10 bg-slate-900/90 px-4 text-sm text-white outline-none transition focus:border-brand-400/70 focus:ring-2 focus:ring-brand-400/30"
                       value={phone}
@@ -299,7 +295,7 @@ export function ReservationCreateModal({
                     />
                   </label>
                   <label className="grid gap-2">
-                    <span className="text-sm font-medium text-slate-200">{t("Notas")}</span>
+                    <span className="text-sm font-medium text-slate-200">{t("Notes")}</span>
                     <textarea
                       className="min-h-20 rounded-lg border border-white/10 bg-slate-900/90 px-4 py-3 text-sm text-white outline-none transition focus:border-brand-400/70 focus:ring-2 focus:ring-brand-400/30"
                       value={customerNotes}
@@ -313,12 +309,12 @@ export function ReservationCreateModal({
               {/* Reservation */}
               <section>
                 <p className="mb-3 text-xs font-semibold uppercase text-slate-500">
-                  {t("Reserva")}
+                  {t("Reservation")}
                 </p>
                 <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-3">
                     <label className="grid gap-2">
-                      <span className="text-sm font-medium text-slate-200">{t("Comensales")}</span>
+                      <span className="text-sm font-medium text-slate-200">{t("Guests")}</span>
                       <input
                         className="h-12 rounded-lg border border-white/10 bg-slate-900/90 px-4 text-sm text-white outline-none transition focus:border-brand-400/70 focus:ring-2 focus:ring-brand-400/30"
                         type="number"
@@ -328,7 +324,7 @@ export function ReservationCreateModal({
                       />
                     </label>
                     <label className="grid gap-2">
-                      <span className="text-sm font-medium text-slate-200">{t("Hora")}</span>
+                      <span className="text-sm font-medium text-slate-200">{t("Time")}</span>
                       <input
                         className="h-12 rounded-lg border border-white/10 bg-slate-900/90 px-4 text-sm text-white outline-none transition focus:border-brand-400/70 focus:ring-2 focus:ring-brand-400/30"
                         type="time"
@@ -338,7 +334,7 @@ export function ReservationCreateModal({
                     </label>
                   </div>
                   <label className="grid gap-2">
-                    <span className="text-sm font-medium text-slate-200">{t("Peticiones especiales")}</span>
+                    <span className="text-sm font-medium text-slate-200">{t("Special requests")}</span>
                     <textarea
                       className="min-h-20 rounded-lg border border-white/10 bg-slate-900/90 px-4 py-3 text-sm text-white outline-none transition focus:border-brand-400/70 focus:ring-2 focus:ring-brand-400/30"
                       value={specialRequests}
@@ -353,7 +349,7 @@ export function ReservationCreateModal({
                       checked={accessibilityRequired}
                       onChange={(e) => setAccessibilityRequired(e.target.checked)}
                     />
-                    <span className="text-sm font-medium text-slate-200">{t("Requiere accesibilidad")}</span>
+                    <span className="text-sm font-medium text-slate-200">{t("Accessibility required")}</span>
                   </label>
                 </div>
               </section>
@@ -370,7 +366,7 @@ export function ReservationCreateModal({
               onClick={onClose}
               disabled={isSubmitting}
             >
-              {t("Cancelar")}
+              {t("Cancel")}
             </button>
             <button
               type="button"
@@ -378,7 +374,7 @@ export function ReservationCreateModal({
               disabled={isSubmitting}
               onClick={() => { void handleCreate(); }}
             >
-              {isSubmitting ? t("Creando...") : t("Crear y buscar mesa")}
+              {isSubmitting ? t("Creating...") : t("Create and find table")}
             </button>
           </div>
         ) : null}

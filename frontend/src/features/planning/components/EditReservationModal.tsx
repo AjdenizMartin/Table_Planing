@@ -132,7 +132,7 @@ export function EditReservationModal({
     mutationFn: async () => {
       const size = Number(partySize);
       if (!Number.isInteger(size) || size < 1) {
-        throw new Error(t("El numero de comensales debe ser mayor que cero."));
+        throw new Error(t("The number of guests must be greater than zero."));
       }
 
       const customerChanged = hasCustomerChanges(customer, firstName, lastName, phone, customerNotes);
@@ -174,14 +174,14 @@ export function EditReservationModal({
       }
 
       if (promises.length === 0) {
-        throw new Error(t("No hay cambios que guardar."));
+        throw new Error(t("There are no changes to save."));
       }
 
       await Promise.all(promises);
     },
     onSuccess: () => {
       setError(null);
-      notify(t("Reserva actualizada."), "");
+      notify(t("Reservation updated."), "");
       queryClient.invalidateQueries({ queryKey: ["planning", restaurantId, selectedDate] });
       queryClient.invalidateQueries({ queryKey: ["reservation-detail", restaurantId, reservationId] });
       if (customerId) {
@@ -209,14 +209,14 @@ export function EditReservationModal({
       <div
         className="relative mx-4 flex max-h-[90vh] w-full max-w-lg flex-col rounded-lg border border-white/10 bg-slate-950 shadow-2xl shadow-black/50"
         role="dialog"
-        aria-label={t("Editar reserva")}
+        aria-label={t("Edit reservation")}
       >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-white/10 px-6 pb-4 pt-5">
           <div>
-            <h2 className="text-xl font-semibold text-white">{t("Editar reserva")}</h2>
+            <h2 className="text-xl font-semibold text-white">{t("Edit reservation")}</h2>
             <p className="mt-1 text-xs text-slate-400">
-              {fullReservation ? `${t("Reserva")} #${fullReservation.id}` : ""}
+              {fullReservation ? `${t("Reservation")} #${fullReservation.id}` : ""}
             </p>
           </div>
           <button
@@ -224,7 +224,7 @@ export function EditReservationModal({
             className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-base text-white transition hover:border-brand-400/40 hover:bg-brand-500/10"
             onClick={onClose}
             disabled={saveMutation.isPending}
-            aria-label={t("Cerrar")}
+            aria-label={t("Close")}
           >
             <X className="h-5 w-5" />
           </button>
@@ -242,12 +242,12 @@ export function EditReservationModal({
             {/* --- Customer section --- */}
             <section>
               <p className="mb-3 text-xs font-semibold uppercase text-slate-500">
-                {t("Cliente")}
+                {t("Customer")}
               </p>
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <label className="grid gap-2">
-                    <span className="text-sm font-medium text-slate-200">{t("Nombre")}</span>
+                    <span className="text-sm font-medium text-slate-200">{t("First name")}</span>
                     <input
                       className="h-12 rounded-lg border border-white/10 bg-slate-900/90 px-4 text-sm text-white outline-none transition focus:border-brand-400/70 focus:ring-2 focus:ring-brand-400/30"
                       value={firstName}
@@ -255,7 +255,7 @@ export function EditReservationModal({
                     />
                   </label>
                   <label className="grid gap-2">
-                    <span className="text-sm font-medium text-slate-200">{t("Apellidos")}</span>
+                    <span className="text-sm font-medium text-slate-200">{t("Last name")}</span>
                     <input
                       className="h-12 rounded-lg border border-white/10 bg-slate-900/90 px-4 text-sm text-white outline-none transition focus:border-brand-400/70 focus:ring-2 focus:ring-brand-400/30"
                       value={lastName}
@@ -264,7 +264,7 @@ export function EditReservationModal({
                   </label>
                 </div>
                 <label className="grid gap-2">
-                  <span className="text-sm font-medium text-slate-200">{t("Telefono")}</span>
+                  <span className="text-sm font-medium text-slate-200">{t("Phone")}</span>
                   <input
                     className="h-12 rounded-lg border border-white/10 bg-slate-900/90 px-4 text-sm text-white outline-none transition focus:border-brand-400/70 focus:ring-2 focus:ring-brand-400/30"
                     value={phone}
@@ -273,7 +273,7 @@ export function EditReservationModal({
                   />
                 </label>
                 <label className="grid gap-2">
-                  <span className="text-sm font-medium text-slate-200">{t("Notas del cliente")}</span>
+                  <span className="text-sm font-medium text-slate-200">{t("Customer notes")}</span>
                   <textarea
                     className="min-h-20 rounded-lg border border-white/10 bg-slate-900/90 px-4 py-3 text-sm text-white outline-none transition focus:border-brand-400/70 focus:ring-2 focus:ring-brand-400/30"
                     value={customerNotes}
@@ -287,11 +287,11 @@ export function EditReservationModal({
             {/* --- Reservation section --- */}
             <section>
               <p className="mb-3 text-xs font-semibold uppercase text-slate-500">
-                {t("Reserva")}
+                {t("Reservation")}
               </p>
               <div className="space-y-3">
                 <label className="grid gap-2">
-                  <span className="text-sm font-medium text-slate-200">{t("Comensales")}</span>
+                  <span className="text-sm font-medium text-slate-200">{t("Guests")}</span>
                   <input
                     className="h-12 rounded-lg border border-white/10 bg-slate-900/90 px-4 text-sm text-white outline-none transition focus:border-brand-400/70 focus:ring-2 focus:ring-brand-400/30"
                     type="number"
@@ -301,7 +301,7 @@ export function EditReservationModal({
                   />
                 </label>
                 <label className="grid gap-2">
-                  <span className="text-sm font-medium text-slate-200">{t("Peticiones especiales")}</span>
+                  <span className="text-sm font-medium text-slate-200">{t("Special requests")}</span>
                   <textarea
                     className="min-h-20 rounded-lg border border-white/10 bg-slate-900/90 px-4 py-3 text-sm text-white outline-none transition focus:border-brand-400/70 focus:ring-2 focus:ring-brand-400/30"
                     value={specialRequests}
@@ -316,7 +316,7 @@ export function EditReservationModal({
                     checked={accessibilityRequired}
                     onChange={(e) => setAccessibilityRequired(e.target.checked)}
                   />
-                  <span className="text-sm font-medium text-slate-200">{t("Requiere accesibilidad")}</span>
+                  <span className="text-sm font-medium text-slate-200">{t("Accessibility required")}</span>
                 </label>
               </div>
             </section>
@@ -325,7 +325,7 @@ export function EditReservationModal({
             {reservationSummary ? (
               <section>
                 <p className="mb-3 text-xs font-semibold uppercase text-slate-500">
-                  {t("Estado")}
+                  {t("Status")}
                 </p>
                 <div className="flex items-center gap-3 rounded-lg border border-white/10 bg-slate-900/70 px-4 py-3">
                   <StatusPill status={reservationSummary.status} />
@@ -337,11 +337,11 @@ export function EditReservationModal({
             {reservationSummary ? (
               <section>
                 <p className="mb-3 text-xs font-semibold uppercase text-slate-500">
-                  {t("Mesa")}
+                  {t("Table")}
                 </p>
                 <div className="rounded-lg border border-white/10 bg-slate-900/70 px-4 py-3 text-sm text-white">
                   {reservationSummary.tableCode ?? reservationSummary.tableCombinationName ?? (
-                    <span className="text-slate-400">{t("Sin asignar")}</span>
+                    <span className="text-slate-400">{t("Unassigned")}</span>
                   )}
                 </div>
               </section>
@@ -354,17 +354,17 @@ export function EditReservationModal({
                 className="flex w-full items-center justify-between rounded-lg border border-amber-300/25 bg-amber-400/10 px-4 py-3 text-sm font-semibold text-amber-100 transition hover:bg-amber-400/20"
                 onClick={() => setTimeExpanded((prev) => !prev)}
               >
-                <span>{t("Editar fecha y hora")}</span>
+                <span>{t("Edit date and time")}</span>
                 {timeExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
               </button>
 
               {timeExpanded ? (
                 <div className="mt-3 space-y-3 rounded-lg border border-amber-300/20 bg-amber-400/[0.04] p-4">
                   <div className="rounded-lg border border-amber-300/20 bg-amber-400/10 px-3 py-2 text-xs text-amber-100">
-                    {t("Cambia la hora solo si lo solicita el cliente.")}
+                    {t("Only change the time when requested by the customer.")}
                   </div>
                   <label className="grid gap-2">
-                    <span className="text-sm font-medium text-slate-200">{t("Fecha")}</span>
+                    <span className="text-sm font-medium text-slate-200">{t("Date")}</span>
                     <input
                       className="h-12 rounded-lg border border-white/10 bg-slate-900/90 px-4 text-sm text-white outline-none transition focus:border-brand-400/70 focus:ring-2 focus:ring-brand-400/30"
                       type="date"
@@ -373,7 +373,7 @@ export function EditReservationModal({
                     />
                   </label>
                   <label className="grid gap-2">
-                    <span className="text-sm font-medium text-slate-200">{t("Hora")}</span>
+                    <span className="text-sm font-medium text-slate-200">{t("Time")}</span>
                     <input
                       className="h-12 rounded-lg border border-white/10 bg-slate-900/90 px-4 text-sm text-white outline-none transition focus:border-brand-400/70 focus:ring-2 focus:ring-brand-400/30"
                       type="time"
@@ -383,7 +383,7 @@ export function EditReservationModal({
                   </label>
                   <div className="grid grid-cols-2 gap-3">
                     <label className="grid gap-2">
-                      <span className="text-sm font-medium text-slate-200">{t("Duracion")} (min)</span>
+                      <span className="text-sm font-medium text-slate-200">{t("Duration")} (min)</span>
                       <input
                         className="h-12 rounded-lg border border-white/10 bg-slate-900/90 px-4 text-sm text-white outline-none transition focus:border-brand-400/70 focus:ring-2 focus:ring-brand-400/30"
                         type="number"
@@ -394,7 +394,7 @@ export function EditReservationModal({
                       />
                     </label>
                     <label className="grid gap-2">
-                      <span className="text-sm font-medium text-slate-200">{t("Limpieza")} (min)</span>
+                      <span className="text-sm font-medium text-slate-200">{t("Cleaning")} (min)</span>
                       <input
                         className="h-12 rounded-lg border border-white/10 bg-slate-900/90 px-4 text-sm text-white outline-none transition focus:border-brand-400/70 focus:ring-2 focus:ring-brand-400/30"
                         type="number"
@@ -419,7 +419,7 @@ export function EditReservationModal({
             onClick={onClose}
             disabled={saveMutation.isPending}
           >
-            {t("Cancelar")}
+            {t("Cancel")}
           </button>
           <button
             type="button"
@@ -427,7 +427,7 @@ export function EditReservationModal({
             disabled={saveMutation.isPending || !hasAnyChanges}
             onClick={() => saveMutation.mutate()}
           >
-            {saveMutation.isPending ? t("Guardando...") : t("Guardar cambios")}
+            {saveMutation.isPending ? t("Saving...") : t("Save changes")}
           </button>
         </div>
       </div>

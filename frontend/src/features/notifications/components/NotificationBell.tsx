@@ -15,7 +15,7 @@ export function NotificationBell() {
         type="button"
         className="relative h-11 rounded-lg border border-white/10 bg-white/5 px-4 text-sm font-medium text-white transition hover:border-brand-400/40 hover:bg-brand-500/10"
         onClick={() => setOpen(!open)}
-        aria-label={t("Notificaciones")}
+        aria-label={t("Notifications")}
       >
         <Bell className="h-5 w-5" />
         {count > 0 && (

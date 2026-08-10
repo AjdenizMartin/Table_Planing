@@ -1,302 +1,302 @@
 # Security
 
-## Objetivo
+## Objective
 
-Definir el modelo inicial de seguridad de la plataforma para la primera fase tecnica y las fases inmediatas siguientes. La meta es proteger acceso, datos y aislamiento por restaurante sin introducir complejidad innecesaria.
+Define the platform's initial security model for the first technical phase and the phases immediately following it. The goal is to protect access, data, and restaurant isolation without introducing unnecessary complexity.
 
-## Principios
+## Principles
 
-- autenticacion centralizada
-- autorizacion por rol y contexto de restaurante
-- aislamiento multi-tenant obligatorio
-- backend como autoridad final de permisos
-- trazabilidad de acciones sensibles
-- minimo privilegio por defecto
+- centralized authentication
+- authorization by role and restaurant context
+- mandatory multi-tenant isolation
+- backend as the final authority on permissions
+- traceability of sensitive actions
+- least privilege by default
 
-## Roles del sistema
+## System roles
 
 ### `PLATFORM_ADMIN`
 
-Alcance:
+Scope:
 
-- gestiona la plataforma completa
-- puede crear restaurantes
-- puede gestionar usuarios globales
-- puede inspeccionar configuracion general
+- manages the entire platform
+- can create restaurants
+- can manage global users
+- can inspect general configuration
 
-No debe usarse como atajo para logica de restaurante en UI.
+It must not be used as a shortcut for restaurant logic in the UI.
 
-Implementacion inicial:
+Initial implementation:
 
-- el modelo de persistencia sigue usando `RoleAssignment` con `restaurant_id`
-- si un usuario tiene al menos un `RoleAssignment` con rol `PLATFORM_ADMIN`, la autorizacion lo trata como acceso global
+- the persistence model continues to use `RoleAssignment` with `restaurant_id`
+- if a user has at least one `RoleAssignment` with the `PLATFORM_ADMIN` role, authorization treats it as global access
 
 ### `RESTAURANT_OWNER`
 
-Alcance:
+Scope:
 
-- administra su restaurante
-- configura salones, mesas, reglas e integraciones
-- gestiona usuarios del restaurante
-- puede operar reservas y planning
+- administers their restaurant
+- configures dining rooms, tables, rules, and integrations
+- manages restaurant users
+- can manage reservations and planning
 
 ### `MANAGER`
 
-Alcance:
+Scope:
 
-- opera el dia a dia
-- crea y modifica reservas
-- reubica mesas
-- usa planning, clientes y confirmaciones
-- puede modificar configuracion operativa limitada segun politica
+- handles day-to-day operations
+- creates and modifies reservations
+- reassigns tables
+- uses planning, customers, and confirmations
+- can modify limited operational configuration according to policy
 
 ### `WAITER`
 
-Alcance:
+Scope:
 
-- consulta planning
-- marca llegada o cambios operativos permitidos
-- no debe modificar estructura del restaurante ni seguridad
+- views planning
+- records arrivals or permitted operational changes
+- must not modify the restaurant structure or security
 
-## Matriz inicial de permisos
+## Initial permissions matrix
 
-| Recurso / accion | PLATFORM_ADMIN | RESTAURANT_OWNER | MANAGER | WAITER |
+| Resource / action | PLATFORM_ADMIN | RESTAURANT_OWNER | MANAGER | WAITER |
 |---|---|---|---|---|
-| Ver restaurantes asignados | Yes | Yes | Yes | Yes |
-| Crear restaurante | Yes | No | No | No |
-| Editar datos del restaurante | Yes | Yes | Limited | No |
-| Gestionar salones y mesas | Yes | Yes | Limited | No |
-| Gestionar combinaciones | Yes | Yes | Limited | No |
-| Gestionar reglas | Yes | Yes | Limited | No |
-| Crear y editar clientes | Yes | Yes | Yes | Limited |
-| Eliminar clientes sin reservas | Yes | Yes | Yes | No |
-| Crear y editar reservas | Yes | Yes | Yes | Limited |
-| Confirmar o cancelar reservas | Yes | Yes | Yes | Limited |
-| Reasignar mesas manualmente | Yes | Yes | Yes | No |
-| Consultar top 3 avanzado | Yes | Yes | Yes | No |
-| Aprobar asignacion avanzada | Yes | Yes | Yes | No |
-| Ver recursos e historial | Yes | Yes | Yes | Yes |
-| Ver planning | Yes | Yes | Yes | Yes |
-| Recalcular planning | Yes | Yes | Yes | No |
-| Ver recomendaciones IA | Yes | Yes | Yes | No |
-| Gestionar usuarios del restaurante | Yes | Yes | No | No |
+| View assigned restaurants | Yes | Yes | Yes | Yes |
+| Create restaurant | Yes | No | No | No |
+| Edit restaurant data | Yes | Yes | Limited | No |
+| Manage dining rooms and tables | Yes | Yes | Limited | No |
+| Manage combinations | Yes | Yes | Limited | No |
+| Manage rules | Yes | Yes | Limited | No |
+| Create and edit customers | Yes | Yes | Yes | Limited |
+| Delete customers without reservations | Yes | Yes | Yes | No |
+| Create and edit reservations | Yes | Yes | Yes | Limited |
+| Confirm or cancel reservations | Yes | Yes | Yes | Limited |
+| Manually reassign tables | Yes | Yes | Yes | No |
+| View advanced top 3 | Yes | Yes | Yes | No |
+| Approve advanced assignment | Yes | Yes | Yes | No |
+| View resources and history | Yes | Yes | Yes | Yes |
+| View planning | Yes | Yes | Yes | Yes |
+| Recalculate planning | Yes | Yes | Yes | No |
+| View AI recommendations | Yes | Yes | Yes | No |
+| Manage restaurant users | Yes | Yes | No | No |
 
-`Limited` significa que la accion puede habilitarse con restricciones mas precisas a definir por endpoint o politica.
+`Limited` means that the action can be enabled with more precise restrictions to be defined per endpoint or policy.
 
-## Modelo de autenticacion
+## Authentication model
 
 ## Access token
 
-- formato JWT
-- vida corta
-- enviado en header `Authorization`
-- firmado por el backend
+- JWT format
+- short-lived
+- sent in the `Authorization` header
+- signed by the backend
 
-Claims sugeridos:
+Suggested claims:
 
 - `sub`
 - `user_id`
 - `email`
 - `roles`
 - `restaurant_ids`
-- `active_restaurant_id` opcional
+- optional `active_restaurant_id`
 - `iat`
 - `exp`
 
 ## Refresh token
 
-- token de mayor vida util
-- almacenado de forma segura
-- usado para renovar `access token`
+- longer-lived token
+- stored securely
+- used to renew the `access token`
 - revocable
 
-En la implementacion inicial se modela como token persistido y opaco, revocable desde backend.
+In the initial implementation, it is modeled as a persisted, opaque token that can be revoked by the backend.
 
-## Sesion
+## Session
 
-Flujo inicial:
+Initial flow:
 
-1. login con email y password
-2. emision de `access token`
-3. emision de `refresh token`
-4. renovacion mediante `/api/auth/refresh`
-5. invalidacion logica en logout
+1. login with email and password
+2. issuance of `access token`
+3. issuance of `refresh token`
+4. renewal through `/api/auth/refresh`
+5. logical invalidation on logout
 
 ## Passwords
 
-- hash con `BCrypt` o `Argon2`
-- nunca almacenar passwords en texto plano
-- nunca registrar password en logs
+- hash with `BCrypt` or `Argon2`
+- never store passwords in plain text
+- never record passwords in logs
 
 ## Multi-tenant
 
-## Regla principal
+## Primary rule
 
-Todo recurso de negocio pertenece a un restaurante o debe resolverse dentro de un contexto de restaurante.
+Every business resource belongs to a restaurant or must be resolved within a restaurant context.
 
-## Reglas de aislamiento
+## Isolation rules
 
-- toda query funcional debe filtrar por `restaurant_id`
-- no confiar solo en IDs enviados por cliente
-- el backend debe validar que el usuario tiene acceso al restaurante del recurso
-- los eventos WebSocket tambien deben quedar aislados por restaurante
+- every functional query must filter by `restaurant_id`
+- do not rely solely on IDs sent by the client
+- the backend must validate that the user has access to the resource's restaurant
+- WebSocket events must also be isolated by restaurant
 
-## Resolucion del contexto de restaurante
+## Restaurant context resolution
 
-Orden sugerido:
+Suggested order:
 
-1. validar token del usuario
-2. resolver restaurantes autorizados
-3. validar recurso solicitado
-4. confirmar que el recurso pertenece al restaurante esperado
+1. validate the user's token
+2. resolve authorized restaurants
+3. validate the requested resource
+4. confirm that the resource belongs to the expected restaurant
 
-## Autorizacion
+## Authorization
 
-Se recomienda combinar:
+It is recommended to combine:
 
-- autorizacion declarativa en endpoints
-- validacion de dominio en servicios
+- declarative authorization at endpoints
+- domain validation in services
 
-Esto evita que un endpoint aparente estar protegido pero permita cruces indebidos de restaurante o accion.
+This prevents an endpoint from appearing to be protected while allowing improper cross-restaurant or cross-action access.
 
-## Reglas de acceso por modulo
+## Access rules by module
 
 ### Auth
 
-- login publico
-- refresh controlado
-- `me` autenticado
+- public login
+- controlled refresh
+- authenticated `me`
 
 ### Restaurant
 
-- lectura y escritura limitadas por rol
-- `PLATFORM_ADMIN` con alcance global
-- `RESTAURANT_OWNER` con alcance sobre su restaurante
+- read and write access limited by role
+- `PLATFORM_ADMIN` with global scope
+- `RESTAURANT_OWNER` with scope over their restaurant
 
-### DiningRoom, Table y TableCombination
+### DiningRoom, Table and TableCombination
 
-- escritura solo para owner o manager autorizado
-- lectura para roles operativos del restaurante
+- write access only for an authorized owner or manager
+- read access for the restaurant's operational roles
 
-### Customer y Reservation
+### Customer and Reservation
 
-- lectura y escritura para roles operativos
-- `WAITER` con acceso restringido a acciones del servicio
-- sugerencias y seleccion avanzada solo para owner, manager y platform admin
-- historial y recursos asignados visibles para roles operativos del restaurante
+- read and write access for operational roles
+- `WAITER` with access restricted to service actions
+- suggestions and advanced selection only for owner, manager, and platform admin
+- history and assigned resources visible to the restaurant's operational roles
 
 ### Planning
 
-- lectura para todos los roles operativos
-- recalculo solo para manager, owner o platform admin
+- read access for all operational roles
+- recalculation only for manager, owner, or platform admin
 
 ### Notification
 
-- disparo y consulta de logs segun rol
-- acceso restringido a datos sensibles como telefonos
+- triggering and viewing logs according to role
+- restricted access to sensitive data such as phone numbers
 
 ### AI
 
-- lectura de recomendaciones para owner y manager
-- acciones de aplicacion de sugerencias sujetas a permisos de planning
+- recommendation read access for owner and manager
+- actions that apply suggestions are subject to planning permissions
 
 ### Customers
 
-- `PLATFORM_ADMIN`, `RESTAURANT_OWNER` y `MANAGER` pueden eliminar clientes
-- `WAITER` mantiene acceso de lectura y no ve la accion de borrado
-- el servicio valida el restaurante objetivo y bloquea el borrado si hay reservas asociadas
-- cada borrado aplicado genera una entrada de auditoria
+- `PLATFORM_ADMIN`, `RESTAURANT_OWNER`, and `MANAGER` can delete customers
+- `WAITER` retains read access and does not see the delete action
+- the service validates the target restaurant and blocks deletion if there are associated reservations
+- every completed deletion generates an audit entry
 
-## Seguridad de API
+## API security
 
-- HTTPS obligatorio en produccion
-- CORS restringido a orígenes permitidos
-- validacion de payloads con `Spring Validation`
-- limitacion de tasa en login y mensajeria
-- errores sin fuga de informacion sensible
+- HTTPS mandatory in production
+- CORS restricted to allowed origins
+- payload validation with `Spring Validation`
+- rate limiting for login and messaging
+- errors without sensitive information leakage
 
-Implementacion del piloto:
+Pilot implementation:
 
-- Nginx termina TLS y redirige HTTP a HTTPS
-- login limitado a 5 solicitudes por minuto por IP, con burst controlado
-- CORS backend parametrizado y restringido al origen HTTPS del piloto
-- perfil `prod` sin controlador de registro, build frontend sin ruta/CTA de alta y bloqueo adicional en Nginx
-- Actuator expone solo `health` y no se publica a Internet
-- PostgreSQL y backend viven en una red Docker interna sin puertos host
-- secretos de PostgreSQL y JWT se montan como archivos, nunca en la imagen
-- perfil `prod` no activa el bootstrap demo por estar limitado a `@Profile("dev")`
-- el entrypoint del backend inicia con capacidades limitadas para leer secretos `0600`, cambia inmediatamente al UID/GID `10001` y ejecuta Java sin capacidades Linux, con filesystem de solo lectura y `no-new-privileges`
-- Nginx aplica HSTS, CSP, proteccion contra framing y restricciones de permisos del navegador
-- logs Docker rotados y monitor operativo con alerta webhook opcional sin incluir secretos
+- Nginx terminates TLS and redirects HTTP to HTTPS
+- login limited to 5 requests per minute per IP, with controlled bursts
+- backend CORS parameterized and restricted to the pilot's HTTPS origin
+- `prod` profile without a registration controller, frontend build without a registration route/CTA, and additional blocking in Nginx
+- Actuator exposes only `health` and is not published to the Internet
+- PostgreSQL and the backend reside on an internal Docker network without host ports
+- PostgreSQL and JWT secrets are mounted as files, never included in the image
+- the `prod` profile does not activate the demo bootstrap because it is limited to `@Profile("dev")`
+- the backend entrypoint starts with limited capabilities to read `0600` secrets, immediately switches to UID/GID `10001`, and runs Java without Linux capabilities, with a read-only filesystem and `no-new-privileges`
+- Nginx applies HSTS, CSP, framing protection, and browser permission restrictions
+- rotated Docker logs and an operational monitor with an optional webhook alert that does not include secrets
 
-La limitacion por IP en Nginx es adecuada para el piloto de un VPS. Antes de una exposicion publica amplia debe complementarse con observabilidad, bloqueo progresivo por cuenta y proteccion del proveedor perimetral.
+IP-based rate limiting in Nginx is appropriate for the VPS pilot. Before broad public exposure, it must be supplemented with observability, progressive account-based blocking, and edge provider protection.
 
-## Seguridad de frontend
+## Frontend security
 
-- no almacenar secretos en frontend
-- evitar meter reglas de permisos solo en UI
-- ocultar acciones no autorizadas, pero sin confiar en eso como control real
+- do not store secrets in the frontend
+- avoid placing permission rules only in the UI
+- hide unauthorized actions, but do not rely on this as an actual control
 
-## Auditoria
+## Audit
 
-Deben registrarse al menos:
+At a minimum, the following must be recorded:
 
-- login exitoso y fallido relevante
-- creacion y modificacion de restaurante
-- cambios en mesas y salones
-- creacion, confirmacion, cancelacion y no-show de reservas
-- reasignaciones y recalculos de planning
-- envios de notificaciones
+- successful and relevant failed logins
+- restaurant creation and modification
+- changes to tables and dining rooms
+- reservation creation, confirmation, cancellation, and no-show
+- planning reassignments and recalculations
+- notification deliveries
 
-## Riesgos iniciales y mitigacion
+## Initial risks and mitigation
 
-### Riesgo: fuga entre restaurantes
+### Risk: cross-restaurant data leakage
 
-Mitigacion:
+Mitigation:
 
-- filtros por `restaurant_id`
-- tests de aislamiento
-- validacion de pertenencia de recurso
+- filters by `restaurant_id`
+- isolation tests
+- resource ownership validation
 
-### Riesgo: privilegios excesivos
+### Risk: excessive privileges
 
-Mitigacion:
+Mitigation:
 
-- permisos minimos por rol
-- endpoints con reglas explicitas
-- revisiones de seguridad por modulo
+- minimum permissions per role
+- endpoints with explicit rules
+- security reviews by module
 
-### Riesgo: refresh token comprometido
+### Risk: compromised refresh token
 
-Mitigacion:
+Mitigation:
 
-- revocacion
-- rotacion futura
-- expiracion razonable
+- revocation
+- future rotation
+- reasonable expiration
 
-### Riesgo: exponer telefonos o notas internas
+### Risk: exposure of phone numbers or internal notes
 
-Mitigacion:
+Mitigation:
 
-- serializacion cuidada
+- careful serialization
 - DTOs
-- control fino de permisos
+- fine-grained permission control
 
-## Alcance de la primera fase tecnica
+## Scope of the first technical phase
 
-La primera fase debe dejar listo:
+The first phase must deliver:
 
 - login
 - `access token`
 - `refresh token`
-- endpoint `me`
-- contexto de restaurante
-- autorizacion basica por rol
-- base para auditoria
+- `me` endpoint
+- restaurant context
+- basic role-based authorization
+- foundation for auditing
 
-No es necesario todavia:
+Not yet required:
 
 - SSO
 - MFA
-- politicas avanzadas de device management
-- delegacion compleja entre usuarios
+- advanced device management policies
+- complex delegation between users

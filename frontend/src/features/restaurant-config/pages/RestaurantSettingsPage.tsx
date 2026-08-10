@@ -64,25 +64,25 @@ export function RestaurantSettingsPage() {
 
   function validateForm() {
     if (!form.name.trim()) {
-      return t("El nombre del restaurante es obligatorio.");
+      return t("Restaurant name is required.");
     }
 
     if (!form.slug.trim()) {
-      return t("El slug es obligatorio.");
+      return t("The web identifier is required.");
     }
 
     if (!form.timezone.trim()) {
-      return t("La zona horaria es obligatoria.");
+      return t("Time zone is required.");
     }
 
     return null;
   }
 
   return (
-    <ConfigShell title={t("Restaurante")}>
-      <ConfigCard title={t("Datos del restaurante")}>
+    <ConfigShell title={t("Restaurant")}>
+      <ConfigCard title={t("Restaurant details")}>
         {restaurantQuery.isLoading ? (
-          <StatusMessage tone="info">{t("Cargando datos del restaurante...")}</StatusMessage>
+          <StatusMessage tone="info">{t("Loading restaurant details...")}</StatusMessage>
         ) : null}
         {restaurantQuery.error ? (
           <StatusMessage tone="error">
@@ -112,7 +112,7 @@ export function RestaurantSettingsPage() {
             }}
           >
             <TextField
-              label={t("Nombre")}
+              label={t("First name")}
               value={form.name}
               onChange={(event) =>
                 setForm((current) => ({ ...current, name: event.target.value }))
@@ -120,7 +120,7 @@ export function RestaurantSettingsPage() {
               required
             />
             <TextField
-              label={t("Identificador web")}
+              label={t("Web identifier")}
               value={form.slug}
               onChange={(event) =>
                 setForm((current) => ({ ...current, slug: event.target.value }))
@@ -128,7 +128,7 @@ export function RestaurantSettingsPage() {
               required
             />
             <SelectField
-              label={t("Zona horaria")}
+              label={t("Time zone")}
               value={form.timezone}
               onChange={(event) =>
                 setForm((current) => ({ ...current, timezone: event.target.value }))
@@ -141,7 +141,7 @@ export function RestaurantSettingsPage() {
               ))}
             </SelectField>
             <TextField
-              label={t("Telefono")}
+              label={t("Phone")}
               value={form.phone}
               onChange={(event) =>
                 setForm((current) => ({ ...current, phone: event.target.value }))
@@ -149,14 +149,14 @@ export function RestaurantSettingsPage() {
               placeholder="+34 600 000 000"
             />
             <SelectField
-              label={t("Estado")}
+              label={t("Status")}
               value={form.status}
               onChange={(event) =>
                 setForm((current) => ({ ...current, status: event.target.value }))
               }
             >
-              <option value="ACTIVE">{t("Activo")}</option>
-              <option value="INACTIVE">{t("Inactivo")}</option>
+              <option value="ACTIVE">{t("Active")}</option>
+              <option value="INACTIVE">{t("Inactive")}</option>
             </SelectField>
 
             <div className="lg:col-span-2 flex justify-end">
@@ -165,7 +165,7 @@ export function RestaurantSettingsPage() {
                 type="submit"
                 disabled={updateMutation.isPending}
               >
-                {updateMutation.isPending ? t("Guardando...") : t("Guardar cambios")}
+                {updateMutation.isPending ? t("Saving...") : t("Save changes")}
               </button>
             </div>
           </form>

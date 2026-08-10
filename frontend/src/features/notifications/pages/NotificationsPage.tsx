@@ -31,13 +31,13 @@ export function NotificationsPage() {
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-white">{t("Notificaciones")}</h1>
+        <h1 className="text-2xl font-semibold text-white">{t("Notifications")}</h1>
         <button
           type="button"
           className="h-11 rounded-lg border border-white/10 bg-white/5 px-4 text-sm font-medium text-white transition hover:border-brand-400/40 hover:bg-brand-500/10"
           onClick={() => setShowRead(!showRead)}
         >
-          {showRead ? t("Solo no leidas") : t("Mostrar todas")}
+          {showRead ? t("Unread only") : t("Show all")}
         </button>
       </div>
 
@@ -48,7 +48,7 @@ export function NotificationsPage() {
             className="rounded-lg px-4 py-2 text-sm text-brand-400 transition hover:bg-white/5"
             onClick={() => markAllAsRead.mutate()}
           >
-            {t("Marcar todas como leidas")}
+            {t("Mark all as read")}
           </button>
         </div>
       )}
@@ -57,7 +57,7 @@ export function NotificationsPage() {
         {notifications.length === 0 ? (
           <div className="rounded-lg border border-white/10 bg-white/5 px-6 py-12 text-center">
             <p className="text-lg text-slate-400">
-              {showRead ? t("No hay notificaciones") : t("No hay notificaciones sin leer")}
+              {showRead ? t("There are no notifications") : t("There are no unread notifications")}
             </p>
           </div>
         ) : (

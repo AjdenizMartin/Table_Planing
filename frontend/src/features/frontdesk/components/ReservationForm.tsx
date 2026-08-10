@@ -103,7 +103,7 @@ export function ReservationForm({
 
   function validateForm() {
     if (form.customerMode === "existing" && !form.customerId) {
-      return t("Selecciona un cliente para la reserva.");
+      return t("Select a customer for the reservation.");
     }
 
     if (
@@ -112,27 +112,27 @@ export function ReservationForm({
       !form.customerLastName.trim() &&
       !form.customerPhone.trim()
     ) {
-      return t("Introduce al menos nombre, apellido o telefono del cliente.");
+      return t("Enter at least a first name, last name or phone number.");
     }
 
     if (Number(form.partySize) <= 0) {
-      return t("El numero de comensales debe ser mayor que cero.");
+      return t("The number of guests must be greater than zero.");
     }
 
     if (!form.reservationDate) {
-      return t("La fecha de la reserva es obligatoria.");
+      return t("Reservation date is required.");
     }
 
     if (!form.startTime) {
-      return t("La hora de inicio es obligatoria.");
+      return t("Start time is required.");
     }
 
     if (Number(form.estimatedDurationMin) <= 0) {
-      return t("La duracion estimada debe ser mayor que cero.");
+      return t("Estimated duration must be greater than zero.");
     }
 
     if (Number(form.cleaningBufferMin) < 0) {
-      return t("El margen de limpieza no puede ser negativo.");
+      return t("Cleaning time cannot be negative.");
     }
 
     return null;
@@ -198,7 +198,7 @@ export function ReservationForm({
     <div className="grid gap-4">
       {!canManageReservations ? (
         <StatusMessage tone="info">
-          {t("Tu rol puede consultar reservas, pero no crearlas.")}
+          {t("Your role can view reservations, but cannot create them.")}
         </StatusMessage>
       ) : null}
       {customersQuery.error ? (
@@ -228,7 +228,7 @@ export function ReservationForm({
                 }))
               }
             >
-              {t("Cliente nuevo")}
+              {t("New customer")}
             </button>
             <button
               type="button"
@@ -245,7 +245,7 @@ export function ReservationForm({
                 }))
               }
             >
-              {t("Cliente existente")}
+              {t("Existing customer")}
             </button>
           </div>
 
@@ -253,7 +253,7 @@ export function ReservationForm({
             <div className="mt-4 grid gap-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <TextField
-                  label={t("Nombre")}
+                  label={t("First name")}
                   value={form.customerFirstName}
                   onChange={(event) =>
                     setForm((current) => ({ ...current, customerFirstName: event.target.value }))
@@ -261,7 +261,7 @@ export function ReservationForm({
                   placeholder="John"
                 />
                 <TextField
-                  label={t("Apellido")}
+                  label={t("Last name")}
                   value={form.customerLastName}
                   onChange={(event) =>
                     setForm((current) => ({ ...current, customerLastName: event.target.value }))
@@ -271,7 +271,7 @@ export function ReservationForm({
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <TextField
-                  label={t("Telefono")}
+                  label={t("Phone")}
                   type="tel"
                   value={form.customerPhone}
                   onChange={(event) =>
@@ -286,38 +286,38 @@ export function ReservationForm({
                   onChange={(event) =>
                     setForm((current) => ({ ...current, customerEmail: event.target.value }))
                   }
-                  placeholder="cliente@email.com"
+                  placeholder="customer@example.com"
                 />
               </div>
               <TextAreaField
-                label={t("Notas del cliente")}
+                label={t("Customer notes")}
                 value={form.customerNotes}
                 onChange={(event) =>
                   setForm((current) => ({ ...current, customerNotes: event.target.value }))
                 }
-                placeholder={t("Preferencias del cliente")}
+                placeholder={t("Customer preferences")}
               />
             </div>
           ) : (
             <div className="mt-4 grid gap-4">
               <TextField
-                label={t("Buscar cliente")}
+                label={t("Find customer")}
                 value={form.customerSearch}
                 onChange={(event) =>
                   setForm((current) => ({ ...current, customerSearch: event.target.value }))
                 }
-                placeholder={t("Nombre o telefono")}
+                placeholder={t("Name or phone")}
               />
 
               <SelectField
-                label={t("Cliente")}
+                label={t("Customer")}
                 value={form.customerId}
                 onChange={(event) =>
                   setForm((current) => ({ ...current, customerId: event.target.value }))
                 }
               >
                 <option value="" disabled>
-                  {t("Selecciona un cliente")}
+                  {t("Select a customer")}
                 </option>
                 {customerOptions.map((customer) => (
                   <option key={customer.id} value={customer.id}>
@@ -332,7 +332,7 @@ export function ReservationForm({
 
         <div className="grid gap-4 sm:grid-cols-2">
           <TextField
-            label={t("Fecha")}
+            label={t("Date")}
             type="date"
             value={form.reservationDate}
             onChange={(event) =>
@@ -340,7 +340,7 @@ export function ReservationForm({
             }
           />
           <TextField
-            label={t("Hora")}
+            label={t("Time")}
             type="time"
             value={form.startTime}
             onChange={(event) =>
@@ -351,7 +351,7 @@ export function ReservationForm({
 
         <div className="grid gap-4 sm:grid-cols-2">
           <TextField
-            label={t("Comensales")}
+            label={t("Guests")}
             type="number"
             min={1}
             value={form.partySize}
@@ -360,7 +360,7 @@ export function ReservationForm({
             }
           />
           <TextField
-            label={t("Duracion")}
+            label={t("Duration")}
             type="number"
             min={1}
             value={form.estimatedDurationMin}
@@ -370,10 +370,10 @@ export function ReservationForm({
                 estimatedDurationMin: event.target.value,
               }))
             }
-            hint={t("Minutos")}
+            hint={t("Minutes")}
           />
           <TextField
-            label={t("Limpieza")}
+            label={t("Cleaning")}
             type="number"
             min={0}
             value={form.cleaningBufferMin}
@@ -383,10 +383,10 @@ export function ReservationForm({
                 cleaningBufferMin: event.target.value,
               }))
             }
-            hint={t("Minutos")}
+            hint={t("Minutes")}
           />
           <SelectField
-            label={t("Canal")}
+            label={t("Channel")}
             value={form.channel}
             onChange={(event) =>
               setForm((current) => ({
@@ -404,7 +404,7 @@ export function ReservationForm({
         </div>
 
         <CheckboxField
-          label={t("Requiere accesibilidad")}
+          label={t("Accessibility required")}
           checked={form.accessibilityRequired}
           onChange={(checked) =>
             setForm((current) => ({ ...current, accessibilityRequired: checked }))
@@ -412,12 +412,12 @@ export function ReservationForm({
         />
 
         <TextAreaField
-          label={t("Peticiones especiales")}
+          label={t("Special requests")}
           value={form.specialRequests}
           onChange={(event) =>
             setForm((current) => ({ ...current, specialRequests: event.target.value }))
           }
-          placeholder={t("Alergias, celebracion, silla infantil")}
+          placeholder={t("Allergies, celebration, high chair")}
         />
       </div>
 
@@ -429,7 +429,7 @@ export function ReservationForm({
         >
           <span className="inline-flex items-center gap-2">
             <RotateCcw className="h-4 w-4" />
-            {t("Limpiar")}
+            {t("Clear")}
           </span>
         </button>
         <button
@@ -443,10 +443,10 @@ export function ReservationForm({
           <span className="inline-flex items-center gap-2">
             <Plus className="h-4 w-4" />
             {isSubmitting
-              ? t("Creando...")
+              ? t("Creating...")
               : form.customerMode === "quick"
-                ? t("Crear cliente y reserva")
-                : t("Crear reserva")}
+                ? t("Create customer and reservation")
+                : t("Create reservation")}
           </span>
         </button>
       </div>

@@ -1,181 +1,181 @@
 # Algorithm
 
-## Objetivo
+## Objective
 
-El motor de asignacion debe decidir la mejor mesa o combinacion para cada reserva, no solo una mesa libre cualquiera. El objetivo es optimizar ocupacion, flexibilidad futura y calidad operativa del servicio.
+The assignment engine must select the best table or combination for each reservation, not merely any available table. The objective is to optimize occupancy, future flexibility, and the operational quality of service.
 
-## Version implementada actualmente
+## Currently implemented version
 
-Estado actual: `PILOT_READY`
+Current status: `PILOT_READY`
 
-Implementado hoy:
+Currently implemented:
 
-- ventana efectiva usando `start_time`, `end_time` y `cleaning_buffer`
-- candidatos con mesas activas y combinaciones predefinidas activas
-- restricciones duras de capacidad, actividad, accesibilidad y solapamiento
-- scoring determinista con explicacion persistida
-- desempate determinista
-- exclusion de mesas `STORAGE` como candidatas normales
-- exclusion defensiva de combinaciones que contengan mesas `STORAGE`
-- modos separados `AUTOMATIC` y `MANUAL_SUGGESTION`
-- top 3 manual con combinaciones avanzadas e inventario
-- capacidad adicional por recursos y disponibilidad temporal
-- penalizaciones operativas avanzadas deterministas
-- aplicacion transaccional con bloqueo y revalidacion
+- effective window using `start_time`, `end_time`, and `cleaning_buffer`
+- candidates comprising active tables and active predefined combinations
+- hard constraints for capacity, active status, accessibility, and overlaps
+- deterministic scoring with a persisted explanation
+- deterministic tie-breaking
+- exclusion of `STORAGE` tables as regular candidates
+- defensive exclusion of combinations containing `STORAGE` tables
+- separate `AUTOMATIC` and `MANUAL_SUGGESTION` modes
+- manual top 3 with advanced combinations and inventory
+- additional capacity from resources and temporal availability
+- deterministic advanced operational penalties
+- transactional application with locking and revalidation
 
-No implementado todavia:
+Not yet implemented:
 
-- replanning profundo o cascadas de reasignacion
-- optimizacion batch por turno completo
-- simulacion avanzada de demanda futura
-- disponibilidad como modulo/API separado
-- montajes especiales con aprobacion y tareas operativas
+- deep replanning or reassignment cascades
+- batch optimization for an entire service period
+- advanced future-demand simulation
+- availability as a separate module/API
+- special setups with approval and operational tasks
 
-## Principios
+## Principles
 
-- algoritmo determinista antes que heuristicas opacas
-- explicabilidad obligatoria
-- respeto estricto de restricciones duras
-- scoring configurable y mejorable
-- IA solo como apoyo explicativo
+- deterministic algorithm before opaque heuristics
+- mandatory explainability
+- strict observance of hard constraints
+- configurable and improvable scoring
+- AI solely as explanatory support
 
-## Problema a resolver
+## Problem to solve
 
-Cuando entra una nueva reserva, el sistema debe decidir:
+When a new reservation arrives, the system must decide:
 
-- si puede aceptarse o no
-- en que mesa o combinacion debe asignarse
-- si conviene reservar un recurso mas flexible
-- si existe recolocacion limitada que mejore el planning
+- whether it can be accepted
+- which table or combination it should be assigned to
+- whether a more flexible resource should be reserved
+- whether a limited reassignment exists that improves the plan
 
-## Entradas del algoritmo
+## Algorithm inputs
 
-- fecha
-- hora solicitada
-- numero de comensales
-- duracion estimada
-- tiempo de limpieza
-- reglas del restaurante
-- salones habilitados
-- mesas disponibles
-- combinaciones permitidas
-- reservas existentes
-- preferencias del cliente
-- requisitos de accesibilidad
+- date
+- requested time
+- number of guests
+- estimated duration
+- cleaning time
+- restaurant rules
+- enabled dining rooms
+- available tables
+- permitted combinations
+- existing reservations
+- customer preferences
+- accessibility requirements
 
-## Restricciones duras
+## Hard constraints
 
-Estas restricciones deben cumplirse siempre:
+These constraints must always be satisfied:
 
-- la capacidad debe soportar el tamano del grupo
-- no puede haber solapamiento horario efectivo
-- debe respetarse el buffer de limpieza
-- el salon debe ser permitido por reglas
-- accesibilidad debe respetarse si aplica
-- la mesa o combinacion debe estar activa
+- capacity must accommodate the party size
+- there must be no effective time overlap
+- the cleaning buffer must be observed
+- the dining room must be permitted by the rules
+- accessibility must be respected when applicable
+- the table or combination must be active
 
-## Ventana efectiva de ocupacion
+## Effective occupancy window
 
-La reserva no ocupa solo la hora exacta del cliente. Se debe calcular:
+The reservation does not occupy only the customer's exact reservation time. The following must be calculated:
 
-- inicio real
-- fin real
+- actual start
+- actual end
 
-Formula conceptual:
+Conceptual formula:
 
 ```text
 inicio_real = hora_reserva
 fin_real = hora_reserva + duracion_estimada + buffer_limpieza
 ```
 
-Para un candidato avanzado el inicio efectivo se adelanta por su preparacion:
+For an advanced candidate, the effective start is brought forward to account for setup:
 
 ```text
 inicio_inventario = hora_reserva - setup_time_minutes
 fin_inventario = fin_reserva + buffer_limpieza
 ```
 
-## Estrategia de seleccion
+## Selection strategy
 
-### Paso 1. Normalizar solicitud
+### Step 1. Normalize request
 
-- resolver duracion segun tamaño del grupo y reglas
-- aplicar limpieza y margenes
-- cargar contexto del restaurante
+- determine duration according to party size and rules
+- apply cleaning time and margins
+- load the restaurant context
 
-### Paso 2. Buscar candidatos
+### Step 2. Find candidates
 
-Modo `AUTOMATIC` busca mesas individuales y combinaciones `STANDARD`. Modo `MANUAL_SUGGESTION` anade combinaciones `ADVANCED`, calcula recursos requeridos y limita la salida ordenada a tres opciones.
+`AUTOMATIC` mode searches individual tables and `STANDARD` combinations. `MANUAL_SUGGESTION` mode adds `ADVANCED` combinations, calculates required resources, and limits the ordered output to three options.
 
-En una fase avanzada se podran generar combinaciones dinamicas controladas.
+Controlled dynamic combinations may be generated in an advanced phase.
 
-Desde Fase 1 de planificacion avanzada, las mesas con `table_type = STORAGE` quedan fuera de la busqueda normal. Las combinaciones estandar tampoco deben contener mesas `STORAGE`; el backend lo valida al crear o actualizar combinaciones y el finder las ignora defensivamente si aparecen por datos legacy. Solo deben evaluarse en niveles avanzados con aprobacion o plan de montaje.
+From Phase 1 of advanced planning, tables with `table_type = STORAGE` are excluded from the regular search. Standard combinations must not contain `STORAGE` tables either; the backend validates this when combinations are created or updated, and the finder defensively ignores them if they appear because of legacy data. They must be evaluated only at advanced levels with approval or a setup plan.
 
-`StorageResource` solo entra mediante requisitos de una combinacion avanzada. Todos sus tipos son validos. Cada unidad aporta `capacity_per_unit`; valor cero permite modelar manteleria, extensiones u otros recursos sin plazas. La disponibilidad resta cantidades consumidas por asignaciones activas cuyas ventanas se solapan.
+`StorageResource` is included only through the requirements of an advanced combination. All its types are valid. Each unit contributes `capacity_per_unit`; a zero value makes it possible to model linens, extensions, or other resources without seats. Availability subtracts quantities consumed by active assignments whose windows overlap.
 
-La seleccion manual bloquea en base de datos los recursos requeridos en orden de id y repite la comprobacion antes de persistir. Dos transacciones concurrentes no pueden superar `StorageResource.quantity`.
+Manual selection locks the required resources in the database in ID order and repeats the check before persisting. Two concurrent transactions cannot exceed `StorageResource.quantity`.
 
-## Evolucion avanzada por niveles
+## Advanced evolution by level
 
-La evolucion prevista se documenta en [docs/ADVANCED_TABLE_PLANNING_DESIGN.md](./docs/ADVANCED_TABLE_PLANNING_DESIGN.md):
+The planned evolution is documented in [docs/ADVANCED_TABLE_PLANNING_DESIGN.md](./docs/ADVANCED_TABLE_PLANNING_DESIGN.md):
 
-- Nivel 1: mesa individual de salon.
-- Nivel 2: combinacion estandar.
-- Nivel 3: combinacion con sillas extra.
-- Nivel 4: mesa o recurso de almacen.
-- Nivel 5: montaje especial con aprobacion del manager.
-- Nivel 6: sugerir hora alternativa solo para una nueva solicitud.
+- Level 1: individual dining-room table.
+- Level 2: standard combination.
+- Level 3: combination with extra chairs.
+- Level 4: stored table or storage resource.
+- Level 5: special setup with manager approval.
+- Level 6: suggest an alternative time only for a new request.
 
-Regla de seguridad: el algoritmo no debe cambiar la hora de reservas existentes. Cualquier cambio horario requiere solicitud del cliente y edicion manual del staff.
+Safety rule: the algorithm must not change the time of existing reservations. Any time change requires a customer request and manual editing by staff.
 
-### Paso 3. Filtrar por restricciones duras
+### Step 3. Filter by hard constraints
 
-Eliminar cualquier opcion que:
+Remove any option that:
 
-- no tenga capacidad suficiente
-- ya este ocupada
-- viole reglas del salon
-- rompa accesibilidad
+- lacks sufficient capacity
+- is already occupied
+- violates dining-room rules
+- fails accessibility requirements
 
-### Paso 4. Evaluar impacto local y futuro
+### Step 4. Evaluate local and future impact
 
-Para cada candidato:
+For each candidate:
 
-- medir capacidad desperdiciada
-- medir huecos muertos antes y despues
-- medir bloqueo de mesas grandes
-- medir perdida de flexibilidad futura
-- medir uso de salones no prioritarios
+- measure wasted capacity
+- measure unusable gaps before and after
+- measure the blocking of large tables
+- measure the loss of future flexibility
+- measure the use of non-priority dining rooms
 
-### Paso 5. Calcular score
+### Step 5. Calculate score
 
-Cada opcion recibe una puntuacion total compuesta por bonuses y penalizaciones.
+Each option receives a total score composed of bonuses and penalties.
 
-Las combinaciones avanzadas anaden:
+Advanced combinations add:
 
 ```text
 operational_cost_penalty = LOW 8 | MEDIUM 24 | HIGH 48
 setup_time_penalty = min(setup_time_minutes * 0.5, 30)
 ```
 
-### Paso 6. Elegir mejor opcion
+### Step 6. Select the best option
 
-Seleccionar por score descendente y desempate estable por tipo e id. En sugerencia manual se devuelven como maximo tres.
+Select by descending score with stable tie-breaking by type and ID. Manual suggestions return at most three options.
 
-### Paso 7. Explicar decision
+### Step 7. Explain the decision
 
-Guardar:
+Store:
 
-- candidato elegido
-- alternativas principales
-- factores de score
-- reglas activadas
+- selected candidate
+- primary alternatives
+- score factors
+- activated rules
 
-## Recolocacion limitada
+## Limited reassignment
 
-Documentado como evolucion prevista. La version actual no hace recolocacion automatica profunda; solo soporta movimiento manual desde planning y asignacion automatica directa.
+Documented as planned evolution. The current version does not perform deep automatic reassignment; it supports only manual moves from planning and direct automatic assignment.
 
-## Formula inicial de scoring
+## Initial scoring formula
 
 ```text
 score_total =
@@ -192,95 +192,95 @@ score_total =
 - w11 * recombination_cost
 - w12 * reassignment_cost
 - w13 * fragmentation_penalty
-## Significado de factores
+## Meaning of factors
 
 ### Bonuses
 
-- `capacity_fit`: premia capacidad cercana al tamaño del grupo
-- `room_priority`: premia el salon preferente
-- `future_flexibility`: premia dejar opciones utiles para mas tarde
-- `preference_match`: premia preferencias del cliente o manager
-- `accessibility_match`: premia asignaciones aptas
-- `service_flow_alignment`: premia equilibrio operativo
+- `capacity_fit`: rewards capacity close to the party size
+- `room_priority`: rewards the preferred dining room
+- `future_flexibility`: rewards preserving useful options for later
+- `preference_match`: rewards customer or manager preferences
+- `accessibility_match`: rewards suitable assignments
+- `service_flow_alignment`: rewards operational balance
 
-### Penalizaciones
+### Penalties
 
-- `wasted_seats_penalty`: castiga ocupar demasiada capacidad
-- `dead_gap_penalty`: castiga dejar huecos inutilizables
-- `large_table_block_penalty`: castiga usar mesas grandes para grupos pequeños
-- `room_activation_penalty`: castiga abrir un salon secundario antes de tiempo
-- `recombination_cost`: castiga combinaciones complejas innecesarias
-- `reassignment_cost`: castiga mover reservas existentes
-- `fragmentation_penalty`: castiga dispersar en exceso el servicio
+- `wasted_seats_penalty`: penalizes occupying excessive capacity
+- `dead_gap_penalty`: penalizes leaving unusable gaps
+- `large_table_block_penalty`: penalizes using large tables for small parties
+- `room_activation_penalty`: penalizes opening a secondary dining room prematurely
+- `recombination_cost`: penalizes unnecessary complex combinations
+- `reassignment_cost`: penalizes moving existing reservations
+- `fragmentation_penalty`: penalizes excessive dispersion of service
 
-## Ejemplos de comportamiento esperado
+## Examples of expected behavior
 
-### Caso 1
+### Case 1
 
-Reserva de 2 personas:
+Reservation for 2 people:
 
-- si hay mesa de 2 disponible, debe priorizarse frente a mesa de 6
-- salvo que el analisis detecte que la mesa de 2 es estrategica para otra franja
+- if a table for 2 is available, it should be prioritized over a table for 6
+- unless the analysis determines that the table for 2 is strategically important for another time slot
 
-### Caso 2
+### Case 2
 
-Reserva de 4 personas a las 20:30:
+Reservation for 4 people at 20:30:
 
-- si no hay hueco directo, se puede evaluar mover una reserva pequeña
-- la recolocacion solo debe aceptarse si mejora claramente el conjunto
+- if there is no direct opening, moving a small reservation may be evaluated
+- the reassignment should be accepted only if it clearly improves the overall plan
 
-### Caso 3
+### Case 3
 
-Cliente con movilidad reducida:
+Customer with reduced mobility:
 
-- debe evitarse el salon con escalera
-- aunque haya disponibilidad alli, la opcion debe descartarse o penalizarse fuertemente segun la regla
+- the dining room with stairs must be avoided
+- even if availability exists there, the option must be discarded or heavily penalized according to the rule
 
-## Explicabilidad
+## Explainability
 
-Cada asignacion debe devolver un resumen similar a:
+Each assignment must return a summary similar to:
 
 ```text
-Seleccionada mesa M12 del salon principal.
-Motivos:
-- capacidad ajustada al grupo de 4
-- evita bloquear mesa de 6
-- mantiene libre una combinacion util a las 21:00
-- respeta prioridad del salon principal
+Table M12 in the main dining room selected.
+Reasons:
+- capacity closely matches the party of 4
+- avoids blocking a table for 6
+- keeps a useful combination available at 21:00
+- respects the priority of the main dining room
 ```
 
-## Parametrizacion
+## Parameterization
 
-Los pesos del scoring deben ser configurables por defecto a nivel plataforma y ajustables mas adelante por restaurante, con cuidado para no romper consistencia.
+Scoring weights must be configurable by default at platform level and adjustable later by restaurant, taking care not to undermine consistency.
 
-## Estrategia de evolucion
+## Evolution strategy
 
 ### Version 1
 
-- mesas individuales
-- combinaciones predefinidas
-- scoring heuristico
-- explicacion persistida
+- individual tables
+- predefined combinations
+- heuristic scoring
+- persisted explanation
 
 ### Version 2
 
-- combinaciones dinamicas controladas
-- simulacion de demanda futura
-- ajuste de pesos con datos historicos
+- controlled dynamic combinations
+- future-demand simulation
+- weight adjustment using historical data
 
 ### Version 3
 
-- optimizacion por turno completo
-- simulaciones batch
-- recomendaciones avanzadas apoyadas por IA
+- full-service-period optimization
+- batch simulations
+- advanced AI-supported recommendations
 
-## Requisitos de testing del algoritmo
+## Algorithm testing requirements
 
-- escenarios felices
-- escenarios limite
-- conflictos temporales
-- accesibilidad
-- prioridad de salones
-- huecos muertos
-- recolocacion
-- no regresion entre versiones
+- happy-path scenarios
+- edge cases
+- temporal conflicts
+- accessibility
+- dining-room priority
+- unusable gaps
+- reassignment
+- no regressions between versions

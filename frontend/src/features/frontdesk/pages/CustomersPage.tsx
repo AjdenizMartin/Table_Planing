@@ -62,7 +62,7 @@ export function CustomersPage() {
 
   function validateForm() {
     if (!form.phone.trim() && !form.firstName.trim() && !form.lastName.trim()) {
-      return t("Introduce telefono o al menos un nombre para crear el cliente.");
+      return t("Enter a phone number or at least one name.");
     }
 
     return null;
@@ -89,20 +89,20 @@ export function CustomersPage() {
   }
 
   return (
-    <OperationsShell title={t("Clientes")}>
+    <OperationsShell title={t("Customers")}>
       <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-        <ConfigCard title={t("Base de clientes")}>
+        <ConfigCard title={t("Customer list")}>
           <div className="mb-5">
             <TextField
-              label={t("Buscar cliente")}
+              label={t("Find customer")}
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder={t("Nombre o telefono")}
+              placeholder={t("Name or phone")}
             />
           </div>
 
           {customersQuery.isLoading ? (
-            <StatusMessage tone="info">{t("Cargando clientes...")}</StatusMessage>
+            <StatusMessage tone="info">{t("Loading customers...")}</StatusMessage>
           ) : null}
           {customersQuery.error ? (
             <StatusMessage tone="error">
@@ -122,12 +122,12 @@ export function CustomersPage() {
                       {formatCustomerName(customer)}
                     </h3>
                     <p className="mt-2 text-sm text-slate-400">
-                      {customer.phone || t("Sin telefono")}
+                      {customer.phone || t("No phone")}
                       {customer.email ? ` · ${customer.email}` : ""}
                     </p>
                     {customer.mobilityNeeds ? (
                       <p className="mt-1 text-sm text-slate-500">
-                        {t("Movilidad")}: {customer.mobilityNeeds}
+                        {t("Accessibility")}: {customer.mobilityNeeds}
                       </p>
                     ) : null}
                   </div>
@@ -137,7 +137,7 @@ export function CustomersPage() {
                     to={`/customers/${customer.id}`}
                   >
                     <Eye className="h-4 w-4" />
-                    {t("Ver ficha")}
+                    {t("View profile")}
                   </Link>
                 </div>
               </article>
@@ -145,16 +145,16 @@ export function CustomersPage() {
 
             {customersQuery.data?.length === 0 ? (
               <StatusMessage tone="info">
-                {t("No hay clientes para esta busqueda.")}
+                {t("No customers match this search.")}
               </StatusMessage>
             ) : null}
           </div>
         </ConfigCard>
 
-        <ConfigCard title={t("Nuevo cliente")}>
+        <ConfigCard title={t("New customer")}>
           {!canManageCustomers ? (
             <StatusMessage tone="info">
-              {t("Tu rol puede consultar clientes, pero no crearlos.")}
+              {t("Your role can view customers, but cannot create them.")}
             </StatusMessage>
           ) : null}
           {validationError ? <StatusMessage tone="error">{validationError}</StatusMessage> : null}
@@ -167,14 +167,14 @@ export function CustomersPage() {
           <form className="grid gap-4" onSubmit={handleSubmit}>
             <div className="grid gap-4 sm:grid-cols-2">
               <TextField
-                label={t("Nombre")}
+                label={t("First name")}
                 value={form.firstName}
                 onChange={(event) =>
                   setForm((current) => ({ ...current, firstName: event.target.value }))
                 }
               />
               <TextField
-                label={t("Apellidos")}
+                label={t("Last name")}
                 value={form.lastName}
                 onChange={(event) =>
                   setForm((current) => ({ ...current, lastName: event.target.value }))
@@ -183,7 +183,7 @@ export function CustomersPage() {
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <TextField
-                label={t("Telefono")}
+                label={t("Phone")}
                 value={form.phone}
                 onChange={(event) =>
                   setForm((current) => ({ ...current, phone: event.target.value }))
@@ -199,15 +199,15 @@ export function CustomersPage() {
               />
             </div>
             <TextField
-              label={t("Etiquetas")}
+              label={t("Tags")}
               value={form.tags}
               onChange={(event) =>
                 setForm((current) => ({ ...current, tags: event.target.value }))
               }
-              placeholder={t("VIP, alergias, habitual")}
+              placeholder={t("VIP, allergies, regular")}
             />
             <TextField
-              label={t("Necesidades de movilidad")}
+              label={t("Accessibility needs")}
               value={form.mobilityNeeds}
               onChange={(event) =>
                 setForm((current) => ({
@@ -217,7 +217,7 @@ export function CustomersPage() {
               }
             />
             <TextAreaField
-              label={t("Notas")}
+              label={t("Notes")}
               value={form.notes}
               onChange={(event) =>
                 setForm((current) => ({ ...current, notes: event.target.value }))
@@ -232,7 +232,7 @@ export function CustomersPage() {
               >
                 <span className="inline-flex items-center gap-2">
                   <UserPlus className="h-4 w-4" />
-                  {createMutation.isPending ? t("Creando...") : t("Crear cliente")}
+                  {createMutation.isPending ? t("Creating...") : t("Create customer")}
                 </span>
               </button>
             </div>

@@ -1,61 +1,61 @@
 # Testing
 
-## Objetivo
+## Objective
 
-Definir una estrategia de pruebas coherente con una plataforma donde la logica de negocio, el aislamiento multi-tenant y el algoritmo de asignacion son criticos.
+Define a testing strategy consistent with a platform where business logic, multi-tenant isolation, and the assignment algorithm are critical.
 
-## Principios
+## Principles
 
-- testear primero la logica que aporta valor real
-- combinar pruebas rapidas de unidad con pruebas de integracion realistas
-- proteger especialmente permisos, tiempos y algoritmo
-- evitar una suite lenta o fragil desde el inicio
+- test the logic that delivers real value first
+- combine fast unit tests with realistic integration tests
+- pay particular attention to permissions, time calculations, and the algorithm
+- avoid a slow or fragile suite from the outset
 
-## Piramide de testing recomendada
+## Recommended testing pyramid
 
 ### 1. Unit tests
 
-Para:
+For:
 
-- utilidades puras
-- reglas de validacion
-- calculos temporales
-- scoring del algoritmo
-- resolucion de permisos aislada
+- pure utilities
+- validation rules
+- time calculations
+- algorithm scoring
+- isolated permission resolution
 
-Objetivo:
+Objective:
 
-- alta velocidad
-- feedback rapido
-- cobertura fuerte de edge cases
+- high speed
+- fast feedback
+- strong edge-case coverage
 
 ### 2. Integration tests
 
-Para:
+For:
 
-- servicios de aplicacion
-- repositorios JPA
-- flujos HTTP con Spring Boot
-- seguridad real de endpoints
-- integracion con Flyway
+- application services
+- JPA repositories
+- HTTP flows with Spring Boot
+- actual endpoint security
+- Flyway integration
 
-Objetivo:
+Objective:
 
-- validar cableado de modulos
-- detectar errores de configuracion o persistencia
+- validate module wiring
+- detect configuration or persistence errors
 
-### 3. End-to-end selectivos
+### 3. Selective end-to-end tests
 
-Para fases posteriores:
+For later phases:
 
 - login
-- crear reserva
-- ver planning
-- mover reserva
+- create a reservation
+- view planning
+- move a reservation
 
-No son prioridad absoluta antes de estabilizar backend y modelo de datos.
+They are not an absolute priority before the backend and data model are stabilized.
 
-## Herramientas recomendadas
+## Recommended tools
 
 ### Backend
 
@@ -70,180 +70,180 @@ No son prioridad absoluta antes de estabilizar backend y modelo de datos.
 
 - `Vitest`
 - `React Testing Library`
-- `Playwright` con Chromium para flujos criticos en 768 y 1024 px
-- tests del selector ES/EN y persistencia de idioma
-- tests de interfaz para acciones destructivas y permisos visibles
+- `Playwright` with Chromium for critical flows at 768 and 1024 px
+- tests for the ES/EN selector and language persistence
+- interface tests for destructive actions and visible permissions
 
 ## Testcontainers
 
-Se recomienda usar `Testcontainers` desde fases tempranas para:
+Using `Testcontainers` from the early phases is recommended for:
 
-- PostgreSQL real
-- Redis si se incorpora en pruebas relevantes
+- real PostgreSQL
+- Redis if it is included in relevant tests
 
-Beneficios:
+Benefits:
 
-- pruebas mas fieles que mocks de base de datos
-- validacion real de migraciones Flyway
-- menor riesgo de diferencias entre local y CI
+- tests that are more faithful than database mocks
+- actual validation of Flyway migrations
+- lower risk of differences between local environments and CI
 
-## Ejecucion de suites
+## Suite execution
 
-La suite backend se separa en pruebas rapidas y pruebas de integracion para evitar que Docker bloquee el feedback diario.
+The backend suite is divided into fast tests and integration tests to prevent Docker from blocking daily feedback.
 
-Comandos:
+Commands:
 
-- `mvn test` desde `backend/`: ejecuta unit tests y excluye `*IntegrationTest`.
-- `mvn test -Pintegration-tests` desde `backend/`: ejecuta tambien `*IntegrationTest`; requiere Docker/Testcontainers disponible.
-- `mvn clean compile` desde `backend/`: valida compilacion sin ejecutar tests.
-- `npm test` desde `frontend/`: ejecuta pruebas de componentes y contratos de formulario.
-- `npm run build` desde `frontend/`: valida TypeScript y bundle estatico.
-- `npm run e2e` desde `frontend/`: ejecuta manager/staff en escritorio y tablet con API de red controlada.
+- `mvn test` from `backend/`: runs unit tests and excludes `*IntegrationTest`.
+- `mvn test -Pintegration-tests` from `backend/`: also runs `*IntegrationTest`; requires Docker/Testcontainers to be available.
+- `mvn clean compile` from `backend/`: validates compilation without running tests.
+- `npm test` from `frontend/`: runs component tests and form contract tests.
+- `npm run build` from `frontend/`: validates TypeScript and the static bundle.
+- `npm run e2e` from `frontend/`: runs manager/staff flows on desktop and tablet with a controlled network API.
 
-Nota local:
+Local note:
 
-- si Docker CLI responde pero Testcontainers falla con `Could not find a valid Docker environment`, revisar el socket activo de Docker Desktop y la compatibilidad de `docker-java`/Testcontainers con la version de Docker Desktop instalada
-- en macOS con Docker Desktop puede ser necesario exponer correctamente el socket usado por el contexto `desktop-linux`; hasta resolverlo, `mvn test` sigue siendo la suite obligatoria de feedback rapido
-- en JDKs recientes, Mockito inline puede fallar si el runtime no permite auto-attach de agentes; la suite usa `mock-maker-subclass` en tests para evitar depender de ese mecanismo cuando solo se mockean interfaces y colaboradores no finales.
+- if the Docker CLI responds but Testcontainers fails with `Could not find a valid Docker environment`, check the active Docker Desktop socket and the compatibility of `docker-java`/Testcontainers with the installed Docker Desktop version
+- on macOS with Docker Desktop, it may be necessary to correctly expose the socket used by the `desktop-linux` context; until this is resolved, `mvn test` remains the mandatory fast-feedback suite
+- on recent JDKs, Mockito inline may fail if the runtime does not permit agent self-attachment; the suite uses `mock-maker-subclass` in tests to avoid relying on that mechanism when only interfaces and non-final collaborators are mocked.
 
-Regla practica:
+Practical rule:
 
-- cambios en algoritmo, reglas, SMS, audit o AI deben tener unit tests rapidos cuando sea posible
-- flujos HTTP, seguridad real, Flyway y JPA deben validarse con integration tests
-- si Docker no esta disponible, no se debe bloquear la suite rapida por tests de integracion
+- changes to the algorithm, rules, SMS, audit, or AI must have fast unit tests whenever possible
+- HTTP flows, actual security, Flyway, and JPA must be validated with integration tests
+- if Docker is unavailable, integration tests must not block the fast suite
 
-## Tipos de pruebas por modulo
+## Test types by module
 
-### Auth y Security
+### Auth and Security
 
-Casos importantes:
+Important cases:
 
-- login exitoso
-- login fallido
-- refresh valido
-- refresh invalido o revocado
-- acceso a endpoint protegido sin token
-- acceso con rol insuficiente
-- acceso a recurso de otro restaurante
+- successful login
+- failed login
+- valid refresh
+- invalid or revoked refresh
+- access to a protected endpoint without a token
+- access with an insufficient role
+- access to another restaurant's resource
 
-### Restaurant, DiningRoom y Table
+### Restaurant, DiningRoom, and Table
 
-Casos importantes:
+Important cases:
 
-- crear restaurante valido
-- evitar duplicados prohibidos
-- crear salon y mesa con capacidades validas
-- impedir editar recursos de otro restaurante
+- create a valid restaurant
+- prevent prohibited duplicates
+- create a dining room and table with valid capacities
+- prevent editing another restaurant's resources
 
 ### Reservation
 
-Casos importantes:
+Important cases:
 
-- crear reserva valida
-- rechazar reserva con datos invalidos
-- detectar solapamiento segun ventana efectiva
-- cambiar estados correctamente
-- cancelar y liberar recurso asociado
+- create a valid reservation
+- reject a reservation with invalid data
+- detect overlap according to the effective window
+- change statuses correctly
+- cancel and release the associated resource
 
 ### Planning
 
-Casos importantes:
+Important cases:
 
-- devolver planning del dia por restaurante
-- aislar salones correctamente
-- recalculo restringido a roles permitidos
-- no mostrar mesas `STORAGE` como mesas operativas del planning
+- return the restaurant's planning for the day
+- isolate dining rooms correctly
+- restrict recalculation to permitted roles
+- do not display `STORAGE` tables as operational planning tables
 
 ### Storage Inventory
 
-Casos importantes:
+Important cases:
 
-- crear recurso de almacen activo
-- rechazar cantidades negativas
-- rechazar `capacityPerUnit` y `setupTimeMinutes` negativos
-- exigir `name` y `resourceType` al crear
-- filtrar por `resourceType`
-- filtrar por `active`
-- actualizar nombre, tipo, cantidad, capacidad, tiempo, notas y estado
-- desactivar y reactivar sin borrar fisicamente
-- filtrar por restaurante
-- no exponer recursos de otro restaurante
-- no modificar recursos de otro restaurante
-- impedir reducir o desactivar inventario por debajo de consumos futuros
-- mantener inventario fuera del modo automatico
+- create an active storage resource
+- reject negative quantities
+- reject negative `capacityPerUnit` and `setupTimeMinutes`
+- require `name` and `resourceType` on creation
+- filter by `resourceType`
+- filter by `active`
+- update name, type, quantity, capacity, time, notes, and status
+- deactivate and reactivate without physically deleting
+- filter by restaurant
+- do not expose another restaurant's resources
+- do not modify another restaurant's resources
+- prevent reducing or deactivating inventory below future consumption requirements
+- keep inventory out of automatic mode
 
 ### Advanced Assignments
 
-Casos cubiertos:
+Covered cases:
 
-- migracion compatible de combinaciones existentes
-- capacidad efectiva con recursos de cualquier tipo
-- exclusion avanzada en `AUTOMATIC`
-- inclusion, ranking y penalizaciones en `MANUAL_SUGGESTION`
-- sugerir sin mutar asignaciones
-- aplicar y persistir snapshots de inventario
-- detectar solapes de inventario
-- revalidar bajo bloqueo transaccional
-- aislar restaurante y restringir aprobacion a owner/manager/admin
+- compatible migration of existing combinations
+- effective capacity with resources of any type
+- advanced exclusion in `AUTOMATIC`
+- inclusion, ranking, and penalties in `MANUAL_SUGGESTION`
+- suggest without mutating assignments
+- apply and persist inventory snapshots
+- detect inventory overlaps
+- revalidate under a transactional lock
+- isolate restaurants and restrict approval to owner/manager/admin
 
 ### Notification
 
-Casos importantes:
+Important cases:
 
-- registrar log de envio
-- reintento segun estado
-- no llamar al proveedor externo si SMS esta deshabilitado
-- no exponer datos sensibles a roles no permitidos
+- record the delivery log
+- retry according to status
+- do not call the external provider if SMS is disabled
+- do not expose sensitive data to unauthorized roles
 
 ### AI
 
-Casos importantes:
+Important cases:
 
-- generar recomendacion explicativa desde datos validos
-- preservar dismissed al regenerar insights equivalentes
-- no permitir que la IA actue como fuente primaria de asignacion
+- generate an explanatory recommendation from valid data
+- preserve dismissed when regenerating equivalent insights
+- do not allow AI to act as the primary source of assignments
 
-## Testing del algoritmo
+## Algorithm testing
 
-Este es uno de los puntos mas importantes del producto.
+This is one of the most important aspects of the product.
 
-### Objetivos del testing del algoritmo
+### Algorithm testing objectives
 
-- validar restricciones duras
-- proteger el scoring
-- asegurar decisiones coherentes
-- evitar regresiones al retocar pesos o reglas
+- validate hard constraints
+- protect scoring
+- ensure consistent decisions
+- avoid regressions when adjusting weights or rules
 
-### Escenarios minimos recomendados
+### Recommended minimum scenarios
 
-- reserva de 2 no ocupa mesa de 6 si existe mesa adecuada
-- no se asigna mesa con conflicto horario
-- se respeta buffer de limpieza
-- se evita salon no prioritario si no hace falta
-- se respeta accesibilidad
-- se penaliza bloqueo de mesa grande
-- se detecta hueco muerto relevante
-- recolocacion de un salto mejora el resultado
-- una mesa `STORAGE` no se considera candidata directa
-- una combinacion que contenga una mesa `STORAGE` no se considera candidata basica
+- a reservation for 2 does not occupy a table for 6 if a suitable table exists
+- a table with a scheduling conflict is not assigned
+- the cleaning buffer is respected
+- a non-priority dining room is avoided when unnecessary
+- accessibility requirements are respected
+- blocking a large table is penalized
+- a relevant dead gap is detected
+- a one-step reassignment improves the result
+- a `STORAGE` table is not considered a direct candidate
+- a combination containing a `STORAGE` table is not considered a basic candidate
 
-### Enfoque
+### Approach
 
-- tests de unidad para funciones de score y filtros
-- tests de integracion para escenarios completos de planning
-- datasets pequeños y legibles
+- unit tests for score functions and filters
+- integration tests for complete planning scenarios
+- small, readable datasets
 
-## Tests de API
+## API tests
 
-Se recomienda cubrir:
+The following should be covered:
 
-- status codes correctos
-- validaciones de payload
-- serializacion de fechas
-- contratos base de respuesta
-- errores controlados
+- correct status codes
+- payload validations
+- date serialization
+- base response contracts
+- controlled errors
 
-Casos:
+Cases:
 
 - `POST /api/auth/login`
 - `GET /api/auth/me`
@@ -251,86 +251,86 @@ Casos:
 - `POST /api/reservations`
 - `GET /api/planning`
 
-## Tests de permisos
+## Permission tests
 
-Deben ser explicitos y no quedar implicitos dentro de otros tests.
+They must be explicit and not left implicit within other tests.
 
-Casos minimos:
+Minimum cases:
 
-- `WAITER` no puede editar configuracion
-- `MANAGER` puede crear reservas
-- `RESTAURANT_OWNER` puede editar su restaurante
-- `WAITER` no puede eliminar clientes
-- manager puede eliminar clientes sin reservas
-- no se puede eliminar un cliente de otro restaurante
-- un cliente con reservas asociadas devuelve conflicto y conserva sus datos
-- usuario de restaurante A no puede acceder a datos de restaurante B
-- `PLATFORM_ADMIN` puede operar globalmente segun politica
+- `WAITER` cannot edit configuration
+- `MANAGER` can create reservations
+- `RESTAURANT_OWNER` can edit their restaurant
+- `WAITER` cannot delete customers
+- manager can delete customers without reservations
+- a customer from another restaurant cannot be deleted
+- a customer with associated reservations returns a conflict and retains their data
+- a user from restaurant A cannot access data from restaurant B
+- `PLATFORM_ADMIN` can operate globally according to policy
 
-## Tests de WebSocket
+## WebSocket tests
 
-No son prioridad en la primera linea de codigo, pero deben planificarse.
+They are not a priority in the first line of code, but they must be planned.
 
-Cobertura sugerida:
+Suggested coverage:
 
-- conexion autenticada
-- suscripcion por restaurante
-- emision de evento al crear reserva
-- emision de evento al cancelar reserva
-- no recibir eventos de otro restaurante
+- authenticated connection
+- subscription by restaurant
+- event emission when creating a reservation
+- event emission when canceling a reservation
+- do not receive events from another restaurant
 
-## Estrategia de datos de prueba
+## Test data strategy
 
-- factories o builders para entidades
-- fixtures pequenas y legibles
-- evitar dependencias ocultas entre tests
-- cada test debe preparar su propio contexto o uno controlado
+- factories or builders for entities
+- small, readable fixtures
+- avoid hidden dependencies between tests
+- each test must prepare its own context or a controlled one
 
-## CI recomendada
+## Recommended CI
 
-Pipeline actual:
+Current pipeline:
 
-1. validar formato y compilacion
-2. ejecutar unit tests
-3. ejecutar integration tests
-4. ejecutar tests frontend y build estatico
-5. ejecutar Playwright en escritorio y tablet
-6. construir imagenes Docker backend, frontend dev y frontend prod
+1. validate formatting and compilation
+2. run unit tests
+3. run integration tests
+4. run frontend tests and static build
+5. run Playwright on desktop and tablet
+6. build backend, frontend dev, and frontend prod Docker images
 
-Antes del piloto tambien se ejecuta `PilotOnboardingIntegrationTest`: comprueba creacion auditada, repeticion idempotente, rollback por conflicto y rechazo de archivos de contrasena sin permisos `0600`.
+Before the pilot, `PilotOnboardingIntegrationTest` is also run: it verifies audited creation, idempotent repetition, rollback on conflict, and rejection of password files without `0600` permissions.
 
-Playwright cubre viewports tablet con Chromium, pero no sustituye el UAT sobre una tablet Android fisica. Ese gate manual incluye tactil, teclado virtual, rotacion, zona horaria y reconexion WebSocket.
+Playwright covers tablet viewports with Chromium, but does not replace UAT on a physical Android tablet. That manual gate includes touch input, virtual keyboard, rotation, time zone, and WebSocket reconnection.
 
-## Validacion de produccion
+## Production validation
 
-- `ProductionRegistrationIntegrationTest` arranca con perfil `prod` y exige `404` en `/api/auth/register`.
-- los tests frontend verifican que un build productivo no puede habilitar la ruta de registro.
-- el build productivo no debe contener credenciales demo.
-- `scripts/production-preflight.sh` rechaza un checkout sin tag exacto, secretos inseguros, DNS ausente, poco disco o Compose invalido.
-- `scripts/pilot-ops-check.sh` falla ante contenedores no saludables, HTTPS/registro/TLS incorrectos, disco alto o backups ausentes.
-- la imagen backend debe ejecutar como usuario no root y arrancar con filesystem de solo lectura y capacidades eliminadas.
+- `ProductionRegistrationIntegrationTest` starts with the `prod` profile and requires `404` at `/api/auth/register`.
+- frontend tests verify that a production build cannot enable the registration route.
+- the production build must not contain demo credentials.
+- `scripts/production-preflight.sh` rejects a checkout without an exact tag, insecure secrets, missing DNS, insufficient disk space, or invalid Compose configuration.
+- `scripts/pilot-ops-check.sh` fails when containers are unhealthy, HTTPS/registration/TLS settings are incorrect, disk usage is high, or backups are missing.
+- the backend image must run as a non-root user and start with a read-only filesystem and dropped capabilities.
 
-## Definition of done para testing
+## Definition of done for testing
 
-Antes de cerrar una funcionalidad importante:
+Before completing an important feature:
 
-- existe cobertura de casos felices
-- existen casos de error relevantes
-- se han probado permisos
-- se han probado restricciones multi-tenant
-- si afecta algoritmo, hay casos de no regresion
+- happy-path coverage exists
+- relevant error cases exist
+- permissions have been tested
+- multi-tenant constraints have been tested
+- if it affects the algorithm, regression test cases exist
 
-## Alcance de la primera fase tecnica
+## Scope of the first technical phase
 
-La primera fase debe dejar preparados:
+The first phase must establish:
 
-- tests de contexto Spring
-- tests basicos de seguridad
-- primer setup de `Testcontainers` para PostgreSQL
-- base para `MockMvc`
+- Spring context tests
+- basic security tests
+- initial `Testcontainers` setup for PostgreSQL
+- foundation for `MockMvc`
 
-No hace falta aun:
+Not yet required:
 
-- suite e2e completa
-- cobertura exhaustiva del frontend
-- simulaciones avanzadas del algoritmo
+- complete e2e suite
+- exhaustive frontend coverage
+- advanced algorithm simulations

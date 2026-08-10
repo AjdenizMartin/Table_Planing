@@ -5,18 +5,18 @@ import type {
 } from "@/features/frontdesk/types";
 
 const statusLabels: Record<ReservationStatus, string> = {
-  PENDING: "Pendiente",
-  CONFIRMED: "Confirmada",
-  ARRIVED: "Llegado",
-  SEATED: "Sentada",
-  COMPLETED: "Completada",
-  CANCELLED: "Cancelada",
-  NO_SHOW: "No-show",
+  PENDING: "Pending",
+  CONFIRMED: "Confirmed",
+  ARRIVED: "Arrived",
+  SEATED: "Seated",
+  COMPLETED: "Completed",
+  CANCELLED: "Cancelled",
+  NO_SHOW: "No show",
 };
 
 export function formatCustomerName(customer: Pick<CustomerResponse, "firstName" | "lastName">) {
   const name = [customer.firstName, customer.lastName].filter(Boolean).join(" ").trim();
-  return name || "Cliente sin nombre";
+  return name || "Unnamed customer";
 }
 
 export function formatReservationCustomerName(
@@ -26,7 +26,7 @@ export function formatReservationCustomerName(
     .filter(Boolean)
     .join(" ")
     .trim();
-  return name || "Cliente sin nombre";
+  return name || "Unnamed customer";
 }
 
 export function formatReservationStatus(status: ReservationStatus) {

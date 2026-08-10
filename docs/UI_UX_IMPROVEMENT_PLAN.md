@@ -1,327 +1,327 @@
 # UI/UX Improvement Plan
 
-## 1. Problema actual
+## 1. Current problem
 
-La aplicación tiene dos pantallas separadas para gestionar reservas (`/reservations` y `/planning`), cada una con capacidades complementarias pero desconectadas. El usuario debe navejar entre ellas constantemente, perdiendo contexto operativo.
+The application has two separate screens for managing reservations (`/reservations` and `/planning`), each with complementary but disconnected capabilities. Users must constantly navigate between them, losing operational context.
 
-### Síntomas principales
+### Main symptoms
 
-- 9 items en el nav principal + sub-navegación interna en varias pantallas.
-- PlanningPage (1044 líneas) contiene toda la lógica inline sin separación de componentes.
-- No hay acciones de estado (confirmar, cancelar, sentar) disponibles desde planning.
-- El botón "New reservation" en planning navega a otra pantalla.
-- El botón "Edit layout" en planning navega a otra pantalla.
-- HomePage muestra datos de debug irrelevantes para operación diaria.
-- No existe un componente reutilizable de panel lateral/overlay.
-- La fecha seleccionada no se sincroniza entre planning y reservas.
+- 9 items in the main navigation + internal sub-navigation on several screens.
+- PlanningPage (1,044 lines) contains all logic inline, without component separation.
+- No status actions (confirm, cancel, seat) are available from planning.
+- The "New reservation" button in planning navigates to another screen.
+- The "Edit layout" button in planning navigates to another screen.
+- HomePage displays debug data that is irrelevant to daily operations.
+- There is no reusable side panel/overlay component.
+- The selected date is not synchronized between planning and reservations.
 
 ---
 
-## 2. Pantallas actuales
+## 2. Current screens
 
-| # | Ruta | Componente | Propósito | Problema |
+| # | Route | Component | Purpose | Problem |
 |---|------|-----------|-----------|----------|
-| 1 | `/` | HomePage | Dashboard de bienvenida | Muestra información de debug, no útil para operación |
-| 2 | `/planning` | PlanningPage | Plano visual de mesas | Sin acciones de estado, 1044 líneas inline |
-| 3 | `/reservations` | ReservationsPage | CRUD de reservas | Sin contexto visual, duplicado lógico con planning |
-| 4 | `/customers` | CustomersPage | Lista de clientes | Correcta, pero debería accesible desde planning |
-| 5 | `/customers/:id` | CustomerDetailPage | Detalle de cliente | Correcta |
-| 6 | `/notifications` | NotificationsPage | Lista de notificaciones | Accesible desde campana en header |
-| 7 | `/settings/restaurant` | RestaurantSettingsPage | Config restaurante | 1 de 5 pantallas de settings |
-| 8 | `/settings/dining-rooms` | DiningRoomsPage | Gestión salones | Separada innecesariamente |
-| 9 | `/settings/tables` | TablesPage | Gestión mesas | Separada innecesariamente |
-| 10 | `/settings/layout` | TableLayoutEditorPage | Editor de plano | Separada innecesariamente |
-| 11 | `/settings/table-combinations` | TableCombinationsPage | Combinaciones de mesas | Separada innecesariamente |
+| 1 | `/` | HomePage | Welcome dashboard | Displays debug information that is not useful for operations |
+| 2 | `/planning` | PlanningPage | Visual table floor plan | No status actions, 1,044 lines inline |
+| 3 | `/reservations` | ReservationsPage | Reservation CRUD | No visual context, logically duplicates planning |
+| 4 | `/customers` | CustomersPage | Customer list | Correct, but it should be accessible from planning |
+| 5 | `/customers/:id` | CustomerDetailPage | Customer details | Correct |
+| 6 | `/notifications` | NotificationsPage | Notification list | Accessible from the bell in the header |
+| 7 | `/settings/restaurant` | RestaurantSettingsPage | Restaurant configuration | 1 of 5 settings screens |
+| 8 | `/settings/dining-rooms` | DiningRoomsPage | Dining room management | Unnecessarily separate |
+| 9 | `/settings/tables` | TablesPage | Table management | Unnecessarily separate |
+| 10 | `/settings/layout` | TableLayoutEditorPage | Floor plan editor | Unnecessarily separate |
+| 11 | `/settings/table-combinations` | TableCombinationsPage | Table combinations | Unnecessarily separate |
 
 ---
 
-## 3. Flujo actual
+## 3. Current flow
 
-### 3.1 Ver una reserva
+### 3.1 View a reservation
 
 ```
-PlanningPage (pinchar reserva)
-  → DetailPanel (columna derecha, 360px)
-    → Muestra: nombre, hora, pax, estado, mesa, notas
-    → NO muestra: canal, teléfono, confirmado-en, cancelado-en
-    → Única acción disponible: "Find best table" (si no asignada)
+PlanningPage (select reservation)
+  → DetailPanel (right column, 360px)
+    → Displays: name, time, party size, status, table, notes
+    → Does NOT display: channel, phone number, confirmed-at, cancelled-at
+    → Only available action: "Find best table" (if unassigned)
 ```
 
-Para ver todos los datos → hay que ir a `/reservations`, buscar la fecha, encontrar la reserva.
+To view all data → go to `/reservations`, search for the date, and find the reservation.
 
-### 3.2 Confirmar / Cancelar una reserva
+### 3.2 Confirm / Cancel a reservation
 
 ```
 PlanningPage
-  → Nav a /reservations?date=...
-  → Encontrar reserva en lista
-  → Pinchar reserva → se abre ReservationDetailPanel
-  → Click "Confirmar" o "Cancelar"
-  → Volver a /planning (pierde scroll, selección, contexto)
+  → Navigate to /reservations?date=...
+  → Find reservation in the list
+  → Select reservation → ReservationDetailPanel opens
+  → Click "Confirm" or "Cancel"
+  → Return to /planning (loses scroll position, selection, and context)
 ```
 
-**3 navegaciones distintas para una acción simple.**
+**3 separate navigation steps for a simple action.**
 
-### 3.3 Editar una reserva
+### 3.3 Edit a reservation
 
-No existe flujo de edición. El endpoint `PATCH /{id}` existe, pero no hay UI. Para cambiar datos de una reserva, el usuario no tiene camino definido.
+There is no editing flow. The `PATCH /{id}` endpoint exists, but there is no UI. Users have no defined path for changing reservation data.
 
-### 3.4 Crear una reserva
+### 3.4 Create a reservation
 
 ```
 PlanningPage
   → Click "New reservation"
-  → Navega a /reservations?mode=new&date=...
-  → Rellena formulario (nombre, teléfono, hora, pax, etc.)
-  → Click "Crear"
-  → Vuelve a /planning (pierde contexto)
+  → Navigates to /reservations?mode=new&date=...
+  → Completes form (name, phone number, time, party size, etc.)
+  → Click "Create"
+  → Returns to /planning (loses context)
 ```
 
-### 3.5 Reasignar mesa
+### 3.5 Reassign table
 
 ```
 PlanningPage
-  → Pinchar reserva no asignada → DetailPanel
-  → Click "Find best table" (asignación automática)
-  → O arrastrar en FloorPlan (no implementado aún)
+  → Select unassigned reservation → DetailPanel
+  → Click "Find best table" (automatic assignment)
+  → Or drag on FloorPlan (not yet implemented)
 ```
 
 ---
 
-## 4. Flujo recomendado (Planning First)
+## 4. Recommended flow (Planning First)
 
-### Principio
+### Principle
 
-El usuario nunca abandona `/planning` para tareas operativas del día.
+Users never leave `/planning` for daily operational tasks.
 
-#### 4.1 Ver una reserva
+#### 4.1 View a reservation
 
 ```
 PlanningPage
-  → Pinchar reserva en FloorPlan, Queue o Timeline
-  → ReservationSidePanel (overlay derecho, ~576px)
-    → Muestra: TODO (nombre, teléfono, pax, fecha, hora, duración,
-      mesa, salón, estado, confirmación, canal, notas, accesibilidad)
-    → Acciones disponibles según estado
+  → Select reservation in FloorPlan, Queue, or Timeline
+  → ReservationSidePanel (right overlay, ~576px)
+    → Displays: EVERYTHING (name, phone number, party size, date, time, duration,
+      table, dining room, status, confirmation, channel, notes, accessibility)
+    → Available actions based on status
 ```
 
-#### 4.2 Confirmar / Cancelar / Sentar / Completar
+#### 4.2 Confirm / Cancel / Seat / Complete
 
 ```
 PlanningPage → ReservationSidePanel
-  → Click "Confirmar" → llama a POST /confirm
-  → Panel se mantiene abierto con datos actualizados
-  → Planning se refresca en background
+  → Click "Confirm" → calls POST /confirm
+  → Panel remains open with updated data
+  → Planning refreshes in the background
   → Toast: "Reservation confirmed."
 ```
 
-**0 navegaciones. 1 click.**
+**0 navigation steps. 1 click.**
 
-#### 4.3 Editar reserva
+#### 4.3 Edit reservation
 
 ```
 PlanningPage → ReservationSidePanel
   → Click "Edit details"
-  → EditReservationModal (modal centrado)
-  → Editar party size, notas, accesibilidad
-  → SIN campo de hora (protegido)
-  → Click "Guardar" → PATCH /{id}
+  → EditReservationModal (centered modal)
+  → Edit party size, notes, accessibility
+  → NO time field (protected)
+  → Click "Save" → PATCH /{id}
 ```
 
-#### 4.4 Crear reserva
+#### 4.4 Create reservation
 
 ```
 PlanningPage
-  → Click "New reservation" en HeroHeader
-  → CreateReservationPanel (overlay o modal, mismo patrón)
-  → Rellenar formulario mínimo (cliente, hora, pax)
-  → Click "Crear" → POST /reservations + auto-assign
-  → Planning se refresca
+  → Click "New reservation" in HeroHeader
+  → CreateReservationPanel (overlay or modal, same pattern)
+  → Complete minimum form (customer, time, party size)
+  → Click "Create" → POST /reservations + auto-assign
+  → Planning refreshes
 ```
 
-#### 4.5 Reasignar mesa
+#### 4.5 Reassign table
 
 ```
 PlanningPage → ReservationSidePanel
   → Click "Reassign table"
-  → POST /assign (existente)
-  → Panel se actualiza con nueva mesa
-  → FloorPlan se refresca
+  → POST /assign (existing)
+  → Panel updates with the new table
+  → FloorPlan refreshes
 ```
 
 ---
 
-## 5. Componentes nuevos necesarios
+## 5. Required new components
 
-| Componente | Propósito | Basado en |
+| Component | Purpose | Based on |
 |---|---|---|
-| `ReservationSidePanel` | Overlay lateral con detalle completo + acciones rápidas | Patrón de `InsightPanel` |
-| `EditReservationModal` | Modal para editar datos básicos (sin hora) | Nuevo |
-| `PanelPrimitive` | Reusable slide-over/drawer con backdrop (futuro) | Extraer de `InsightPanel` + `ReservationSidePanel` |
+| `ReservationSidePanel` | Side overlay with full details + quick actions | `InsightPanel` pattern |
+| `EditReservationModal` | Modal for editing basic data (without time) | New |
+| `PanelPrimitive` | Reusable slide-over/drawer with backdrop (future) | Extract from `InsightPanel` + `ReservationSidePanel` |
 
-## 6. Componentes existentes reutilizables
+## 6. Existing reusable components
 
-| Componente | Dónde está | Se reutiliza para |
+| Component | Location | Reused for |
 |---|---|---|
-| `ReservationDetailPanel` (acciones) | `frontdesk/components/` | Lógica de confirm/cancel/seat/complete/no-show |
-| `StatusPill` | `frontdesk/components/` | Mostrar estado en side panel |
-| `StatusMessage` | `restaurant-config/components/` | Mensajes de error/success |
-| `ConfigCard` | `restaurant-config/components/` | Secciones de información |
-| `Field` (TextField, SelectField...) | `restaurant-config/components/` | Formularios |
-| `getErrorMessage` | `restaurant-config/utils/` | Parseo de errores API |
-| `notify()` | `notifications/components/` | Toast de éxito |
-| `formatReservationCustomerName` | `frontdesk/utils/` | Nombre completo |
-| `formatReservationStatus` | `frontdesk/utils/` | Label de estado en español |
-| `normalizeTimeForInput` | `frontdesk/utils/` | Formato HH:mm |
+| `ReservationDetailPanel` (actions) | `frontdesk/components/` | Confirm/cancel/seat/complete/no-show logic |
+| `StatusPill` | `frontdesk/components/` | Display status in side panel |
+| `StatusMessage` | `restaurant-config/components/` | Error/success messages |
+| `ConfigCard` | `restaurant-config/components/` | Information sections |
+| `Field` (TextField, SelectField...) | `restaurant-config/components/` | Forms |
+| `getErrorMessage` | `restaurant-config/utils/` | API error parsing |
+| `notify()` | `notifications/components/` | Success toast |
+| `formatReservationCustomerName` | `frontdesk/utils/` | Full name |
+| `formatReservationStatus` | `frontdesk/utils/` | Legacy status label formatting |
+| `normalizeTimeForInput` | `frontdesk/utils/` | HH:mm format |
 
-## 7. Pantallas que se deben simplificar
+## 7. Screens to simplify
 
-| Pantalla | Problema | Propuesta |
+| Screen | Problem | Proposal |
 |---|---|---|
-| **HomePage (`/`)** | Muestra debug session, no útil | Redirigir a `/planning` |
-| **AppLayout nav** | 9 items, demasiados | Reducir a: Planning, Clientes, Notificaciones, Config (settings agrupados) |
-| **ReservationsPage** | Duplica funcionalidad de planning | Convertir en vista auxiliar de búsqueda/archivo histórico |
-| **Settings (5 páginas)** | Demasiada fragmentación | Agrupar en 1-2 pantallas con tabs o secciones |
-| **PlanningPage** | 1044 líneas inline | Extraer componentes a archivos separados |
-| **OperationsShell** | Sub-nav redundante (Clientes/Reservas) | Eliminar una vez que reservations se integre en planning |
-| **ConfigShell** | Sub-nav para settings | Mantener pero simplificar |
+| **HomePage (`/`)** | Displays session debug data; not useful | Redirect to `/planning` |
+| **AppLayout nav** | 9 items; too many | Reduce to: Planning, Customers, Notifications, Config (grouped settings) |
+| **ReservationsPage** | Duplicates planning functionality | Convert into an auxiliary search/historical archive view |
+| **Settings (5 pages)** | Too fragmented | Group into 1–2 screens with tabs or sections |
+| **PlanningPage** | 1,044 lines inline | Extract components into separate files |
+| **OperationsShell** | Redundant sub-navigation (Customers/Reservations) | Remove once reservations are integrated into planning |
+| **ConfigShell** | Settings sub-navigation | Keep but simplify |
 
-## 8. Acciones rápidas necesarias
+## 8. Required quick actions
 
-### Desde ReservationSidePanel:
+### From ReservationSidePanel:
 
-| Acción | Endpoint | Estado |
+| Action | Endpoint | Status |
 |---|---|---|---|
-| Confirm reservation | `POST /{id}/confirm` | ✅ Existe |
-| Cancel reservation | `POST /{id}/cancel` | ✅ Existe |
-| Mark arrived | `POST /{id}/arrived` | ✅ Existe |
-| Mark seated | `POST /{id}/seat` | ✅ Existe |
-| Mark finished | `POST /{id}/complete` | ✅ Existe |
-| Mark no-show | `POST /{id}/no-show` | ✅ Existe |
-| Send reminder | `POST /{id}/notifications/reminder` | ✅ Existe |
-| Send confirmation SMS | `POST /{id}/notifications/confirmation` | ✅ Existe |
-| Reassign table | `POST /{id}/assign` | ✅ Existe |
-| Open edit modal | `PATCH /{id}` | ✅ Existe + implementado |
+| Confirm reservation | `POST /{id}/confirm` | ✅ Exists |
+| Cancel reservation | `POST /{id}/cancel` | ✅ Exists |
+| Mark arrived | `POST /{id}/arrived` | ✅ Exists |
+| Mark seated | `POST /{id}/seat` | ✅ Exists |
+| Mark finished | `POST /{id}/complete` | ✅ Exists |
+| Mark no-show | `POST /{id}/no-show` | ✅ Exists |
+| Send reminder | `POST /{id}/notifications/reminder` | ✅ Exists |
+| Send confirmation SMS | `POST /{id}/notifications/confirmation` | ✅ Exists |
+| Reassign table | `POST /{id}/assign` | ✅ Exists |
+| Open edit modal | `PATCH /{id}` | ✅ Exists + implemented |
 
-## 9. Riesgos técnicos
+## 9. Technical risks
 
-| Riesgo | Impacto | Mitigación |
+| Risk | Impact | Mitigation |
 |---|---|---|
-| El panel lateral superpone al FloorPlan y puede sentirse disruptivo | Medio | Backdrop translúcido, animación suave, cierre fácil (click fuera, Escape) |
-| Múltiples queries al abrir un panel (reservation detail + customer) | Bajo | Las queries son rápidas (GET por ID), se pueden cachear con TanStack Query |
-| Inconsistencia entre planning summary y reservation detail | Medio | Usar GET /reservations/{id} como fuente de verdad para el panel, planning summary solo para display visual |
-| Mutaciones desde planning no invalidan todos los caches | Alto | Invalidar siempre `["planning", ...]`, `["reservations", ...]`, y `["aiInsights", ...]` |
-| Type mismatch entre `PlanningReservationSummaryResponse` y `ReservationResponse` | Medio | Convertir/mapear en el panel; no mezclar tipos |
-| Mobile: panel lateral no funciona en vertical | Bajo | Usar modal centrado en <1024px en lugar de side panel |
-| El botón "Edit details" podría permitir cambios de hora si no se protege | Alto | El `EditReservationModal` NO incluye campos de fecha/hora por diseño. La validación se refuerza en backend |
+| The side panel overlays FloorPlan and may feel disruptive | Medium | Translucent backdrop, smooth animation, easy dismissal (click outside, Escape) |
+| Multiple queries when opening a panel (reservation detail + customer) | Low | Queries are fast (GET by ID) and can be cached with TanStack Query |
+| Inconsistency between planning summary and reservation detail | Medium | Use GET /reservations/{id} as the panel's source of truth; use planning summary only for visual display |
+| Mutations from planning do not invalidate all caches | High | Always invalidate `["planning", ...]`, `["reservations", ...]`, and `["aiInsights", ...]` |
+| Type mismatch between `PlanningReservationSummaryResponse` and `ReservationResponse` | Medium | Convert/map in the panel; do not mix types |
+| Mobile: side panel does not work in portrait orientation | Low | Use a centered modal at <1024px instead of a side panel |
+| The "Edit details" button could allow time changes if not protected | High | By design, `EditReservationModal` does NOT include date/time fields. Validation is reinforced in the backend |
 
-## 10. Plan por fases
+## 10. Phased plan
 
-### Fase 1 (este sprint) — Acciones rápidas en planning
+### Phase 1 (this sprint) — Quick actions in planning
 
-**Objetivo:** Poder ver detalle completo y ejecutar acciones de estado desde planning.
+**Objective:** View full details and execute status actions from planning.
 
-| Tarea | Archivos |
+| Task | Files |
 |---|---|
-| Crear `ReservationSidePanel` | `features/planning/components/ReservationSidePanel.tsx` |
-| Añadir `sendReservationConfirmation()` a API | `features/frontdesk/api/frontdeskApi.ts` |
-| Integrar panel en PlanningPage | `features/planning/pages/PlanningPage.tsx` |
-| Crear `EditReservationModal` | `features/planning/components/EditReservationModal.tsx` |
-| Documentar | `docs/UI_UX_IMPROVEMENT_PLAN.md` |
+| Create `ReservationSidePanel` | `features/planning/components/ReservationSidePanel.tsx` |
+| Add `sendReservationConfirmation()` to API | `features/frontdesk/api/frontdeskApi.ts` |
+| Integrate panel into PlanningPage | `features/planning/pages/PlanningPage.tsx` |
+| Create `EditReservationModal` | `features/planning/components/EditReservationModal.tsx` |
+| Document | `docs/UI_UX_IMPROVEMENT_PLAN.md` |
 
-**Criterios:** Ver detalle completo, confirmar, cancelar, sentar, completar, no-show, reasignar, recordatorio SMS, y editar datos básicos desde planning.
+**Criteria:** View full details; confirm, cancel, seat, complete, mark as no-show, reassign, send SMS reminders, and edit basic data from planning.
 
 ---
 
-### Fase 2 — Panel de creación en planning
+### Phase 2 — Creation panel in planning
 
-**Objetivo:** Crear nuevas reservas sin salir de planning.
+**Objective:** Create new reservations without leaving planning.
 
-| Tarea | Archivos |
+| Task | Files |
 |---|---|
-| Crear `CreateReservationPanel` (modal/overlay) | `features/planning/components/CreateReservationPanel.tsx` |
-| Reutilizar lógica de `ReservationForm` | Extraer validación + submit a hook compartido |
-| Botón "New reservation" en HeroHeader → abre panel | `PlanningPage.tsx` |
-| Auto-assign después de crear | Flujo existente |
+| Create `CreateReservationPanel` (modal/overlay) | `features/planning/components/CreateReservationPanel.tsx` |
+| Reuse `ReservationForm` logic | Extract validation + submit into a shared hook |
+| "New reservation" button in HeroHeader → opens panel | `PlanningPage.tsx` |
+| Auto-assign after creation | Existing flow |
 
-**Criterios:** Crear reserva, asignar mesa automáticamente, ver resultado en FloorPlan. Sin navegación.
+**Criteria:** Create reservation, assign table automatically, view result in FloorPlan. No navigation.
 
 ---
 
-### Fase 3 — Simplificación de navegación
+### Phase 3 — Navigation simplification
 
-**Objetivo:** Reducir fricción de navegación.
+**Objective:** Reduce navigation friction.
 
-| Tarea | Archivos |
+| Task | Files |
 |---|---|
-| HomePage redirige a `/planning` | `features/home/HomePage.tsx` → `router.tsx` |
-| Reducir AppLayout nav a 4-5 items | `components/layout/AppLayout.tsx` |
-| Agrupar settings en tabs (1-2 páginas) | `features/restaurant-config/pages/*` |
-| Extraer componentes inline de PlanningPage | `features/planning/components/*` |
+| HomePage redirects to `/planning` | `features/home/HomePage.tsx` → `router.tsx` |
+| Reduce AppLayout navigation to 4–5 items | `components/layout/AppLayout.tsx` |
+| Group settings into tabs (1–2 pages) | `features/restaurant-config/pages/*` |
+| Extract inline components from PlanningPage | `features/planning/components/*` |
 
-**Criterios:** Nav limpio, planning es landing, planning tiene componentes extraídos.
+**Criteria:** Clean navigation, planning is the landing page, planning components are extracted.
 
 ---
 
-### Fase 4 — Extraer PanelPrimitive
+### Phase 4 — Extract PanelPrimitive
 
-**Objetivo:** Tener un componente reutilizable de side panel para toda la app.
+**Objective:** Provide a reusable side panel component for the entire app.
 
-| Tarea | Archivos |
+| Task | Files |
 |---|---|
-| Extraer `SlideOver` de `InsightPanel` y `ReservationSidePanel` | `src/components/ui/SlideOver.tsx` |
-| Refactorizar `InsightPanel` para usarlo | `features/ai/components/InsightPanel.tsx` |
-| Refactorizar `ReservationSidePanel` para usarlo | `features/planning/components/ReservationSidePanel.tsx` |
+| Extract `SlideOver` from `InsightPanel` and `ReservationSidePanel` | `src/components/ui/SlideOver.tsx` |
+| Refactor `InsightPanel` to use it | `features/ai/components/InsightPanel.tsx` |
+| Refactor `ReservationSidePanel` to use it | `features/planning/components/ReservationSidePanel.tsx` |
 
-**Criterios:** SidePanel reutilizable con animación, backdrop, cierre por Escape/click fuera, responsive.
+**Criteria:** Reusable SidePanel with animation, backdrop, dismissal via Escape/click outside, and responsive behavior.
 
 ---
 
-### Fase 5 — Sincronización de estado global
+### Phase 5 — Global state synchronization
 
-**Objetivo:** La fecha seleccionada y la reserva activa persisten entre vistas.
+**Objective:** The selected date and active reservation persist across views.
 
-| Tarea | Archivos |
+| Task | Files |
 |---|---|
-| Mover `selectedDate` a contexto o URL search params | Context o router |
-| Sincronizar planning y reservations | Ambos consumen mismo origen |
-| Persistir `selectedReservationId` en URL | `planning?date=...&reservationId=...` |
+| Move `selectedDate` to context or URL search params | Context or router |
+| Synchronize planning and reservations | Both consume the same source |
+| Persist `selectedReservationId` in URL | `planning?date=...&reservationId=...` |
 
-**Criterios:** Cambiar fecha en planning → misma fecha en reservas. Pinchar reserva → URL refleja selección.
-
----
-
-## 11. Criterios de aceptación generales
-
-- [x] Puedo ver detalle completo de una reserva desde el planning
-- [x] Puedo confirmar una reserva desde el planning
-- [x] Puedo cancelar una reserva desde el planning
-- [x] Puedo marcar seated/finished/no-show desde el planning
-- [x] Puedo marcar arrived desde el planning
-- [x] Puedo enviar recordatorio SMS desde el planning
-- [x] Puedo editar datos básicos desde el planning
-- [x] Puedo reasignar mesa desde el planning
-- [x] El panel se abre/cierra con animación suave
-- [x] El panel es responsive (lateral en desktop, modal en mobile)
-- [x] Las acciones muestran loading/error/success
-- [x] El planning se refresca después de cada acción
-- [x] La hora de la reserva nunca cambia por accidente
-- [x] `npm run build` funciona
+**Criteria:** Change date in planning → same date in reservations. Select reservation → URL reflects selection.
 
 ---
 
-## Apéndice A: Archivos revisados
+## 11. General acceptance criteria
 
-### Frontend (59 archivos .ts/.tsx en 8 features)
+- [x] I can view full reservation details from planning
+- [x] I can confirm a reservation from planning
+- [x] I can cancel a reservation from planning
+- [x] I can mark a reservation as seated/finished/no-show from planning
+- [x] I can mark a reservation as arrived from planning
+- [x] I can send an SMS reminder from planning
+- [x] I can edit basic data from planning
+- [x] I can reassign a table from planning
+- [x] The panel opens/closes with a smooth animation
+- [x] The panel is responsive (side panel on desktop, modal on mobile)
+- [x] Actions display loading/error/success states
+- [x] Planning refreshes after each action
+- [x] The reservation time never changes accidentally
+- [x] `npm run build` works
+
+---
+
+## Appendix A: Files reviewed
+
+### Frontend (59 .ts/.tsx files across 8 features)
 
 ```
 src/
-├── app/router.tsx                         (12 rutas, raíz de navegación)
-├── components/layout/AppLayout.tsx         (9 items nav, header, restaurant selector)
+├── app/router.tsx                         (12 routes, navigation root)
+├── components/layout/AppLayout.tsx         (9 navigation items, header, restaurant selector)
 ├── features/
 │   ├── ai/
 │   │   ├── components/InsightBar.tsx
-│   │   ├── components/InsightPanel.tsx     (slide-over reusable como patrón)
+│   │   ├── components/InsightPanel.tsx     (reusable slide-over used as a pattern)
 │   │   └── hooks/useAiInsights.ts
 │   ├── auth/
 │   │   ├── context/AuthContext.tsx
@@ -329,24 +329,24 @@ src/
 │   ├── frontdesk/
 │   │   ├── api/frontdeskApi.ts            (CRUD + status transitions)
 │   │   ├── components/
-│   │   │   ├── OperationsShell.tsx         (sub-nav redundante)
-│   │   │   ├── ReservationDetailPanel.tsx  (acciones de estado completas)
-│   │   │   ├── ReservationForm.tsx         (creación con validación)
+│   │   │   ├── OperationsShell.tsx         (redundant sub-navigation)
+│   │   │   ├── ReservationDetailPanel.tsx  (complete status actions)
+│   │   │   ├── ReservationForm.tsx         (creation with validation)
 │   │   │   └── StatusPill.tsx
 │   │   ├── pages/
 │   │   │   ├── CustomersPage.tsx
 │   │   │   ├── CustomerDetailPage.tsx
-│   │   │   └── ReservationsPage.tsx       (341 líneas, duplicado lógico)
+│   │   │   └── ReservationsPage.tsx       (341 lines, logical duplicate)
 │   │   ├── utils/frontdeskUtils.ts
 │   │   └── types.ts
-│   ├── home/HomePage.tsx                  (debug, no operativo)
+│   ├── home/HomePage.tsx                  (debug, not operational)
 │   ├── notifications/
 │   │   ├── components/NotificationToast.tsx (notify() global)
 │   │   └── pages/NotificationsPage.tsx
 │   ├── planning/
 │   │   ├── api/planningApi.ts
-│   │   ├── components/PlanningGrid.tsx     (dead code, no se importa)
-│   │   ├── pages/PlanningPage.tsx          (1044 líneas, TODO inline)
+│   │   ├── components/PlanningGrid.tsx     (dead code, not imported)
+│   │   ├── pages/PlanningPage.tsx          (1,044 lines, EVERYTHING inline)
 │   │   └── types.ts
 │   ├── realtime/
 │   │   └── RealtimeProvider.tsx
@@ -369,12 +369,12 @@ src/
 └── services/api/client.ts                 (ApiClient + ApiError)
 ```
 
-### Backend (relevante para endpoints)
+### Backend (relevant to endpoints)
 
 ```
 backend/.../reservation/
 ├── api/ReservationController.java          (status endpoints)
-├── api/ReservationResponse.java            (DTO completo)
+├── api/ReservationResponse.java            (complete DTO)
 ├── domain/ReservationStatus.java           (enum: PENDING, CONFIRMED, SEATED, COMPLETED, CANCELLED, NO_SHOW)
 └── service/ReservationService.java         (ensureTransitionAllowed, confirm, cancel, seat, complete, noShow)
 
@@ -387,85 +387,85 @@ backend/.../planning/
 
 ---
 
-## Apéndice B: Problemas detectados
+## Appendix B: Identified problems
 
-### Críticos
+### Critical
 
-1. **Dos sistemas paralelos**: PlanningPage (solo lectura visual) y ReservationsPage (solo acciones sin contexto). El usuario debe navegar entre ambos constantemente.
-2. **1044 líneas en PlanningPage**: Todo el código está inline, sin separación de componentes, imposible de mantener a largo plazo.
-3. **No hay acciones de estado en planning**: El DetailPanel dentro de planning solo muestra información y tiene un único botón "Find best table". Confirmar, cancelar, sentar, completar no existen.
+1. **Two parallel systems**: PlanningPage (visual read-only view) and ReservationsPage (actions only, without context). Users must constantly navigate between them.
+2. **1,044 lines in PlanningPage**: All code is inline, without component separation, making it impossible to maintain in the long term.
+3. **No status actions in planning**: The DetailPanel within planning only displays information and has a single "Find best table" button. Confirm, cancel, seat, and complete actions do not exist.
 
-### Altos
+### High
 
-4. **HomePage inútil**: Muestra datos de debug de sesión. No aporta valor operativo.
-5. **Navegación sobrecargada**: 9 items en AppLayout + sub-navegación en OperationsShell y ConfigShell = demasiadas opciones.
-6. **Settings fragmentadas**: 5 pantallas separadas para configuración que podrían agruparse.
-7. **Type mismatch**: Planning usa `PlanningReservationSummaryResponse` (con `reservationId`), frontdesk usa `ReservationResponse` (con `id`). No se pueden intercambiar componentes entre features sin mapeo.
+4. **Useless HomePage**: Displays session debug data. It provides no operational value.
+5. **Overloaded navigation**: 9 items in AppLayout + sub-navigation in OperationsShell and ConfigShell = too many options.
+6. **Fragmented settings**: 5 separate configuration screens that could be grouped together.
+7. **Type mismatch**: Planning uses `PlanningReservationSummaryResponse` (with `reservationId`), while frontdesk uses `ReservationResponse` (with `id`). Components cannot be shared across features without mapping.
 
-### Medios
+### Medium
 
-8. **No hay panel lateral reutilizable**: `InsightPanel` es un one-off. Cada nuevo overlay se implementa desde cero.
-9. **OperacionesShell duplica navegación**: Tiene sidebar con "Clientes" y "Reservas" cuando AppLayout ya tiene esos links.
-10. **PlanningGrid.tsx es dead code**: Definido pero no importado, ocupa espacio.
-11. **La fecha no se sincroniza**: Cambiar fecha en planning no afecta a la fecha en reservas y viceversa.
+8. **No reusable side panel**: `InsightPanel` is a one-off. Each new overlay is implemented from scratch.
+9. **OperationsShell duplicates navigation**: It has a sidebar with "Customers" and "Reservations" even though AppLayout already has those links.
+10. **PlanningGrid.tsx is dead code**: Defined but not imported; it takes up space.
+11. **The date is not synchronized**: Changing the date in planning does not affect the date in reservations, and vice versa.
 
-### Bajos
+### Low
 
-12. **Faltan animaciones/transiciones**: Los cambios de estado y apertura de paneles son instantáneos, sin feedback visual.
-13. **Falta responsive consistente**: Algunas pantallas tienen layout responsive, otras no.
-14. **Falta soporte para teclado**: Algunos botones no tienen manejo de teclado.
-
----
-
-## Apéndice C: Qué implementar primero
-
-### Prioridad 1: ReservationSidePanel con acciones
-
-Dar al planning las acciones de estado que hoy solo existen en frontdesk. Es el cambio de mayor impacto con menor riesgo.
-
-**Archivos:**
-- `frontend/src/features/planning/components/ReservationSidePanel.tsx` (nuevo)
-- `frontend/src/features/planning/components/EditReservationModal.tsx` (nuevo)
-- `frontend/src/features/planning/pages/PlanningPage.tsx` (modificar)
-- `frontend/src/features/frontdesk/api/frontdeskApi.ts` (añadir sendConfirmation)
-
-### Prioridad 2: Simplificar navegación
-
-Reducir fricción antes de añadir más funcionalidad.
-
-### Prioridad 3: Extraer componentes de PlanningPage
-
-Dividir el monolito de 1044 líneas en archivos manejables.
-
-### Prioridad 4: Panel de creación en planning
-
-Completar el círculo: todo el ciclo de vida de la reserva desde planning.
+12. **Missing animations/transitions**: Status changes and panel openings are instantaneous, with no visual feedback.
+13. **Inconsistent responsive behavior**: Some screens have responsive layouts; others do not.
+14. **Missing keyboard support**: Some buttons do not support keyboard interaction.
 
 ---
 
-## Apéndice D: Progreso
+## Appendix C: What to implement first
 
-### Sprint 4: Acciones rápidas completas en ReservationSidePanel (completado)
+### Priority 1: ReservationSidePanel with actions
 
-**Objetivo:** Todas las acciones de estado disponibles desde el panel lateral de planning.
+Add to planning the status actions that currently exist only in frontdesk. This is the highest-impact change with the lowest risk.
 
-**Nuevo en backend:**
-- ✅ `ReservationStatus.ARRIVED` añadido con transiciones: `PENDING/CONFIRMED → ARRIVED`, `ARRIVED → SEATED/CANCELLED/NO_SHOW`
+**Files:**
+- `frontend/src/features/planning/components/ReservationSidePanel.tsx` (new)
+- `frontend/src/features/planning/components/EditReservationModal.tsx` (new)
+- `frontend/src/features/planning/pages/PlanningPage.tsx` (modify)
+- `frontend/src/features/frontdesk/api/frontdeskApi.ts` (add sendConfirmation)
+
+### Priority 2: Simplify navigation
+
+Reduce friction before adding more functionality.
+
+### Priority 3: Extract PlanningPage components
+
+Split the 1,044-line monolith into manageable files.
+
+### Priority 4: Creation panel in planning
+
+Complete the loop: manage the entire reservation lifecycle from planning.
+
+---
+
+## Appendix D: Progress
+
+### Sprint 4: Complete quick actions in ReservationSidePanel (completed)
+
+**Objective:** Make all status actions available from the planning side panel.
+
+**New in the backend:**
+- ✅ `ReservationStatus.ARRIVED` added with transitions: `PENDING/CONFIRMED → ARRIVED`, `ARRIVED → SEATED/CANCELLED/NO_SHOW`
 - ✅ `ReservationService.arrived()` — endpoint `POST /{id}/arrived`
-- ✅ `NotificationTemplateCode.RESERVATION_REMINDER` — nuevo template
+- ✅ `NotificationTemplateCode.RESERVATION_REMINDER` — new template
 - ✅ `SmsNotificationService.sendReservationReminder()` — endpoint `POST /{id}/notifications/reminder`
-- ✅ Backend compila sin errores
+- ✅ Backend compiles without errors
 
-**Nuevo en frontend:**
-- ✅ `ReservationSidePanel.tsx` (~436 líneas) — overlay lateral con detalle completo + acciones
-- ✅ `EditReservationModal.tsx` — modal para editar party size, notas, accesibilidad (sin hora)
-- ✅ `ARRIVED` en tipos frontend + StatusPill + labels
-- ✅ Escape key handler en side panel y modal
-- ✅ Loading state por acción individual
-- ✅ Mensajes de error/success claros con toast notifications
-- ✅ Query invalidation tras cada acción
+**New in the frontend:**
+- ✅ `ReservationSidePanel.tsx` (~436 lines) — side overlay with full details + actions
+- ✅ `EditReservationModal.tsx` — modal for editing party size, notes, and accessibility (without time)
+- ✅ `ARRIVED` in frontend types + StatusPill + labels
+- ✅ Escape key handler in side panel and modal
+- ✅ Loading state for each individual action
+- ✅ Clear error/success messages with toast notifications
+- ✅ Query invalidation after each action
 
-**Acciones funcionales en ReservationSidePanel:**
+**Functional actions in ReservationSidePanel:**
 - ✅ Confirm reservation → `POST /{id}/confirm`
 - ✅ Cancel reservation → `POST /{id}/cancel`
 - ✅ Mark arrived → `POST /{id}/arrived`
@@ -477,11 +477,11 @@ Completar el círculo: todo el ciclo de vida de la reserva desde planning.
 - ✅ Reassign table → `POST /{id}/assign`
 - ✅ Edit details → `EditReservationModal` → `PATCH /{id}`
 
-**Archivos nuevos:**
+**New files:**
 - `frontend/src/features/planning/components/EditReservationModal.tsx`
 
-**Archivos modificados:**
-- `frontend/src/features/planning/components/ReservationSidePanel.tsx` — wiring de edit → modal, Escape key
+**Modified files:**
+- `frontend/src/features/planning/components/ReservationSidePanel.tsx` — edit → modal wiring, Escape key
 - `frontend/src/features/frontdesk/api/frontdeskApi.ts` — `arrivedReservation()`, `sendReservationReminder()`
 - `frontend/src/features/frontdesk/types.ts` — `ARRIVED` status
 - `frontend/src/features/frontdesk/components/StatusPill.tsx` — ARRIVED styling
@@ -494,18 +494,18 @@ Completar el círculo: todo el ciclo de vida de la reserva desde planning.
 - `backend/.../notification/service/SmsNotificationService.java` — reminder message
 - `backend/.../notification/api/ReservationSmsNotificationController.java` — POST /reminder
 
-**Siguiente (Fase 2):**
-- Crear reservas desde planning (`CreateReservationPanel`)
-- Extraer `SlideOver` reutilizable de `InsightPanel` + `ReservationSidePanel`
+**Next (Phase 2):**
+- Create reservations from planning (`CreateReservationPanel`)
+- Extract reusable `SlideOver` from `InsightPanel` + `ReservationSidePanel`
 
 ---
 
-## Apéndice E: Qué NO tocar todavía
+## Appendix E: What NOT to modify yet
 
-- **Algoritmo de asignación** — Funciona, tiene tests, no necesita cambios UX ahora.
-- **Backend endpoints de reserva** — Todos existen, incluyendo `/arrived` y `/send-reminder`.
-- **Lógica de estado de reservas** — `ensureTransitionAllowed` en backend es correcta y completa.
-- **Lógica de notificaciones** — El scheduler de reminders funciona. Solo añadimos llamada a `/notifications/confirmation`.
-- **3D / drag-and-drop** — No están en el roadmap inmediato.
-- **Multi-tenant** — La arquitectura actual es correcta, no necesita cambios.
-- **Integraciones externas** — WhatsApp, Google, etc. son Fase futura.
+- **Assignment algorithm** — It works, has tests, and does not need UX changes at this time.
+- **Reservation backend endpoints** — They all exist, including `/arrived` and `/send-reminder`.
+- **Reservation status logic** — `ensureTransitionAllowed` in the backend is correct and complete.
+- **Notification logic** — The reminder scheduler works. We only add a call to `/notifications/confirmation`.
+- **3D / drag-and-drop** — They are not on the immediate roadmap.
+- **Multi-tenant** — The current architecture is correct and does not need changes.
+- **External integrations** — WhatsApp, Google, etc. are a future phase.

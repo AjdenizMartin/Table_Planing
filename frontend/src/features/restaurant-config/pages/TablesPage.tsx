@@ -18,12 +18,12 @@ import { useI18n } from "@/features/i18n/I18nProvider";
 
 const emptyForm = {
   diningRoomId: "",
-  tableType: "FIXED" as RestaurantTableResponse["tableType"],
+  tableType: "Fixed" as RestaurantTableResponse["tableType"],
   code: "",
   label: "",
   minCapacity: "2",
   maxCapacity: "4",
-  shape: "RECTANGLE",
+  shape: "Rectangle",
   x: "100",
   y: "100",
   width: "120",
@@ -95,7 +95,7 @@ export function TablesPage() {
   const createMutation = useMutation({
     mutationFn: () =>
       configApi.createTable(activeRestaurantId!, {
-        diningRoomId: form.tableType === "STORAGE" ? null : Number(form.diningRoomId),
+        diningRoomId: form.tableType === "Storage" ? null : Number(form.diningRoomId),
         tableType: form.tableType,
         code: form.code,
         label: form.label || null,
@@ -117,7 +117,7 @@ export function TablesPage() {
   const updateMutation = useMutation({
     mutationFn: () =>
       configApi.updateTable(activeRestaurantId!, selected!.id, {
-        diningRoomId: form.tableType === "STORAGE" ? null : Number(form.diningRoomId),
+        diningRoomId: form.tableType === "Storage" ? null : Number(form.diningRoomId),
         tableType: form.tableType,
         code: form.code,
         label: form.label || null,
@@ -131,7 +131,7 @@ export function TablesPage() {
         return;
       }
 
-      if (form.tableType !== "STORAGE") {
+      if (form.tableType !== "Storage") {
         await configApi.updateTableLayout(activeRestaurantId!, selected.id, {
           x: Number(form.x),
           y: Number(form.y),
@@ -156,20 +156,20 @@ export function TablesPage() {
     createMutation.error ?? updateMutation.error ?? deactivateMutation.error;
 
   function validateForm() {
-    if (form.tableType !== "STORAGE" && !form.diningRoomId) {
-      return t("Selecciona un salon para la mesa.");
+    if (form.tableType !== "Storage" && !form.diningRoomId) {
+      return t("Select a dining room for the table.");
     }
 
     if (!form.code.trim()) {
-      return t("El codigo de la mesa es obligatorio.");
+      return t("Table code is required.");
     }
 
     if (Number(form.minCapacity) <= 0 || Number(form.maxCapacity) <= 0) {
-      return t("Las capacidades deben ser mayores que cero.");
+      return t("Capacities must be greater than zero.");
     }
 
     if (Number(form.minCapacity) > Number(form.maxCapacity)) {
-      return t("La capacidad minima no puede ser mayor que la maxima.");
+      return t("Minimum capacity cannot exceed maximum capacity.");
     }
 
     if (
@@ -178,10 +178,10 @@ export function TablesPage() {
       Number(form.width) < 20 ||
       Number(form.height) < 20
     ) {
-      return t("Revisa la posicion y tamaño de la mesa.");
+      return t("Review the table position and size.");
     }
 
-    if (form.tableType === "STORAGE" && form.active) {
+    if (form.tableType === "Storage" && form.active) {
       return null;
     }
 
@@ -189,11 +189,11 @@ export function TablesPage() {
   }
 
   return (
-    <ConfigShell title={t("Mesas")}>
+    <ConfigShell title={t("Tables")}>
       <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-        <ConfigCard title={t("Mesas configuradas")}>
+        <ConfigCard title={t("Configured tables")}>
           {tablesQuery.isLoading ? (
-            <StatusMessage tone="info">{t("Cargando mesas...")}</StatusMessage>
+            <StatusMessage tone="info">{t("Loading tables...")}</StatusMessage>
           ) : null}
           {tablesQuery.error ? (
             <StatusMessage tone="error">{getErrorMessage(tablesQuery.error)}</StatusMessage>
@@ -217,14 +217,14 @@ export function TablesPage() {
                       {table.label ? ` · ${table.label}` : ""}
                     </h3>
                     <p className="mt-2 text-sm text-slate-400">
-                      {table.tableType === "STORAGE"
-                        ? t("Almacen")
-                        : `${t("Salon")} ${roomsById.get(table.diningRoomId ?? 0) ?? table.diningRoomId}`} ·{" "}
-                      {table.minCapacity}-{table.maxCapacity} {t("personas")} · {t(table.shape)}
+                      {table.tableType === "Storage"
+                        ? t("Storage")
+                        : `${t("Dining room")} ${roomsById.get(table.diningRoomId ?? 0) ?? table.diningRoomId}`} ·{" "}
+                      {table.minCapacity}-{table.maxCapacity} {t("guests")} · {t(table.shape)}
                     </p>
                     <p className="mt-1 text-sm text-slate-500">
-                      {t("Tipo")} {t(table.tableType)} · {t("Posicion")} {table.x},{table.y} · {table.width} × {table.height} ·{" "}
-                      {table.active ? t("Activa") : t("Inactiva")}
+                      {t("Type")} {t(table.tableType)} · {t("Position")} {table.x},{table.y} · {table.width} × {table.height} ·{" "}
+                      {table.active ? t("Active") : t("Inactive")}
                     </p>
                   </div>
 
@@ -236,7 +236,7 @@ export function TablesPage() {
                     >
                       <span className="inline-flex items-center gap-2">
                         <Pencil className="h-4 w-4" />
-                        {t("Editar")}
+                        {t("Edit")}
                       </span>
                     </button>
                     <button
@@ -246,7 +246,7 @@ export function TablesPage() {
                     >
                       <span className="inline-flex items-center gap-2">
                         <Power className="h-4 w-4" />
-                        {t("Desactivar")}
+                        {t("Deactivate")}
                       </span>
                     </button>
                   </div>
@@ -256,13 +256,13 @@ export function TablesPage() {
 
             {tablesQuery.data?.length === 0 ? (
               <StatusMessage tone="info">
-                {t("Todavia no hay mesas configuradas.")}
+                {t("No tables have been configured.")}
               </StatusMessage>
             ) : null}
           </div>
         </ConfigCard>
 
-        <ConfigCard title={selected ? t("Editar mesa") : t("Crear mesa")}>
+        <ConfigCard title={selected ? t("Edit table") : t("Create table")}>
           {feedbackError ? (
             <StatusMessage tone="error">{getErrorMessage(feedbackError)}</StatusMessage>
           ) : null}
@@ -288,15 +288,15 @@ export function TablesPage() {
             }}
           >
             <SelectField
-              label={t("Salon")}
+              label={t("Dining room")}
               value={form.diningRoomId}
-              disabled={form.tableType === "STORAGE"}
+              disabled={form.tableType === "Storage"}
               onChange={(event) =>
                 setForm((current) => ({ ...current, diningRoomId: event.target.value }))
               }
             >
               <option value="" disabled>
-                {t("Selecciona un salon")}
+                {t("Select a dining room")}
               </option>
               {(diningRoomsQuery.data ?? []).map((room) => (
                 <option key={room.id} value={room.id}>
@@ -305,29 +305,29 @@ export function TablesPage() {
               ))}
             </SelectField>
             <SelectField
-              label={t("Tipo de mesa")}
+              label={t("Table type")}
               value={form.tableType}
               onChange={(event) =>
                 setForm((current) => ({
                   ...current,
                   tableType: event.target.value as RestaurantTableResponse["tableType"],
-                  diningRoomId: event.target.value === "STORAGE" ? "" : current.diningRoomId,
+                  diningRoomId: event.target.value === "Storage" ? "" : current.diningRoomId,
                 }))
               }
             >
-              <option value="FIXED">{t("FIXED")}</option>
-              <option value="MOVABLE">{t("MOVABLE")}</option>
-              <option value="STORAGE">{t("STORAGE")}</option>
-              <option value="TEMPORARY">{t("TEMPORARY")}</option>
+              <option value="Fixed">{t("Fixed")}</option>
+              <option value="Movable">{t("Movable")}</option>
+              <option value="Storage">{t("Storage")}</option>
+              <option value="Temporary">{t("Temporary")}</option>
             </SelectField>
-            {form.tableType === "STORAGE" ? (
+            {form.tableType === "Storage" ? (
               <StatusMessage tone="info">
-                {t("Las mesas de almacen solo aparecen en inventario.")}
+                {t("Storage tables only appear in inventory.")}
               </StatusMessage>
             ) : null}
             <div className="grid gap-4 sm:grid-cols-2">
               <TextField
-                label={t("Codigo")}
+                label={t("Code")}
                 value={form.code}
                 onChange={(event) =>
                   setForm((current) => ({ ...current, code: event.target.value }))
@@ -335,7 +335,7 @@ export function TablesPage() {
                 required
               />
               <TextField
-                label={t("Etiqueta")}
+                label={t("Label")}
                 value={form.label}
                 onChange={(event) =>
                   setForm((current) => ({ ...current, label: event.target.value }))
@@ -344,7 +344,7 @@ export function TablesPage() {
             </div>
             <div className="grid gap-4 sm:grid-cols-3">
               <TextField
-                label={t("Capacidad minima")}
+                label={t("Minimum capacity")}
                 type="number"
                 min={1}
                 value={form.minCapacity}
@@ -357,7 +357,7 @@ export function TablesPage() {
                 required
               />
               <TextField
-                label={t("Capacidad maxima")}
+                label={t("Maximum capacity")}
                 type="number"
                 min={1}
                 value={form.maxCapacity}
@@ -370,15 +370,15 @@ export function TablesPage() {
                 required
               />
               <SelectField
-                label={t("Forma")}
+                label={t("Shape")}
                 value={form.shape}
                 onChange={(event) =>
                   setForm((current) => ({ ...current, shape: event.target.value }))
                 }
               >
-                <option value="RECTANGLE">{t("RECTANGLE")}</option>
-                <option value="ROUND">{t("ROUND")}</option>
-                <option value="SQUARE">{t("SQUARE")}</option>
+                <option value="Rectangle">{t("Rectangle")}</option>
+                <option value="Round">{t("Round")}</option>
+                <option value="Square">{t("Square")}</option>
               </SelectField>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -405,7 +405,7 @@ export function TablesPage() {
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <TextField
-                label={t("Ancho")}
+                label={t("Width")}
                 type="number"
                 min={20}
                 value={form.width}
@@ -415,7 +415,7 @@ export function TablesPage() {
                 required
               />
               <TextField
-                label={t("Alto")}
+                label={t("Height")}
                 type="number"
                 min={20}
                 value={form.height}
@@ -426,7 +426,7 @@ export function TablesPage() {
               />
             </div>
             <CheckboxField
-              label={t("Mesa activa")}
+              label={t("Active table")}
               checked={form.active}
               onChange={(checked) =>
                 setForm((current) => ({ ...current, active: checked }))
@@ -443,7 +443,7 @@ export function TablesPage() {
                     setValidationError(null);
                   }}
                 >
-                  {t("Cancelar")}
+                  {t("Cancel")}
                 </button>
               ) : null}
               <button
@@ -453,11 +453,11 @@ export function TablesPage() {
               >
                 {selected
                   ? updateMutation.isPending
-                    ? t("Guardando...")
-                    : t("Guardar mesa")
+                    ? t("Saving...")
+                    : t("Save table")
                   : createMutation.isPending
-                    ? t("Creando...")
-                    : t("Crear mesa")}
+                    ? t("Creating...")
+                    : t("Create table")}
               </button>
             </div>
           </form>

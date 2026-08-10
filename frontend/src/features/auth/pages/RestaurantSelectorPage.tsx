@@ -1,6 +1,5 @@
 import { Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "@/features/auth/context/AuthContext";
-import { LanguageSwitcher } from "@/features/i18n/LanguageSwitcher";
 import { useI18n } from "@/features/i18n/I18nProvider";
 
 export function RestaurantSelectorPage() {
@@ -25,9 +24,8 @@ export function RestaurantSelectorPage() {
       <section className="w-full max-w-2xl">
         <div className="mb-6 flex items-center justify-between">
           <h1 className="text-2xl font-semibold text-white">
-            {t("Selecciona un restaurante")}
+            {t("Select a restaurant")}
           </h1>
-          <LanguageSwitcher compact />
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">

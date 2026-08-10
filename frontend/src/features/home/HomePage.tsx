@@ -12,25 +12,25 @@ import { useI18n } from "@/features/i18n/I18nProvider";
 const quickActions = [
   {
     to: "/planning",
-    label: "Abrir planning",
+    label: "Open planning",
     icon: Sparkles,
     color: "text-emerald-300 bg-emerald-400/10",
   },
   {
     to: "/reservations",
-    label: "Nueva reserva",
+    label: "New reservation",
     icon: CalendarPlus,
     color: "text-sky-300 bg-sky-400/10",
   },
   {
     to: "/customers",
-    label: "Buscar cliente",
+    label: "Find customer",
     icon: Search,
     color: "text-amber-300 bg-amber-400/10",
   },
   {
     to: "/settings/layout",
-    label: "Configurar sala",
+    label: "Configure dining room",
     icon: Map,
     color: "text-violet-300 bg-violet-400/10",
   },
@@ -48,9 +48,9 @@ export function HomePage() {
     <section className="grid gap-6">
       <header className="flex flex-col gap-2 border-b border-white/8 pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-sm text-slate-500">{t("Hoy")}</p>
+          <p className="text-sm text-slate-500">{t("Today")}</p>
           <h1 className="mt-1 text-2xl font-semibold text-white sm:text-3xl">
-            {activeRestaurant?.name ?? t("Sin restaurante seleccionado")}
+            {activeRestaurant?.name ?? t("No restaurant selected")}
           </h1>
         </div>
         <div className="flex items-center gap-3 text-sm text-slate-400">
@@ -61,7 +61,7 @@ export function HomePage() {
 
       <div>
         <h2 className="text-sm font-semibold text-slate-300">
-          {t("Accesos rapidos")}
+          {t("Quick actions")}
         </h2>
         <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {quickActions.map((action) => {

@@ -1,98 +1,98 @@
 # Advanced Table Planning Design
 
-## Estado de implementacion del piloto
+## Pilot implementation status
 
-V16 y V17 implementan combinaciones `STANDARD`/`ADVANCED`, coste operativo, preparacion, requisitos de inventario, sugerencias top 3, seleccion explicita y snapshots de consumo. La aprobacion es la propia seleccion del manager. `ReservationSetupPlan`, `SetupTask`, planos diarios y editor visual avanzado permanecen fuera del alcance del piloto.
+V16 and V17 implement `STANDARD`/`ADVANCED` combinations, operational cost, preparation, inventory requirements, top 3 suggestions, explicit selection, and consumption snapshots. Approval is the manager's selection itself. `ReservationSetupPlan`, `SetupTask`, daily floor plans, and the advanced visual editor remain outside the scope of the pilot.
 
-## 1. Problema operativo real
+## 1. Real operational problem
 
-Muchos restaurantes no operan con un plano completamente fijo. Durante un servicio real, el equipo puede juntar mesas, mover mesas ligeras, añadir sillas, sacar mesas guardadas o preparar un montaje temporal para grupos grandes. Las apps de table planning que solo buscan una mesa libre o una combinacion simple suelen fallar en estos casos:
+Many restaurants do not operate with a completely fixed floor plan. During an actual service, the team may join tables, move lightweight tables, add chairs, bring out stored tables, or prepare a temporary setup for large groups. Table planning apps that only look for a free table or a simple combination often fail in these cases:
 
-- dejan mesas vacias aunque exista una solucion operativa viable
-- bloquean mesas grandes para reservas pequenas
-- no entienden que una mesa puede estar fisicamente en almacen y no en el salon
-- no distinguen entre una combinacion normal y un montaje que requiere trabajo del staff
-- no avisan al equipo de preparacion cuando la asignacion requiere accion previa
-- optimizan capacidad sin valorar coste operativo, accesibilidad o impacto futuro
+- they leave tables empty even when an operationally viable solution exists
+- they block large tables for small reservations
+- they do not understand that a table may physically be in storage rather than in the dining room
+- they do not distinguish between a normal combination and a setup that requires staff work
+- they do not alert the preparation team when the assignment requires prior action
+- they optimize capacity without considering operational cost, accessibility, or future impact
 
-El resultado es peor ocupacion, mas improvisacion durante el servicio, reservas grandes rechazadas innecesariamente y mas carga mental para managers y camareros.
+The result is poorer occupancy, more improvisation during service, large reservations being rejected unnecessarily, and a greater mental burden on managers and servers.
 
-## 2. Objetivo del sistema avanzado
+## 2. Objective of the advanced system
 
-El objetivo es evolucionar el producto hacia un motor de planificacion diaria que entienda recursos fisicos y coste operativo, sin perder explicabilidad ni control humano. El sistema debe poder:
+The objective is to evolve the product into a daily planning engine that understands physical resources and operational cost, without sacrificing explainability or human control. The system must be able to:
 
-- partir de un layout base del restaurante
-- generar o editar un plano diario por servicio
-- distinguir mesas fijas, moviles, temporales y almacenadas
-- modelar sillas extra y otros recursos guardados
-- evaluar combinaciones normales y avanzadas
-- proponer montajes especiales cuando compense
-- crear tareas operativas para preparar esos montajes
-- explicar por que una opcion es barata, cara, segura o arriesgada
+- start from a restaurant's base layout
+- generate or edit a daily floor plan for each service
+- distinguish between fixed, movable, temporary, and stored tables
+- model extra chairs and other stored resources
+- evaluate normal and advanced combinations
+- propose special setups when worthwhile
+- create operational tasks to prepare those setups
+- explain why an option is inexpensive, costly, safe, or risky
 
-Regla central: el sistema no debe cambiar la hora de una reserva existente. Puede moverla entre recursos, unir mesas o sugerir preparaciones, pero la hora solo cambia si el cliente lo solicita y el staff la edita manualmente. Para una nueva solicitud, el sistema puede sugerir horas alternativas si no hay opcion viable a la hora pedida.
+Central rule: the system must not change the time of an existing reservation. It may move the reservation between resources, join tables, or suggest preparations, but the time changes only if the customer requests it and staff edit it manually. For a new request, the system may suggest alternative times if there is no viable option at the requested time.
 
-## 3. Conceptos principales
+## 3. Main concepts
 
 ### Base layout
 
-Configuracion estable del restaurante: salones, mesas habituales, coordenadas, capacidades, accesibilidad y prioridades. Representa como suele estar montado el restaurante antes de ajustes diarios.
+Stable restaurant configuration: dining rooms, standard tables, coordinates, capacities, accessibility, and priorities. It represents how the restaurant is usually arranged before daily adjustments.
 
 ### Daily floor plan
 
-Version operativa de un dia o turno concreto. Puede copiar el base layout y aplicar excepciones: mesas bloqueadas, mesas movidas, recursos de almacen sacados, zonas abiertas o cerradas y montajes temporales.
+Operational version for a specific day or shift. It may copy the base layout and apply exceptions: blocked tables, moved tables, resources brought out of storage, open or closed areas, and temporary setups.
 
 ### Fixed tables
 
-Mesas que normalmente no se mueven. Pueden formar parte de combinaciones, pero moverlas debe estar prohibido o tener un coste muy alto.
+Tables that are not normally moved. They may be part of combinations, but moving them must be prohibited or carry a very high cost.
 
 ### Movable tables
 
-Mesas presentes en el salon que el staff puede mover o juntar. Tienen menor coste operativo que usar almacen, pero aun asi requieren tiempo y coordinacion.
+Tables present in the dining room that staff can move or join. They have a lower operational cost than using storage, but still require time and coordination.
 
 ### Storage tables
 
-Mesas guardadas fuera del salon. No deben aparecer como mesas normales disponibles en el planning. Solo entran en juego mediante una opcion avanzada o un montaje aprobado.
+Tables stored outside the dining room. They must not appear as normally available tables in the planning view. They only come into play through an advanced option or an approved setup.
 
 ### Extra chairs
 
-Sillas adicionales disponibles en almacen o back office. Permiten ampliar capacidad de una mesa o montaje, con limites fisicos y operativos.
+Additional chairs available in storage or the back office. They make it possible to increase the capacity of a table or setup, within physical and operational limits.
 
 ### Table combinations
 
-Combinaciones configuradas de mesas existentes. En fase inicial son combinaciones estandar del salon. En fases avanzadas pueden incluir coste, restricciones, orientacion y requisitos de preparacion.
+Configured combinations of existing tables. In the initial phase, these are standard dining-room combinations. In advanced phases, they may include cost, restrictions, orientation, and preparation requirements.
 
 ### Setup options
 
-Opciones configurables o generadas que describen como atender una reserva: mesa individual, combinacion, mesa con sillas extra, mesa de almacen, montaje temporal o combinacion con movimiento.
+Configurable or generated options that describe how to accommodate a reservation: individual table, combination, table with extra chairs, storage table, temporary setup, or combination involving movement.
 
 ### Reservation setup plans
 
-Plan elegido o propuesto para una reserva concreta. Debe indicar recursos usados, coste, aprobacion requerida, explicacion y estado.
+Plan selected or proposed for a specific reservation. It must indicate the resources used, cost, required approval, explanation, and status.
 
 ### Setup tasks
 
-Tareas operativas derivadas de un plan: sacar mesa del almacen, anadir 4 sillas, mover dos mesas, preparar mantel grande, abrir salon secundario o confirmar con manager.
+Operational tasks derived from a plan: retrieve a table from storage, add 4 chairs, move two tables, prepare a large tablecloth, open a secondary dining room, or confirm with a manager.
 
-## 4. Modelo de datos propuesto
+## 4. Proposed data model
 
-### Cambios a RestaurantTable
+### Changes to RestaurantTable
 
-Campos propuestos:
+Proposed fields:
 
 - `table_type`: `FIXED`, `MOVABLE`, `STORAGE`, `TEMPORARY`
-- `dining_room_id`: nullable para `STORAGE`; obligatorio para mesas fisicas en salon
-- `movable`: derivable de `table_type`, pero puede mantenerse como regla futura si hace falta granularidad
-- `setup_cost`: coste base de mover o preparar la mesa
-- `storage_resource_id`: opcional si una mesa de almacen se gestiona tambien como inventario agregado
+- `dining_room_id`: nullable for `STORAGE`; required for physical tables in a dining room
+- `movable`: derivable from `table_type`, but may be retained as a future rule if greater granularity is needed
+- `setup_cost`: base cost of moving or preparing the table
+- `storage_resource_id`: optional if a storage table is also managed as aggregated inventory
 
-Regla inicial: las mesas `STORAGE` no aparecen como mesas normales del salon ni como candidatas del algoritmo basico.
+Initial rule: `STORAGE` tables do not appear as normal dining-room tables or as candidates for the basic algorithm.
 
 ### StorageResource
 
-Inventario agregado del restaurante.
+Aggregated restaurant inventory.
 
-Campos:
+Fields:
 
 - `id`
 - `restaurant_id`
@@ -106,13 +106,13 @@ Campos:
 - `created_at`
 - `updated_at`
 
-Uso: registrar recursos como sillas extra, mesas plegables, tronas, extensiones o bancos. `STORAGE_TABLE` permanece como tipo compatible con V14. En el piloto estos recursos se consumen solo al seleccionar de forma explicita una combinacion avanzada; nunca entran en la asignacion automatica.
+Use: record resources such as extra chairs, folding tables, high chairs, extensions, or benches. `STORAGE_TABLE` remains a type compatible with V14. In the pilot, these resources are consumed only when an advanced combination is explicitly selected; they never enter automatic assignment.
 
 ### FloorPlanTemplate
 
-Plantilla de plano base o alternativo.
+Base or alternative floor plan template.
 
-Campos:
+Fields:
 
 - `id`
 - `restaurant_id`
@@ -123,13 +123,13 @@ Campos:
 - `created_at`
 - `updated_at`
 
-Uso: permitir layouts por temporada, terraza, eventos o turnos.
+Use: support layouts by season, terrace, event, or shift.
 
 ### DailyFloorPlan
 
-Plano operativo de un dia.
+Operational floor plan for a day.
 
-Campos:
+Fields:
 
 - `id`
 - `restaurant_id`
@@ -142,13 +142,13 @@ Campos:
 - `created_at`
 - `updated_at`
 
-Uso: congelar decisiones diarias sin alterar el layout base.
+Use: freeze daily decisions without altering the base layout.
 
 ### TableSetupOption
 
-Opcion de montaje disponible o calculada.
+Available or calculated setup option.
 
-Campos:
+Fields:
 
 - `id`
 - `restaurant_id`
@@ -166,9 +166,9 @@ Campos:
 
 ### TableSetupOptionItem
 
-Recursos que componen una opcion.
+Resources that make up an option.
 
-Campos:
+Fields:
 
 - `id`
 - `table_setup_option_id`
@@ -180,9 +180,9 @@ Campos:
 
 ### ReservationSetupPlan
 
-Plan propuesto, aprobado o aplicado para una reserva.
+Plan proposed, approved, or applied for a reservation.
 
-Campos:
+Fields:
 
 - `id`
 - `restaurant_id`
@@ -200,9 +200,9 @@ Campos:
 
 ### SetupTask
 
-Trabajo operativo que debe hacer el staff.
+Operational work to be performed by staff.
 
-Campos:
+Fields:
 
 - `id`
 - `restaurant_id`
@@ -219,153 +219,153 @@ Campos:
 - `created_at`
 - `updated_at`
 
-## 5. Evolucion del algoritmo
+## 5. Algorithm evolution
 
-### Nivel 1: mesa individual
+### Level 1: individual table
 
-Usar solo mesas activas de salon, no `STORAGE`, respetando capacidad, solapes, accesibilidad y prioridad de salon.
+Use only active dining-room tables, excluding `STORAGE`, while respecting capacity, overlaps, accessibility, and dining-room priority.
 
-### Nivel 2: combinacion estandar
+### Level 2: standard combination
 
-Usar combinaciones configuradas de mesas activas en salon. Debe seguir siendo determinista y explicable.
+Use configured combinations of active dining-room tables. It must remain deterministic and explainable.
 
-### Nivel 3: combinacion con sillas extra
+### Level 3: combination with extra chairs
 
-Permitir superar capacidad normal dentro de un margen seguro si hay sillas extra suficientes y la mesa/salon lo permite.
+Allow normal capacity to be exceeded within a safe margin if enough extra chairs are available and the table/dining room allows it.
 
-### Nivel 4: mesa del almacen
+### Level 4: storage table
 
-Considerar recursos `STORAGE_TABLE` o mesas `STORAGE` solo como opcion avanzada. Debe generar coste operativo y tarea de preparacion.
+Consider `STORAGE_TABLE` resources or `STORAGE` tables only as an advanced option. It must generate an operational cost and a preparation task.
 
-### Nivel 5: montaje especial con aprobacion
+### Level 5: special setup requiring approval
 
-Crear `ReservationSetupPlan` en estado `PROPOSED` cuando la solucion requiere mover varias mesas, abrir salon secundario, sacar almacen o preparar montaje no habitual. No se aplica automaticamente sin aprobacion.
+Create a `ReservationSetupPlan` with `PROPOSED` status when the solution requires moving several tables, opening a secondary dining room, retrieving items from storage, or preparing an unusual setup. It is not applied automatically without approval.
 
-### Nivel 6: sugerir hora alternativa para nueva solicitud
+### Level 6: suggest an alternative time for a new request
 
-Solo para solicitudes nuevas, si no hay solucion viable a la hora pedida. Nunca debe modificar reservas existentes automaticamente.
+Only for new requests, if there is no viable solution at the requested time. It must never modify existing reservations automatically.
 
-## 6. Scoring propuesto
+## 6. Proposed scoring
 
-El score debe combinar calidad de capacidad, impacto futuro y coste operativo:
+The score must combine capacity quality, future impact, and operational cost:
 
-- `capacity_fit`: premia que la capacidad encaje con el grupo
-- `wasted_seats_penalty`: penaliza sillas desperdiciadas
-- `room_priority`: premia salones principales o preferidos
-- `large_table_block_penalty`: penaliza bloquear mesas grandes para grupos pequenos
-- `dead_gap_penalty`: penaliza huecos muertos antes o despues
-- `move_table_cost`: penaliza mover mesas fisicas
-- `storage_usage_cost`: penaliza sacar recursos de almacen
-- `setup_time_cost`: penaliza preparaciones largas cerca de la hora de llegada
-- `manager_approval_cost`: penaliza opciones que requieren aprobacion
-- `future_reservation_impact`: penaliza reducir flexibilidad para reservas futuras
+- `capacity_fit`: rewards capacity that fits the group
+- `wasted_seats_penalty`: penalizes wasted seats
+- `room_priority`: rewards main or preferred dining rooms
+- `large_table_block_penalty`: penalizes blocking large tables for small groups
+- `dead_gap_penalty`: penalizes dead gaps before or after
+- `move_table_cost`: penalizes moving physical tables
+- `storage_usage_cost`: penalizes retrieving resources from storage
+- `setup_time_cost`: penalizes lengthy preparations close to the arrival time
+- `manager_approval_cost`: penalizes options that require approval
+- `future_reservation_impact`: penalizes reduced flexibility for future reservations
 
-La explicacion debe separar restricciones duras, costes operativos y motivos comerciales.
+The explanation must separate hard constraints, operational costs, and commercial reasons.
 
-## 7. Reglas de seguridad
+## 7. Safety rules
 
-- No cambiar horas de reservas existentes automaticamente.
-- No usar recursos de almacen sin confirmacion o plan aprobado.
-- No crear montajes imposibles por capacidad, espacio, accesibilidad o inventario.
-- No exceder cantidad de sillas o mesas extra disponibles.
-- Respetar accesibilidad declarada en salones y reservas.
-- Respetar `restaurant_id` en todas las entidades, queries, eventos y permisos.
-- Mantener trazabilidad de aprobaciones, rechazos y tareas completadas.
-- El frontend puede sugerir acciones, pero la validacion vive en backend.
+- Do not change the times of existing reservations automatically.
+- Do not use storage resources without confirmation or an approved plan.
+- Do not create setups that are impossible due to capacity, space, accessibility, or inventory.
+- Do not exceed the available quantity of extra chairs or tables.
+- Respect declared accessibility in dining rooms and reservations.
+- Respect `restaurant_id` in all entities, queries, events, and permissions.
+- Maintain traceability of approvals, rejections, and completed tasks.
+- The frontend may suggest actions, but validation lives in the backend.
 
-## 8. UX propuesta
+## 8. Proposed UX
 
-### Configurar mesas de almacen
+### Configure storage tables
 
-En configuracion de mesas, permitir tipo `STORAGE`. Estas mesas se muestran como inventario, no como mesas colocadas en un salon. La UI debe advertir que no aparecen como disponibles en el planning diario hasta que se apruebe un montaje.
+In table configuration, allow the `STORAGE` type. These tables are shown as inventory, not as tables placed in a dining room. The UI must warn that they do not appear as available in the daily planning view until a setup is approved.
 
-### Configurar sillas extra
+### Configure extra chairs
 
-Crear una seccion de inventario de almacen con recursos tipo `EXTRA_CHAIR`. Debe mostrar cantidad total, estado activo e instrucciones internas.
+Create a storage inventory section with resources of type `EXTRA_CHAIR`. It must show total quantity, active status, and internal instructions.
 
-### Crear combinaciones visuales
+### Create visual combinations
 
-En una fase posterior, el editor debe permitir seleccionar mesas del plano y guardarlas como combinacion, indicando si requiere mover mesas o solo juntarlas.
+In a later phase, the editor must allow tables to be selected from the floor plan and saved as a combination, indicating whether it requires moving tables or only joining them.
 
-### Mostrar montajes especiales en el planning
+### Show special setups in the planning view
 
-El planning debe diferenciar:
+The planning view must distinguish between:
 
-- asignacion normal
-- combinacion estandar
-- opcion con sillas extra
-- montaje pendiente de aprobacion
-- montaje aprobado con tareas pendientes
+- normal assignment
+- standard combination
+- option with extra chairs
+- setup pending approval
+- approved setup with pending tasks
 
-### Avisar al staff
+### Notify staff
 
-Las `SetupTask` deben aparecer en panel operativo, notificaciones internas y detalle de reserva. Deben tener estado claro y responsable opcional.
+`SetupTask` entries must appear in the operational dashboard, internal notifications, and reservation details. They must have a clear status and an optional assignee.
 
-### Confirmar o rechazar una opcion avanzada
+### Confirm or reject an advanced option
 
-Cuando una opcion requiere aprobacion, el manager ve coste, recursos, tareas y explicacion. Puede aprobar, rechazar o elegir una opcion mas simple.
+When an option requires approval, the manager sees the cost, resources, tasks, and explanation. The manager may approve, reject, or choose a simpler option.
 
-## 9. Fases de implementacion
+## 9. Implementation phases
 
-### Fase 1: tipos de mesa e inventario de almacen
+### Phase 1: table types and storage inventory
 
-Anadir `tableType` a mesas, crear `StorageResource`, API CRUD minima y UI de configuracion. El algoritmo solo debe excluir `STORAGE` de candidatos normales.
+Add `tableType` to tables, create `StorageResource`, a minimal CRUD API, and a configuration UI. The algorithm must only exclude `STORAGE` from normal candidates.
 
-### Fase 2: combinaciones avanzadas
+### Phase 2: advanced combinations
 
-Extender combinaciones con coste, tipo, restricciones y uso limitado de sillas extra.
+Extend combinations with cost, type, restrictions, and limited use of extra chairs.
 
-### Fase 3: setup options
+### Phase 3: setup options
 
-Modelar opciones reutilizables y sus items. Permitir configurarlas y listarlas.
+Model reusable options and their items. Allow them to be configured and listed.
 
-### Fase 4: algoritmo por niveles
+### Phase 4: tiered algorithm
 
-Evaluar progresivamente niveles 1 a 5, manteniendo determinismo y explicabilidad. Nivel 6 solo para nuevas solicitudes.
+Progressively evaluate levels 1 through 5, maintaining determinism and explainability. Level 6 is only for new requests.
 
-### Fase 5: setup tasks
+### Phase 5: setup tasks
 
-Generar tareas operativas desde planes aprobados.
+Generate operational tasks from approved plans.
 
-### Fase 6: UI en planning
+### Phase 6: planning UI
 
-Mostrar planes, costes, aprobaciones y tareas dentro del planning diario.
+Show plans, costs, approvals, and tasks within the daily planning view.
 
-### Fase 7: editor visual avanzado
+### Phase 7: advanced visual editor
 
-Editor visual para combinaciones, montajes y floor plans diarios. No requiere 3D en MVP.
+Visual editor for combinations, setups, and daily floor plans. 3D is not required for the MVP.
 
-## 10. MVP recomendado
+## 10. Recommended MVP
 
-Implementar primero Fase 1:
+Implement Phase 1 first:
 
-- `tableType` en `RestaurantTable`
-- `StorageResource` con cantidad y validacion de disponibilidad
-- UI basica para ver mesas `STORAGE` y recursos como sillas extra
-- exclusion de mesas `STORAGE` del planning y candidatos normales
-- documentacion actualizada
+- `tableType` in `RestaurantTable`
+- `StorageResource` with quantity and availability validation
+- basic UI for viewing `STORAGE` tables and resources such as extra chairs
+- exclusion of `STORAGE` tables from the planning view and normal candidates
+- updated documentation
 
-Esto aporta valor rapido porque el restaurante puede empezar a registrar recursos reales sin cambiar todavia el comportamiento critico del algoritmo. Tambien prepara el modelo para fases avanzadas sin arriesgar reservas existentes.
+This provides value quickly because the restaurant can begin recording real resources without yet changing the algorithm's critical behavior. It also prepares the model for advanced phases without risking existing reservations.
 
-## 11. Riesgos tecnicos
+## 11. Technical risks
 
-- Complejidad del algoritmo si se mezclan demasiados niveles a la vez.
-- Datos mal configurados por el restaurante: capacidades irreales, recursos duplicados o cantidades incorrectas.
-- Montajes fisicamente imposibles si no se modelan dimensiones, accesos y restricciones del salon.
-- UI demasiado compleja para operacion rapida en tablet.
-- Sobreoptimizacion antes de validar necesidades reales.
-- Riesgo de romper asignacion actual si recursos de almacen entran como mesas normales.
-- Falta de trazabilidad si se aplican montajes sin plan, aprobacion o tarea.
+- Algorithm complexity if too many levels are combined at once.
+- Data misconfigured by the restaurant: unrealistic capacities, duplicate resources, or incorrect quantities.
+- Physically impossible setups if dimensions, access routes, and dining-room constraints are not modeled.
+- UI that is too complex for fast tablet operation.
+- Over-optimization before validating real needs.
+- Risk of breaking the current assignment behavior if storage resources enter as normal tables.
+- Lack of traceability if setups are applied without a plan, approval, or task.
 
-## Primera implementacion segura propuesta
+## Proposed first safe implementation
 
-La primera implementacion segura es Fase 1, limitada a modelo, API, UI minima y documentacion:
+The first safe implementation is Phase 1, limited to the model, API, minimal UI, and documentation:
 
-- anadir `tableType` con valores `FIXED`, `MOVABLE`, `STORAGE`, `TEMPORARY`
-- crear `StorageResource` con `resourceType`, `name`, `quantity`, `active` y `notes`
-- permitir crear mesas `STORAGE`, pero excluirlas del planning y del algoritmo normal
-- exponer API de inventario de almacen por restaurante
-- anadir una comprobacion de disponibilidad de cantidad para preparar fases futuras
-- mostrar en configuracion que existen recursos extra y mesas almacenadas
+- add `tableType` with values `FIXED`, `MOVABLE`, `STORAGE`, `TEMPORARY`
+- create `StorageResource` with `resourceType`, `name`, `quantity`, `active`, and `notes`
+- allow `STORAGE` tables to be created, but exclude them from the planning view and the normal algorithm
+- expose a storage inventory API per restaurant
+- add a quantity availability check in preparation for future phases
+- show in configuration that extra resources and stored tables exist
 
-No se implementan todavia montajes especiales automaticos, aprobaciones, tareas, cambios de hora, IA, WhatsApp, 3D ni optimizacion profunda.
+Automatic special setups, approvals, tasks, time changes, AI, WhatsApp, 3D, and deep optimization are not yet implemented.

@@ -29,7 +29,7 @@ export interface RestaurantTableResponse {
   id: number;
   restaurantId: number;
   diningRoomId: number | null;
-  tableType: "FIXED" | "MOVABLE" | "STORAGE" | "TEMPORARY";
+  tableType: "Fixed" | "Movable" | "Storage" | "Temporary";
   code: string;
   label: string | null;
   minCapacity: number;

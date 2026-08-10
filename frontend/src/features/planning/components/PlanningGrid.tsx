@@ -72,8 +72,8 @@ export function PlanningGrid({
             <div>
               <h3 className="text-xl font-semibold text-white">{room.name}</h3>
               <p className="mt-1 text-sm text-slate-400">
-                Prioridad {room.priority} · {room.accessible ? "Accesible" : "No accesible"} ·{" "}
-                {room.tables.length} mesas
+                Prioridad {room.priority} · {room.accessible ? "Accessible" : "Not accessible"} ·{" "}
+                {room.tables.length} tables
               </p>
             </div>
           </div>
@@ -85,7 +85,7 @@ export function PlanningGrid({
                   className="shrink-0 px-4 py-3 text-xs font-semibold uppercase text-slate-500"
                   style={{ width: LABEL_WIDTH }}
                 >
-                  Mesa
+                  Table
                 </div>
                 <div className="relative flex-1" style={{ width: gridWidth }}>
                   <div className="flex">
@@ -156,7 +156,7 @@ export function PlanningGrid({
                           >
                             <div className="flex items-start justify-between gap-2">
                               <p className="line-clamp-1 text-sm font-semibold">
-                                {reservation.customerName || "Cliente"}
+                                {reservation.customerName || "Customer"}
                               </p>
                               <span className="text-xs font-semibold">
                                 {reservation.partySize}p

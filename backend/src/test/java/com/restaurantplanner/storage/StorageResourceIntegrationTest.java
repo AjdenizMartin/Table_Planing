@@ -76,7 +76,7 @@ class StorageResourceIntegrationTest {
                 .content("""
                     {
                       "resourceType": "EXTRA_CHAIR",
-                      "name": "Sillas extra almacen",
+                      "name": "Extra storage chairs",
                       "quantity": 12,
                       "capacityPerUnit": 1,
                       "setupTimeMinutes": 5,
@@ -124,8 +124,8 @@ class StorageResourceIntegrationTest {
     @Test
     void filtersStorageResourcesByTypeAndActiveState() throws Exception {
         Restaurant restaurant = createRestaurant("Main", "main");
-        createStorageResource(restaurant, StorageResourceType.EXTRA_CHAIR, "Sillas extra", 12);
-        createStorageResource(restaurant, StorageResourceType.FOLDING_TABLE, "Mesas plegables", 3);
+        createStorageResource(restaurant, StorageResourceType.EXTRA_CHAIR, "Extra chairs", 12);
+        createStorageResource(restaurant, StorageResourceType.FOLDING_TABLE, "Folding tables", 3);
         StorageResource inactive = createStorageResource(restaurant, StorageResourceType.BENCH, "Banco", 1);
         inactive.setActive(false);
         storageResourceRepository.save(inactive);
@@ -136,7 +136,7 @@ class StorageResourceIntegrationTest {
                 .header(HttpHeaders.AUTHORIZATION, bearer(token)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.length()").value(1))
-            .andExpect(jsonPath("$[0].name").value("Sillas extra"));
+            .andExpect(jsonPath("$[0].name").value("Extra chairs"));
 
         mockMvc.perform(get("/api/restaurants/{restaurantId}/storage-resources", restaurant.getId())
                 .queryParam("active", "false")
@@ -151,7 +151,7 @@ class StorageResourceIntegrationTest {
                 .header(HttpHeaders.AUTHORIZATION, bearer(token)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.length()").value(1))
-            .andExpect(jsonPath("$[0].name").value("Mesas plegables"));
+            .andExpect(jsonPath("$[0].name").value("Folding tables"));
     }
 
     @Test
@@ -160,7 +160,7 @@ class StorageResourceIntegrationTest {
         StorageResource resource = createStorageResource(
             restaurant,
             StorageResourceType.EXTRA_CHAIR,
-            "Sillas antiguas",
+            "Old chairs",
             4
         );
         String token = loginWithRole(restaurant, "manager@example.com", Role.MANAGER);
@@ -171,21 +171,21 @@ class StorageResourceIntegrationTest {
                 .content("""
                     {
                       "resourceType": "FOLDING_TABLE",
-                      "name": "Mesas plegables terraza",
+                      "name": "Terrace folding tables",
                       "quantity": 6,
                       "capacityPerUnit": 4,
                       "setupTimeMinutes": 12,
-                      "notes": "Almacen norte",
+                      "notes": "North storage area",
                       "active": false
                     }
                     """))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.resourceType").value("FOLDING_TABLE"))
-            .andExpect(jsonPath("$.name").value("Mesas plegables terraza"))
+            .andExpect(jsonPath("$.name").value("Terrace folding tables"))
             .andExpect(jsonPath("$.quantity").value(6))
             .andExpect(jsonPath("$.capacityPerUnit").value(4))
             .andExpect(jsonPath("$.setupTimeMinutes").value(12))
-            .andExpect(jsonPath("$.notes").value("Almacen norte"))
+            .andExpect(jsonPath("$.notes").value("North storage area"))
             .andExpect(jsonPath("$.active").value(false));
 
         mockMvc.perform(patch("/api/restaurants/{restaurantId}/storage-resources/{resourceId}", restaurant.getId(), resource.getId())
@@ -219,7 +219,7 @@ class StorageResourceIntegrationTest {
     @Test
     void availabilityCheckRejectsQuantityAboveAvailable() throws Exception {
         Restaurant restaurant = createRestaurant("Main", "main");
-        StorageResource resource = createStorageResource(restaurant, StorageResourceType.EXTRA_CHAIR, "Sillas extra", 4);
+        StorageResource resource = createStorageResource(restaurant, StorageResourceType.EXTRA_CHAIR, "Extra chairs", 4);
         String token = loginWithRole(restaurant, "manager@example.com", Role.MANAGER);
 
         mockMvc.perform(post("/api/restaurants/{restaurantId}/storage-resources/{resourceId}/availability-check", restaurant.getId(), resource.getId())
@@ -239,7 +239,7 @@ class StorageResourceIntegrationTest {
     void storageResourcesAreScopedByRestaurant() throws Exception {
         Restaurant restaurant = createRestaurant("Main", "main");
         Restaurant otherRestaurant = createRestaurant("Other", "other");
-        createStorageResource(otherRestaurant, StorageResourceType.STORAGE_TABLE, "Mesa almacen otra sede", 2);
+        createStorageResource(otherRestaurant, StorageResourceType.STORAGE_TABLE, "Other venue storage table", 2);
         String token = loginWithRole(restaurant, "manager@example.com", Role.MANAGER);
 
         mockMvc.perform(get("/api/restaurants/{restaurantId}/storage-resources", restaurant.getId())

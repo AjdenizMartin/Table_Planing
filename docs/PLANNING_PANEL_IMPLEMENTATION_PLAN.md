@@ -1,141 +1,141 @@
 # Planning Panel Implementation Plan
 
-## Fase 1: Planning funcional y estable
+## Phase 1: Functional and stable planning
 
-Objetivo: convertir `PlanningPage` en una pantalla principal premium, tactil y estable sin drag-and-drop ni cambios de hora.
+Objective: turn `PlanningPage` into a premium, touch-friendly, and stable main screen without drag-and-drop or time changes.
 
-Tareas:
+Tasks:
 
-- Crear header operativo con fecha, turno, salon, ocupacion, reservas, comensales y realtime.
-- Crear panel izquierdo con reservas del dia, busqueda, filtros y reservas sin asignar.
-- Crear plano visual 2D premium por salon.
-- Crear estados visuales para mesas y reservas.
-- Crear panel derecho de detalle de mesa/reserva.
-- Crear timeline inferior de solo lectura.
-- Mantener acciones existentes de asignacion automatica y movimiento manual por selector si ya son seguras.
-- Mostrar claramente que la hora no cambia desde el planning.
-- Manejar loading/error/empty states.
-- Validar `npm run build`.
+- Create an operational header with date, shift, dining room, occupancy, reservations, guests, and realtime status.
+- Create a left panel with the day's reservations, search, filters, and unassigned reservations.
+- Create a premium 2D visual floor plan for each dining room.
+- Create visual states for tables and reservations.
+- Create a right-side table/reservation details panel.
+- Create a read-only bottom timeline.
+- Retain the existing automatic assignment actions and manual movement via selector if they are already safe.
+- Clearly show that times cannot be changed from planning.
+- Handle loading/error/empty states.
+- Validate `npm run build`.
 
-Criterios de finalizacion:
+Completion criteria:
 
-- Usuario demo entra y abre planning.
-- Se ven salones, mesas y reservas.
-- Se diferencian confirmadas, pendientes, sentadas, completadas y sin asignar.
-- La pantalla es usable en tablet.
-- No existe interaccion que cambie horas por accidente.
+- The demo user logs in and opens planning.
+- Dining rooms, tables, and reservations are visible.
+- Confirmed, pending, seated, completed, and unassigned reservations are distinguishable.
+- The screen is usable on a tablet.
+- There is no interaction that can accidentally change times.
 
-## Fase 2: Editor visual de salones y mesas tactil
+## Phase 2: Touch-friendly visual dining room and table editor
 
-Objetivo: separar modo servicio de modo edicion y permitir configurar el plano desde tablet.
+Objective: separate service mode from edit mode and allow the floor plan to be configured from a tablet.
 
-Estado actual:
+Current status:
 
-- Movimiento directo de mesas implementado con Pointer Events nativos.
-- Guardado automatico al soltar mediante `PATCH /api/restaurants/{restaurantId}/tables/{tableId}/layout`.
-- Reversion local si backend rechaza el guardado.
-- Snap-to-grid de 10px disponible en el editor.
+- Direct table movement implemented with native Pointer Events.
+- Automatic save on release via `PATCH /api/restaurants/{restaurantId}/tables/{tableId}/layout`.
+- Local rollback if the backend rejects the save.
+- 10px snap-to-grid available in the editor.
 
-Tareas:
+Tasks:
 
-- Crear `features/floor-plan`.
-- Extraer el editor actual a componentes dedicados si crece la complejidad.
-- Ampliar modo edicion con multi-select y alineacion.
-- Permitir crear, duplicar, desactivar y editar mesas.
-- Permitir cambiar forma, capacidad y dimensiones.
-- Preparar undo/redo.
-- Mantener guardado de layout con endpoint existente de mesa.
-- Evaluar `dnd-kit` frente a `react-konva`.
+- Create `features/floor-plan`.
+- Extract the current editor into dedicated components if complexity increases.
+- Expand edit mode with multi-select and alignment.
+- Allow tables to be created, duplicated, deactivated, and edited.
+- Allow shape, capacity, and dimensions to be changed.
+- Prepare undo/redo.
+- Retain layout saving through the existing table endpoint.
+- Evaluate `dnd-kit` against `react-konva`.
 
-Criterios:
+Criteria:
 
-- El manager puede configurar un salon sin tocar codigo.
-- El modo edicion no afecta reservas activas.
+- The manager can configure a dining room without modifying code.
+- Edit mode does not affect active reservations.
 
-## Fase 3: Drag and drop de reservas entre mesas manteniendo la hora original
+## Phase 3: Drag and drop reservations between tables while retaining the original time
 
-Objetivo: reasignar reservas visualmente sin permitir cambios de hora.
+Objective: visually reassign reservations without allowing time changes.
 
-Tareas:
+Tasks:
 
-- Introducir `dnd-kit`.
-- Arrastrar reservas solo sobre mesas o combinaciones.
-- Bloquear eje temporal y timeline drag.
-- Crear prevalidacion visual.
-- Backend valida capacidad, solapamiento, buffer, accesibilidad, tenant y hora inmutable.
-- Mostrar razon de rechazo.
-- Confirmar movimientos importantes.
+- Introduce `dnd-kit`.
+- Allow reservations to be dragged only onto tables or combinations.
+- Lock the time axis and timeline dragging.
+- Create visual pre-validation.
+- The backend validates capacity, overlap, buffer, accessibility, tenant, and time immutability.
+- Display the reason for rejection.
+- Confirm significant moves.
 
-Criterios:
+Criteria:
 
-- Una reserva puede moverse de mesa sin cambiar hora.
-- No se puede arrastrar una reserva a otra hora.
-- Todo movimiento pasa por backend.
+- A reservation can be moved between tables without changing its time.
+- A reservation cannot be dragged to another time.
+- Every move is processed by the backend.
 
-## Fase 4: Vista 2.5D/isometrica premium
+## Phase 4: Premium 2.5D/isometric view
 
-Objetivo: elevar impacto visual manteniendo estabilidad.
+Objective: increase visual impact while maintaining stability.
 
-Tareas:
+Tasks:
 
-- Aplicar perspectiva/isometria ligera a mesas y zonas.
-- Mejorar sombras, profundidad y etiquetas.
-- Crear modo presentacion/demo.
-- Mantener hit targets tactiles grandes.
-- Evitar 3D real salvo prueba aislada.
+- Apply subtle perspective/isometric styling to tables and zones.
+- Improve shadows, depth, and labels.
+- Create a presentation/demo mode.
+- Maintain large touch targets.
+- Avoid true 3D except for an isolated proof of concept.
 
-Criterios:
+Criteria:
 
-- La vista impresiona en demo sin perder usabilidad.
-- Sigue funcionando bien en tablet.
+- The view is impressive in demos without sacrificing usability.
+- It continues to work well on tablets.
 
-## Fase 5: Modo servicio en vivo
+## Phase 5: Live service mode
 
-Objetivo: pantalla rapida para camareros y manager durante el servicio.
+Objective: provide a fast screen for servers and managers during service.
 
-Tareas:
+Tasks:
 
-- Crear `features/live-service`.
-- Mostrar mesas ocupadas ahora.
-- Mostrar llegadas en 15/30/60 minutos.
-- Mostrar retrasos, pendientes y limpieza.
-- Acciones rapidas: arrived, seated, finished, no-show, reminder.
-- Integrar WebSocket.
+- Create `features/live-service`.
+- Show tables currently occupied.
+- Show arrivals in 15/30/60 minutes.
+- Show delays, pending items, and cleaning status.
+- Quick actions: arrived, seated, finished, no-show, reminder.
+- Integrate WebSocket.
 
-Criterios:
+Criteria:
 
-- El equipo puede operar el turno desde tablet con pocos toques.
+- The team can operate the shift from a tablet with few taps.
 
-## Fase 6: Optimizacion visual y sugerencias sin cambios de hora
+## Phase 6: Visual optimization and suggestions without time changes
 
-Objetivo: mostrar oportunidades accionables sin tocar horarios.
+Objective: show actionable opportunities without altering schedules.
 
-Tareas:
+Tasks:
 
-- Crear `features/optimization`.
-- Mostrar sugerencias de cambio de mesa, uso de salones y combinaciones.
-- Mostrar antes/despues de capacidad.
-- Prohibir recomendaciones de cambio horario automatico.
-- Manager acepta o descarta.
+- Create `features/optimization`.
+- Show suggestions for changing tables, using dining rooms, and creating combinations.
+- Show capacity before/after.
+- Prohibit automatic time-change recommendations.
+- The manager accepts or dismisses suggestions.
 
-Criterios:
+Criteria:
 
-- Cada sugerencia explica impacto y respeta hora original.
+- Each suggestion explains its impact and respects the original time.
 
-## Fase 7: Pulido UI/UX tablet
+## Phase 7: Tablet UI/UX polish
 
-Objetivo: convertir el panel en experiencia premium.
+Objective: turn the panel into a premium experience.
 
-Tareas:
+Tasks:
 
-- Refinar paleta, estados, animaciones y responsive.
-- Mejorar accesibilidad tactil.
-- Crear modo pantalla grande.
-- Crear modo camarero simplificado.
-- Crear datos demo realistas.
-- Pruebas manuales en tablet.
+- Refine the palette, states, animations, and responsive behavior.
+- Improve touch accessibility.
+- Create a large-screen mode.
+- Create a simplified server mode.
+- Create realistic demo data.
+- Perform manual testing on tablets.
 
-Criterios:
+Criteria:
 
-- Demo fluida, clara y visualmente memorable.
-- Sin errores de consola graves.
+- The demo is smooth, clear, and visually memorable.
+- No serious console errors.

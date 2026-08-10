@@ -112,17 +112,17 @@ public class InsightGenerator {
                 continue;
             }
 
-            String description = "Mesa " + assignment.getTable().getCode() + " (" + assignedCapacity
-                + " comensales) asignada a reserva de " + reservation.getPartySize()
-                + " personas cuando " + alternative.get().displayName()
-                + " podia absorber el mismo servicio.";
+            String description = "Table " + assignment.getTable().getCode() + " (" + assignedCapacity
+                + " guests) was assigned to a party of " + reservation.getPartySize()
+                + " when " + alternative.get().displayName()
+                + " could accommodate the same service.";
 
             insights.add(buildInsight(
                 restaurant,
                 date,
                 AiInsightType.WASTED_LARGE_TABLE,
                 assignedCapacity >= 8 ? AiSeverity.HIGH : AiSeverity.MEDIUM,
-                "Mesa grande desperdiciada",
+                "Large table underused",
                 description,
                 "Reservation",
                 reservation.getId(),
@@ -155,17 +155,17 @@ public class InsightGenerator {
                         continue;
                     }
 
-                    String description = "Entre " + table.code() + " existe un hueco libre de "
-                        + gapMinutes + " minutos entre "
-                        + current.customerName() + " y " + next.customerName()
-                        + ", potencialmente reutilizable para otra reserva corta.";
+                    String description = "Table " + table.code() + " has an available gap of "
+                        + gapMinutes + " minutes between "
+                        + current.customerName() + " and " + next.customerName()
+                        + ", which could accommodate another short reservation.";
 
                     insights.add(buildInsight(
                         restaurant,
                         date,
                         AiInsightType.DEAD_GAP_OPPORTUNITY,
                         gapMinutes >= 75 ? AiSeverity.MEDIUM : AiSeverity.LOW,
-                        "Hueco muerto reutilizable",
+                        "Reusable scheduling gap",
                         description,
                         "RestaurantTable",
                         table.id(),
@@ -200,15 +200,15 @@ public class InsightGenerator {
                 continue;
             }
 
-            String description = "El salon " + secondaryRoom.name()
-                + " se esta usando mientras el salon prioritario " + primaryRoom.name()
-                + " aun tiene mesas sin usar.";
+            String description = "Dining room " + secondaryRoom.name()
+                + " is in use while the higher-priority dining room " + primaryRoom.name()
+                + " still has unused tables.";
             insights.add(buildInsight(
                 restaurant,
                 date,
                 AiInsightType.SUBOPTIMAL_ROOM_USAGE,
                 AiSeverity.MEDIUM,
-                "Uso suboptimo de salones",
+                "Suboptimal dining room use",
                 description,
                 "DiningRoom",
                 secondaryRoom.id(),
@@ -228,16 +228,16 @@ public class InsightGenerator {
                         continue;
                     }
 
-                    String description = "La reserva de " + reservation.partySize()
-                        + " personas ocupa la mesa " + table.code()
-                        + " con una diferencia de " + wastedSeats + " plazas respecto a su capacidad maxima.";
+                    String description = "A reservation for " + reservation.partySize()
+                        + " guests occupies table " + table.code()
+                        + ", leaving " + wastedSeats + " seats below its maximum capacity.";
 
                     insights.add(buildInsight(
                         restaurant,
                         date,
                         AiInsightType.CAPACITY_UNDERUTILIZED,
                         wastedSeats >= 5 ? AiSeverity.HIGH : AiSeverity.LOW,
-                        "Capacidad infrautilizada",
+                        "Underused capacity",
                         description,
                         "Reservation",
                         reservation.reservationId(),
@@ -268,16 +268,16 @@ public class InsightGenerator {
                 continue;
             }
 
-            String description = "La reserva de " + buildCustomerName(reservation)
-                + " presenta riesgo de no-show por canal " + reservation.getChannel()
-                + (customerNoShows > 0 ? " y antecedentes operativos registrados." : ".");
+            String description = "The reservation for " + buildCustomerName(reservation)
+                + " has a no-show risk due to channel " + reservation.getChannel()
+                + (customerNoShows > 0 ? " and recorded operational history." : ".");
 
             insights.add(buildInsight(
                 restaurant,
                 date,
                 AiInsightType.HIGH_NO_SHOW_RISK,
                 customerNoShows > 0 ? AiSeverity.HIGH : AiSeverity.MEDIUM,
-                "Riesgo elevado de no-show",
+                "High no-show risk",
                 description,
                 "Reservation",
                 reservation.getId(),
@@ -327,16 +327,16 @@ public class InsightGenerator {
                 continue;
             }
 
-            String description = "La combinacion " + combination.getName()
-                + " se uso para la reserva de " + reservation.getPartySize()
-                + " personas cuando aun habia una mesa unica libre para el mismo tramo horario.";
+            String description = "Combination " + combination.getName()
+                + " was used for a reservation of " + reservation.getPartySize()
+                + " guests while a single table was still available for the same time range.";
 
             insights.add(buildInsight(
                 restaurant,
                 date,
                 AiInsightType.OVER_ASSIGNED_COMBINATION,
                 AiSeverity.MEDIUM,
-                "Combinacion usada antes de tiempo",
+                "Table combination used prematurely",
                 description,
                 "Reservation",
                 reservation.getId(),

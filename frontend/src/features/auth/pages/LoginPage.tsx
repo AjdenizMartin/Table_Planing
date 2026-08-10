@@ -5,7 +5,6 @@ import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { ApiError } from "@/services/api/client";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { registrationEnabled } from "@/features/auth/registration";
-import { LanguageSwitcher } from "@/features/i18n/LanguageSwitcher";
 import { useI18n } from "@/features/i18n/I18nProvider";
 
 interface LocationState {
@@ -66,13 +65,12 @@ export function LoginPage() {
               <p className="text-xs text-slate-500">Restaurant OS</p>
             </div>
           </div>
-          <LanguageSwitcher compact />
         </div>
 
         <div className="rounded-lg border border-white/10 bg-[#111614] p-6 shadow-2xl shadow-black/25 sm:p-7">
           <LockKeyhole className="mb-5 h-6 w-6 text-emerald-300" />
           <h1 className="text-2xl font-semibold text-white">
-            {t("Accede a Table Planning")}
+            {t("Sign in to Table Planning")}
           </h1>
 
           <form className="mt-7 grid gap-4" onSubmit={handleSubmit}>
@@ -92,7 +90,7 @@ export function LoginPage() {
 
             <label className="grid gap-2">
               <span className="text-sm font-medium text-slate-300">
-                {t("Contraseña")}
+                {t("Password")}
               </span>
               <input
                 className="h-11 rounded-lg border border-white/10 bg-[#0c100e] px-3 text-sm text-white outline-none transition focus:border-emerald-400/70 focus:ring-2 focus:ring-emerald-400/20"
@@ -119,7 +117,7 @@ export function LoginPage() {
               type="submit"
               disabled={mutation.isPending}
             >
-              {mutation.isPending ? t("Entrando...") : t("Entrar")}
+              {mutation.isPending ? t("Signing in...") : t("Sign in")}
               {!mutation.isPending ? <ArrowRight className="h-4 w-4" /> : null}
             </button>
           </form>
@@ -129,7 +127,7 @@ export function LoginPage() {
               to="/register"
               className="mt-5 block text-center text-sm font-medium text-emerald-300 hover:text-emerald-200"
             >
-              {t("Crear cuenta")}
+              {t("Create account")}
             </Link>
           ) : null}
         </div>
@@ -148,17 +146,17 @@ function getLoginErrorMessage(
 
   if (error instanceof ApiError) {
     if (error.status === 401 || error.status === 403) {
-      return t("Credenciales incorrectas. Revisa el email y la contraseña.");
+      return t("Incorrect credentials. Check your email and password.");
     }
     if (error.status >= 500) {
-      return t("El servicio no esta disponible. Intentalo de nuevo en unos minutos.");
+      return t("The service is unavailable. Try again in a few minutes.");
     }
-    return error.message || t("No se pudo iniciar sesion.");
+    return error.message || t("Could not sign in.");
   }
 
   if (error instanceof TypeError) {
-    return t("No se pudo conectar con el servicio.");
+    return t("Could not connect to the service.");
   }
 
-  return t("Error inesperado al iniciar sesion.");
+  return t("Unexpected sign-in error.");
 }

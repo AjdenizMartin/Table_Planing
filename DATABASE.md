@@ -1,20 +1,20 @@
 # Database
 
-## Objetivo
+## Objective
 
-La base de datos debe soportar un producto multi-restaurante con consistencia operativa, trazabilidad y capacidad de evolucionar sin rediseños bruscos. PostgreSQL es la opcion principal por robustez transaccional, flexibilidad y buen soporte para consultas complejas.
+The database must support a multi-restaurant product with operational consistency, traceability, and the ability to evolve without disruptive redesigns. PostgreSQL is the primary choice because of its transactional robustness, flexibility, and strong support for complex queries.
 
-## Principios de modelado
+## Modeling Principles
 
-- aislamiento logico por `restaurant_id`
-- integridad referencial estricta
-- historico de decisiones importantes
-- soporte para auditoria
-- capacidad de extender reglas con `jsonb` cuando convenga
+- logical isolation by `restaurant_id`
+- strict referential integrity
+- history of important decisions
+- audit support
+- ability to extend rules with `jsonb` where appropriate
 
-## Estado del esquema
+## Schema Status
 
-### Tablas reales en migraciones
+### Actual Tables in Migrations
 
 - `restaurant`
 - `app_user`
@@ -37,7 +37,7 @@ La base de datos debe soportar un producto multi-restaurante con consistencia op
 - `ai_insight`
 - `storage_resource`
 
-### Tablas planificadas pero no creadas
+### Planned but Uncreated Tables
 
 - `planning_slot`
 - `ai_recommendation`
@@ -48,7 +48,7 @@ La base de datos debe soportar un producto multi-restaurante con consistencia op
 - `reservation_setup_plan`
 - `setup_task`
 
-## Entidades principales
+## Main Entities
 
 ### User
 
@@ -69,9 +69,9 @@ La base de datos debe soportar un producto multi-restaurante con consistencia op
 - `role`
 - `created_at`
 
-En la fase inicial, incluso el rol `PLATFORM_ADMIN` se modela mediante asignaciones con `restaurant_id`, pero la capa de autorizacion puede tratar ese rol como global.
+In the initial phase, even the `PLATFORM_ADMIN` role is modeled through assignments with `restaurant_id`, but the authorization layer may treat that role as global.
 
-Permite que un usuario tenga distintos roles segun restaurante.
+This allows a user to have different roles depending on the restaurant.
 
 ### Restaurant
 
@@ -117,7 +117,7 @@ Permite que un usuario tenga distintos roles segun restaurante.
 - `created_at`
 - `updated_at`
 
-Las mesas `STORAGE` representan mesas guardadas fuera del salon. En la implementacion de Fase 1 pueden no tener `dining_room_id` y no deben aparecer como mesas normales del planning ni como candidatas del algoritmo basico.
+`STORAGE` tables represent tables stored outside the dining room. In the Phase 1 implementation, they may have no `dining_room_id` and must not appear as regular tables in the plan or as candidates for the basic algorithm.
 
 ### StorageResource
 
@@ -133,7 +133,7 @@ Las mesas `STORAGE` representan mesas guardadas fuera del salon. En la implement
 - `created_at`
 - `updated_at`
 
-Representa inventario agregado de almacen, como sillas extra, mesas plegables, tronas, extensiones o bancos. `STORAGE_TABLE` se conserva por compatibilidad con datos de V14. `quantity`, `capacity_per_unit` y `setup_time_minutes` no admiten valores negativos. Las combinaciones avanzadas pueden requerir cualquier tipo de recurso; capacidad adicional es `quantity * capacity_per_unit` y una capacidad cero representa un recurso operativo sin plazas.
+Represents aggregated storage inventory, such as extra chairs, folding tables, high chairs, extensions, or benches. `STORAGE_TABLE` is retained for compatibility with V14 data. `quantity`, `capacity_per_unit`, and `setup_time_minutes` do not allow negative values. Advanced combinations may require any resource type; additional capacity is `quantity * capacity_per_unit`, and zero capacity represents an operational resource with no seats.
 
 ### TableCombination
 
@@ -149,7 +149,7 @@ Representa inventario agregado de almacen, como sillas extra, mesas plegables, t
 - `created_at`
 - `updated_at`
 
-V16 migra combinaciones existentes a `STANDARD`, coste `LOW`, preparacion `0` y sin requisitos de inventario.
+V16 migrates existing combinations to `STANDARD`, cost `LOW`, setup `0`, and no inventory requirements.
 
 ### TableCombinationItem
 
@@ -168,7 +168,7 @@ V16 migra combinaciones existentes a `STANDARD`, coste `LOW`, preparacion `0` y 
 - `created_at`
 - `updated_at`
 
-La pareja combinacion/recurso es unica. `restaurant_id` se mantiene de forma explicita para aislamiento multi-tenant y validacion defensiva.
+The combination/resource pair is unique. `restaurant_id` is retained explicitly for multi-tenant isolation and defensive validation.
 
 ### Customer
 
@@ -233,7 +233,7 @@ La pareja combinacion/recurso es unica. `restaurant_id` se mantiene de forma exp
 - `setup_time_minutes_snapshot`
 - `created_at`
 
-Los snapshots preservan la explicacion historica aunque cambie despues el inventario. Las asignaciones inactivas mantienen sus consumos como historial, pero solo las activas y con reserva operativa cuentan para disponibilidad.
+Snapshots preserve the historical explanation even if inventory changes later. Inactive assignments retain their consumption as history, but only active assignments with an operational reservation count toward availability.
 
 ### PlanningSlot
 
@@ -247,7 +247,7 @@ Los snapshots preservan la explicacion historica aunque cambie despues el invent
 - `status`
 - `reservation_id`
 
-Planificado. No existe como tabla real en las migraciones actuales.
+Planned. It does not exist as an actual table in the current migrations.
 
 ### RestaurantRule
 
@@ -288,7 +288,7 @@ Planificado. No existe como tabla real en las migraciones actuales.
 - `status`
 - `created_at`
 
-Planificado en documentos iniciales, pero la implementacion real actual usa `AiInsight` y la tabla `ai_insight`.
+Planned in the initial documents, but the current actual implementation uses `AiInsight` and the `ai_insight` table.
 
 ### AiInsight
 
@@ -327,7 +327,7 @@ Planificado en documentos iniciales, pero la implementacion real actual usa `AiI
 - `created_at`
 - `updated_at`
 
-## Relaciones
+## Relationships
 
 - `Restaurant 1..N DiningRoom`
 - `Restaurant 1..N RestaurantTable`
@@ -347,13 +347,13 @@ Planificado en documentos iniciales, pero la implementacion real actual usa `AiI
 - `Restaurant 1..N AiInsight`
 - `User 1..N RefreshToken`
 
-## Consideraciones de multi-tenant
+## Multi-Tenant Considerations
 
-- todas las entidades de negocio deben incluir `restaurant_id` salvo las globales
-- todas las consultas deben filtrar por `restaurant_id`
-- los indices principales deben comenzar por `restaurant_id` cuando aplique
+- all business entities must include `restaurant_id` except global entities
+- all queries must filter by `restaurant_id`
+- primary indexes must begin with `restaurant_id` where applicable
 
-## Indices iniciales recomendados
+## Recommended Initial Indexes
 
 - `reservation(restaurant_id, reservation_date, start_time)`
 - `reservation(restaurant_id, status)`
@@ -363,21 +363,21 @@ Planificado en documentos iniciales, pero la implementacion real actual usa `AiI
 - `notification_log(restaurant_id, sent_at)`
 - `restaurant_rule(restaurant_id, rule_type, enabled)`
 
-## Restricciones recomendadas
+## Recommended Constraints
 
-- unicidad de `restaurant.slug`
-- unicidad de `restaurant_table.code` por restaurante
-- unicidad de `dining_room.name` por restaurante si se desea
+- uniqueness of `restaurant.slug`
+- uniqueness of `restaurant_table.code` per restaurant
+- uniqueness of `dining_room.name` per restaurant if desired
 - `min_capacity <= max_capacity`
 
-## Observaciones de consistencia
+## Consistency Notes
 
-- El esquema real ya cubre la mayor parte del MVP operativo
-- existe un subsistema de notificaciones internas (`notification`) que no estaba bien reflejado en la version anterior del documento
-- `jsonb` se usa en varias tablas reales: `restaurant`, `customer`, `reservation_assignment`, `restaurant_rule`, `audit_log`, `ai_insight`
-- combinaciones sin mesas duplicadas dentro de una misma combinacion
+- The actual schema already covers most of the operational MVP
+- an internal notification subsystem (`notification`) exists that was not accurately reflected in the previous version of the document
+- `jsonb` is used in several actual tables: `restaurant`, `customer`, `reservation_assignment`, `restaurant_rule`, `audit_log`, `ai_insight`
+- combinations must not contain duplicate tables within the same combination
 
-## Estados de reserva sugeridos
+## Suggested Reservation Statuses
 
 - `PENDING`
 - `CONFIRMED`
@@ -387,7 +387,7 @@ Planificado en documentos iniciales, pero la implementacion real actual usa `AiI
 - `CANCELLED`
 - `NO_SHOW`
 
-## Canal de reserva sugerido
+## Suggested Reservation Channels
 
 - `MANUAL`
 - `PHONE`
@@ -397,9 +397,9 @@ Planificado en documentos iniciales, pero la implementacion real actual usa `AiI
 - `FACEBOOK`
 - `WHATSAPP`
 
-## Campos `jsonb` propuestos
+## Proposed `jsonb` Fields
 
-Usar `jsonb` de forma controlada en:
+Use `jsonb` in a controlled manner in:
 
 - `restaurant.settings_json`
 - `restaurant_rule.config_json`
@@ -408,18 +408,18 @@ Usar `jsonb` de forma controlada en:
 - `ai_recommendation.recommendation_json`
 - `audit_log.metadata_json`
 
-## Estrategia de migraciones
+## Migration Strategy
 
-- Flyway desde el primer commit tecnico
-- migraciones pequeñas y secuenciales
-- no editar migraciones ya ejecutadas en entornos compartidos
-- `V14` crea `storage_resource` y el primer conjunto de tipos
-- `V15` amplia tipos y añade `capacity_per_unit` y `setup_time_minutes` con valor inicial `0` para preservar datos existentes
+- Flyway from the first technical commit
+- small, sequential migrations
+- do not edit migrations already executed in shared environments
+- `V14` creates `storage_resource` and the initial set of types
+- `V15` expands the types and adds `capacity_per_unit` and `setup_time_minutes` with an initial value of `0` to preserve existing data
 
-## Futuras extensiones posibles
+## Possible Future Extensions
 
-- tabla de `service_shift`
-- tabla de `table_block`
-- tabla de `reservation_event`
-- tabla de `channel_inbox`
-- tabla de `waitlist_entry`
+- `service_shift` table
+- `table_block` table
+- `reservation_event` table
+- `channel_inbox` table
+- `waitlist_entry` table

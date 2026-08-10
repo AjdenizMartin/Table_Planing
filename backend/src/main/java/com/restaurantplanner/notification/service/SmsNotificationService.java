@@ -301,20 +301,20 @@ public class SmsNotificationService {
 
     private String buildReservationConfirmationMessage(Reservation reservation) {
         String customerName = buildCustomerName(reservation.getCustomer());
-        return "Hola " + customerName
-            + ", tu reserva para " + reservation.getPartySize() + " personas el "
+        return "Hello " + customerName
+            + ", your reservation for " + reservation.getPartySize() + " guests on "
             + reservation.getReservationDate().format(DateTimeFormatter.ISO_LOCAL_DATE)
-            + " a las " + reservation.getStartTime().format(DateTimeFormatter.ofPattern("HH:mm"))
-            + " ha sido registrada. Gracias.";
+            + " at " + reservation.getStartTime().format(DateTimeFormatter.ofPattern("HH:mm"))
+            + " has been recorded. Thank you.";
     }
 
     private String buildReservationReminderMessage(Reservation reservation) {
         String customerName = buildCustomerName(reservation.getCustomer());
-        return "Recordatorio: " + customerName
-            + ", tienes una reserva para " + reservation.getPartySize() + " personas el "
+        return "Reminder: " + customerName
+            + ", you have a reservation for " + reservation.getPartySize() + " guests on "
             + reservation.getReservationDate().format(DateTimeFormatter.ISO_LOCAL_DATE)
-            + " a las " + reservation.getStartTime().format(DateTimeFormatter.ofPattern("HH:mm"))
-            + ". Te esperamos.";
+            + " at " + reservation.getStartTime().format(DateTimeFormatter.ofPattern("HH:mm"))
+            + ". We look forward to welcoming you.";
     }
 
     private String buildCustomerName(Customer customer) {
@@ -322,7 +322,7 @@ public class SmsNotificationService {
         String lastName = customer.getLastName() == null ? "" : customer.getLastName().trim();
         String fullName = (firstName + " " + lastName).trim();
         if (fullName.isEmpty()) {
-            return "cliente";
+            return "guest";
         }
         return fullName;
     }

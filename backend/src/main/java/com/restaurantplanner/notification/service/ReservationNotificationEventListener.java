@@ -42,8 +42,8 @@ public class ReservationNotificationEventListener {
     private void handleCreated(ReservationNotificationEvent event) {
         notificationService.create(
             event.restaurantId(), null, NotificationType.RESERVATION_CREATED,
-            "Nueva reserva",
-            "Reserva de " + event.partySize() + " comensales a las " + event.startTime() + " para " + event.customerName(),
+            "New reservation",
+            "Reservation for " + event.partySize() + " guests at " + event.startTime() + " for " + event.customerName(),
             "Reservation", event.reservationId()
         );
     }
@@ -51,17 +51,17 @@ public class ReservationNotificationEventListener {
     private void handleConfirmed(ReservationNotificationEvent event) {
         notificationService.create(
             event.restaurantId(), null, NotificationType.RESERVATION_CONFIRMED,
-            "Reserva confirmada",
-            "Reserva de " + event.partySize() + " comensales confirmada para " + event.customerName(),
+            "Reservation confirmed",
+            "Reservation for " + event.partySize() + " guests confirmed for " + event.customerName(),
             "Reservation", event.reservationId()
         );
 
         if (event.customerEmail() != null && !event.customerEmail().isBlank()) {
             emailService.send(
                 event.customerEmail(),
-                "Reserva confirmada - " + event.date(),
-                "Tu reserva para " + event.partySize() + " personas el " + event.date()
-                    + " a las " + event.startTime() + " ha sido confirmada.\n\nGracias por tu preferencia.",
+                "Reservation confirmed - " + event.date(),
+                "Your reservation for " + event.partySize() + " guests on " + event.date()
+                    + " at " + event.startTime() + " has been confirmed.\n\nThank you for choosing us.",
                 event.restaurantId(), event.reservationId()
             );
         }
@@ -70,17 +70,17 @@ public class ReservationNotificationEventListener {
     private void handleCancelled(ReservationNotificationEvent event) {
         notificationService.create(
             event.restaurantId(), null, NotificationType.RESERVATION_CANCELLED,
-            "Reserva cancelada",
-            "Reserva de " + event.customerName() + " (" + event.partySize() + " comensales) ha sido cancelada",
+            "Reservation cancelled",
+            "Reservation for " + event.customerName() + " (" + event.partySize() + " guests) has been cancelled",
             "Reservation", event.reservationId()
         );
 
         if (event.customerEmail() != null && !event.customerEmail().isBlank()) {
             emailService.send(
                 event.customerEmail(),
-                "Reserva cancelada - " + event.date(),
-                "Tu reserva para " + event.partySize() + " personas el " + event.date()
-                    + " a las " + event.startTime() + " ha sido cancelada.\n\nSi tienes dudas, contactanos.",
+                "Reservation cancelled - " + event.date(),
+                "Your reservation for " + event.partySize() + " guests on " + event.date()
+                    + " at " + event.startTime() + " has been cancelled.\n\nPlease contact us if you have any questions.",
                 event.restaurantId(), event.reservationId()
             );
         }
@@ -89,8 +89,8 @@ public class ReservationNotificationEventListener {
     private void handleSeated(ReservationNotificationEvent event) {
         notificationService.create(
             event.restaurantId(), null, NotificationType.RESERVATION_SEATED,
-            "Comensales sentados",
-            event.customerName() + " (" + event.partySize() + " comensales) se sento",
+            "Guests seated",
+            event.customerName() + " (" + event.partySize() + " guests) has been seated",
             "Reservation", event.reservationId()
         );
     }
@@ -98,8 +98,8 @@ public class ReservationNotificationEventListener {
     private void handleCompleted(ReservationNotificationEvent event) {
         notificationService.create(
             event.restaurantId(), null, NotificationType.RESERVATION_COMPLETED,
-            "Reserva finalizada",
-            event.customerName() + " (" + event.partySize() + " comensales) finalizo",
+            "Reservation completed",
+            event.customerName() + " (" + event.partySize() + " guests) has completed service",
             "Reservation", event.reservationId()
         );
     }
@@ -108,7 +108,7 @@ public class ReservationNotificationEventListener {
         notificationService.create(
             event.restaurantId(), null, NotificationType.RESERVATION_NO_SHOW,
             "No show",
-            event.customerName() + " no se presento (" + event.partySize() + " comensales)",
+            event.customerName() + " did not arrive (" + event.partySize() + " guests)",
             "Reservation", event.reservationId()
         );
     }

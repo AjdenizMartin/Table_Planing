@@ -14,7 +14,7 @@ export function ProtectedRoute({ allowWithoutRestaurant = false }: ProtectedRout
   if (status === "loading") {
     return (
       <main className="grid min-h-screen place-items-center bg-[#0c0f0e] px-6">
-        <p className="text-sm font-medium text-slate-300">{t("Cargando...")}</p>
+        <p className="text-sm font-medium text-slate-300">{t("Loading...")}</p>
       </main>
     );
   }

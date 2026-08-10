@@ -21,5 +21,5 @@ export function getErrorMessage(error: unknown) {
     return error.message;
   }
 
-  return "No se pudo completar la operacion.";
+  return "The operation could not be completed.";
 }

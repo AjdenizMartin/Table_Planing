@@ -1,41 +1,41 @@
 # Restaurant Table Planning
 
-Plataforma profesional de reservas y planificacion inteligente de mesas para restaurantes.
+Professional restaurant reservation and intelligent table planning platform.
 
 ## Vision
 
-Este proyecto busca resolver un problema operativo real: muchos sistemas de reservas aceptan solicitudes, pero asignan mesas de forma demasiado simple. Eso provoca mesas vacias, mal uso de mesas grandes, poca flexibilidad para reservas futuras y un planning diario suboptimo.
+This project aims to solve a real operational problem: many reservation systems accept requests but assign tables too simplistically. This results in empty tables, poor use of large tables, limited flexibility for future reservations, and a suboptimal daily plan.
 
-Restaurant Table Planning se plantea como un producto comercializable para restaurantes que necesitan:
+Restaurant Table Planning is conceived as a marketable product for restaurants that need to:
 
-- Gestionar reservas de forma centralizada.
-- Configurar salones, mesas y combinaciones sin tocar codigo.
-- Asignar automaticamente la mejor mesa o combinacion de mesas.
-- Mantener un planning visual y operativo en tiempo real.
-- Mejorar ocupacion, rotacion y calidad del servicio.
+- Manage reservations centrally.
+- Configure dining rooms, tables, and combinations without modifying code.
+- Automatically assign the best table or table combination.
+- Maintain a real-time visual and operational plan.
+- Improve occupancy, turnover, and service quality.
 
-## Objetivo del producto
+## Product Objective
 
-La aplicacion no debe limitarse a guardar reservas. Debe funcionar como un motor de decision que evalua cada nueva reserva dentro del contexto completo del servicio:
+The application must not be limited to storing reservations. It must operate as a decision engine that evaluates each new reservation within the full service context:
 
-- numero de comensales
-- hora y duracion estimada
-- tiempo de limpieza
-- mesas libres y combinaciones posibles
-- reglas del restaurante
-- impacto sobre reservas futuras
-- riesgo de generar huecos muertos
-- accesibilidad y preferencias
+- party size
+- time and estimated duration
+- cleaning time
+- available tables and possible combinations
+- restaurant rules
+- impact on future reservations
+- risk of creating unusable gaps
+- accessibility and preferences
 
-## Propuesta de valor
+## Value Proposition
 
-- Mejor uso del espacio del restaurante.
-- Menos desperdicio de capacidad.
-- Mas control operativo para managers y personal de sala.
-- Configuracion flexible desde tablet.
-- Base tecnologica preparada para crecer a multi-restaurante.
+- Better use of restaurant space.
+- Less wasted capacity.
+- Greater operational control for managers and front-of-house staff.
+- Flexible tablet-based configuration.
+- A technology foundation ready to scale to multiple restaurants.
 
-## Stack objetivo
+## Target Stack
 
 ### Backend
 
@@ -50,10 +50,10 @@ La aplicacion no debe limitarse a guardar reservas. Debe funcionar como un motor
 - Spring AI
 - Flyway
 
-### Base de datos e infraestructura
+### Database and Infrastructure
 
 - PostgreSQL
-- Redis opcional y recomendado
+- Redis, optional and recommended
 - Docker
 - Docker Compose
 - Nginx
@@ -69,26 +69,26 @@ La aplicacion no debe limitarse a guardar reservas. Debe funcionar como un motor
 - dnd-kit
 - PWA
 
-### Integraciones previstas
+### Planned Integrations
 
 - Twilio SMS
 - WhatsApp Cloud API
-- futuros canales web y social
+- future web and social channels
 
-## Estado actual
+## Current Status
 
-El proyecto ya no esta solo en fase documental. Actualmente incluye una primera base funcional con:
+The project is no longer solely in the documentation phase. It currently includes an initial functional foundation with:
 
-- backend `Spring Boot` con autenticacion JWT, multi-tenant y modulos iniciales
-- configuracion de restaurante, salones, mesas y combinaciones
-- clientes, reservas manuales y asignacion automatica inicial
-- combinaciones avanzadas con inventario, top 3 manual y aplicacion transaccional
-- planning diario, tiempo real por `WebSocket` e insights operativos deterministas
-- frontend `React + TypeScript` con login, configuracion, reservas y planning visual
-- CI con tests backend, PostgreSQL, frontend, Playwright e imagenes Docker
-- Compose local y productivo con Nginx, HTTPS, secretos, backups y health checks
+- `Spring Boot` backend with JWT authentication, multi-tenancy, and initial modules
+- restaurant, dining room, table, and combination configuration
+- customers, manual reservations, and initial automatic assignment
+- advanced combinations with inventory, a manual top 3, and transactional application
+- daily planning, real-time updates through `WebSocket`, and deterministic operational insights
+- `React + TypeScript` frontend with login, configuration, reservations, and visual planning
+- CI with backend tests, PostgreSQL, frontend, Playwright, and Docker images
+- local and production Compose configurations with Nginx, HTTPS, secrets, backups, and health checks
 
-## Documentacion clave
+## Key Documentation
 
 - [ARCHITECTURE.md](./ARCHITECTURE.md)
 - [DATABASE.md](./DATABASE.md)
@@ -106,76 +106,76 @@ El proyecto ya no esta solo en fase documental. Actualmente incluye una primera 
 - [docs/PILOT_RUNBOOK.md](./docs/PILOT_RUNBOOK.md)
 - [docs/PILOT_UAT_CHECKLIST.md](./docs/PILOT_UAT_CHECKLIST.md)
 
-## Principios de construccion
+## Construction Principles
 
-- Monolito modular antes que microservicios.
-- Motor determinista para asignacion de mesas.
-- IA solo como soporte explicativo y analitico.
-- Multi-tenant logico desde el inicio.
-- Trazabilidad de decisiones y cambios.
-- UX pensada para tablet y operacion real en sala.
+- Modular monolith before microservices.
+- Deterministic engine for table assignment.
+- AI only for explanatory and analytical support.
+- Logical multi-tenancy from the start.
+- Traceability of decisions and changes.
+- UX designed for tablets and real front-of-house operations.
 
-## MVP operativo implementado
+## Implemented Operational MVP
 
-La base actual ya cubre una parte relevante del MVP:
+The current foundation already covers a significant portion of the MVP:
 
-- autenticacion y roles
-- configuracion del restaurante
-- salones, mesas y combinaciones
-- reservas manuales
-- asignacion automatica inicial
-- planning visual diario
-- confirmaciones basicas por SMS
-- sugerencias avanzadas aprobadas por manager con inventario reservado
-- historial y explicacion de asignaciones
+- authentication and roles
+- restaurant configuration
+- dining rooms, tables, and combinations
+- manual reservations
+- initial automatic assignment
+- daily visual planning
+- basic SMS confirmations
+- advanced manager-approved suggestions with reserved inventory
+- assignment history and explanations
 
-Pendiente para una fase mas madura:
+Pending for a more mature phase:
 
-- automatizaciones operativas mas profundas
-- integraciones externas adicionales
-- refinamiento del algoritmo y analitica avanzada
-- carga de datos y UAT en el VPS real del piloto
+- deeper operational automation
+- additional external integrations
+- algorithm refinement and advanced analytics
+- data loading and UAT on the pilot's actual VPS
 
-## Arranque rapido
+## Quick Start
 
-### Requisitos
+### Requirements
 
-- Docker Desktop o daemon Docker en ejecucion
-- o alternativamente `Java 21`, `Maven` y `Node.js 20+`
+- Docker Desktop or a running Docker daemon
+- or, alternatively, `Java 21`, `Maven`, and `Node.js 20+`
 
-### Estado implementado vs planificado
+### Implemented vs. Planned Status
 
-Implementado actualmente:
+Currently implemented:
 
-- autenticacion JWT con refresh token
-- restaurante, salones, mesas y combinaciones
-- clientes y reservas manuales
-- planning diario
-- asignacion automatica determinista
-- eventos realtime
-- notificaciones internas y SMS basicos
-- insights explicativos de planning
-- top 3 manual con recursos, coste y preparacion
-- tests Vitest/Testing Library y Playwright a 768/1024 px
-- onboarding administrativo sin endpoint publico y operaciones de backup/TLS para el piloto
+- JWT authentication with refresh token
+- restaurant, dining rooms, tables, and combinations
+- customers and manual reservations
+- daily planning
+- deterministic automatic assignment
+- real-time events
+- internal notifications and basic SMS
+- explanatory planning insights
+- manual top 3 with resources, cost, and setup
+- Vitest/Testing Library and Playwright tests at 768/1024 px
+- administrative onboarding without a public endpoint and backup/TLS operations for the pilot
 
-Planificado o parcial:
+Planned or partial:
 
-- disponibilidad dedicada como modulo/API separada
-- simulacion de planning
-- drag and drop avanzado
-- WhatsApp y canales externos
+- dedicated availability as a separate module/API
+- planning simulation
+- advanced drag and drop
+- WhatsApp and external channels
 - Redis
-- Spring AI / proveedor externo de IA
+- Spring AI / external AI provider
 
-### URLs locales esperadas
+### Expected Local URLs
 
 - Frontend: `http://localhost:5173`
 - Backend API: `http://localhost:8080`
 - Healthcheck: `http://localhost:8080/actuator/health`
-- Ping tecnico: `http://localhost:8080/api/system/ping`
+- Technical ping: `http://localhost:8080/api/system/ping`
 
-## Estructura del repositorio
+## Repository Structure
 
 ```text
 .
@@ -194,47 +194,47 @@ Planificado o parcial:
 └── AGENTS.md
 ```
 
-## Demo local
+## Local Demo
 
-La demo local queda preparada para entrar directamente con un usuario propietario y datos operativos minimos. En perfil `dev`, el backend crea de forma idempotente el restaurante demo, salones, mesas, combinaciones, clientes y reservas del dia.
+The local demo is prepared for direct access with an owner user and minimal operational data. Under the `dev` profile, the backend idempotently creates the demo restaurant, dining rooms, tables, combinations, customers, and reservations for the day.
 
-### Credenciales demo
+### Demo Credentials
 
 - email: `demo@restaurant.com`
 - password: `Demo1234!`
-- rol: `RESTAURANT_OWNER`
-- restaurante: `Demo Restaurant`
+- role: `RESTAURANT_OWNER`
+- restaurant: `Demo Restaurant`
 
-### Datos demo incluidos
+### Included Demo Data
 
-- Salones: `Main Dining Room`, `Side Dining Room`, `Upper Dining Room`
-- Mesas: `Table 1` a `Table 7` con capacidades de 2, 4 y 6 comensales
-- Combinaciones: `Table 1 + Table 2` y `Table 3 + Table 4`
-- Clientes: `John Smith`, `Maria Garcia`, `David Murphy`
-- Reservas del dia actual con estados mezclados entre pendientes y confirmadas
+- Dining rooms: `Main Dining Room`, `Side Dining Room`, `Upper Dining Room`
+- Tables: `Table 1` through `Table 7`, with capacities of 2, 4, and 6 guests
+- Combinations: `Table 1 + Table 2` and `Table 3 + Table 4`
+- Customers: `John Smith`, `Maria Garcia`, `David Murphy`
+- Reservations for the current day with a mix of pending and confirmed statuses
 
-### Opcion 1. Solo base de datos con Docker
+### Option 1. Database Only with Docker
 
 ```bash
 docker compose up postgres
 ```
 
-Este modo es util si quieres arrancar el backend desde tu maquina. PostgreSQL se usa internamente en Docker Compose; si quieres conectar herramientas externas al puerto 5432, revisa primero que ese puerto no este ocupado en tu equipo.
+This mode is useful if you want to start the backend from your machine. PostgreSQL is used internally in Docker Compose; if you want to connect external tools to port 5432, first check that the port is not already in use on your system.
 
-### Opcion 2. Stack completo con Docker
+### Option 2. Full Stack with Docker
 
 ```bash
 docker compose up --build
 ```
 
-Despues abre:
+Then open:
 
 - Frontend: `http://localhost:5173`
 - Backend: `http://localhost:8080`
 - Health: `http://localhost:8080/actuator/health`
 - Ping: `http://localhost:8080/api/system/ping`
 
-### Opcion 3. Desarrollo mixto
+### Option 3. Hybrid Development
 
 Backend:
 
@@ -251,38 +251,38 @@ npm install
 npm run dev
 ```
 
-Para desarrollo mixto, el frontend usa `VITE_API_BASE_URL=http://localhost:8080`. Si el backend no responde, el login mostrara un mensaje indicando que revise Docker, el puerto 8080 o CORS.
+For hybrid development, the frontend uses `VITE_API_BASE_URL=http://localhost:8080`. If the backend does not respond, the login page will display a message asking you to check Docker, port 8080, or CORS.
 
-### Errores comunes
+### Common Errors
 
-- Si Docker indica que un puerto esta ocupado, libera el contenedor/proceso que lo usa o cambia el puerto en un archivo `.env` local.
-- Si el login falla con credenciales incorrectas, usa exactamente `demo@restaurant.com` y `Demo1234!`.
-- Si el navegador muestra error de CORS, confirma que el backend esta arrancado y que el frontend se abre desde `http://localhost:5173`.
-- Si `health` aparece `DOWN`, revisa los logs del backend y la conexion con PostgreSQL.
-- Si ya habias probado datos antiguos y quieres una demo limpia, puedes recrear la base local con `docker compose down -v` y despues `docker compose up --build`. Esto elimina los datos locales del volumen Docker.
+- If Docker reports that a port is in use, stop the container/process using it or change the port in a local `.env` file.
+- If login fails due to incorrect credentials, use exactly `demo@restaurant.com` and `Demo1234!`.
+- If the browser displays a CORS error, confirm that the backend is running and that the frontend is opened from `http://localhost:5173`.
+- If `health` appears as `DOWN`, check the backend logs and the PostgreSQL connection.
+- If you previously tested with old data and want a clean demo, you can recreate the local database with `docker compose down -v` and then `docker compose up --build`. This deletes the local data from the Docker volume.
 
-## Arranque base
+## Basic Startup
 
-### Opcion 1. Solo base de datos con Docker
+### Option 1. Database Only with Docker
 
 ```bash
 docker compose up postgres
 ```
 
-### Opcion 2. Stack completo con Docker
+### Option 2. Full Stack with Docker
 
 ```bash
 docker compose up --build
 ```
 
-Si Docker no esta arrancado, este comando fallara. En macOS eso suele significar que Docker Desktop no esta abierto o el socket Docker no esta disponible.
+If Docker is not running, this command will fail. On macOS, this usually means that Docker Desktop is not open or the Docker socket is unavailable.
 
-Credenciales demo locales en perfil `dev`:
+Local demo credentials under the `dev` profile:
 
 - email: `demo@restaurant.com`
 - password: `Demo1234!`
 
-### Opcion 3. Desarrollo mixto
+### Option 3. Hybrid Development
 
 Backend:
 
@@ -299,11 +299,11 @@ npm install
 npm run dev
 ```
 
-## Notas de entorno
+## Environment Notes
 
-- El backend esta configurado para `Java 21`.
-- La validacion reciente del proyecto confirma:
-  - `mvn -q -DskipTests package` correcto en `backend`
-  - `npm run build` correcto en `frontend`
-- Si el proyecto no arranca localmente, revisa primero que Docker Desktop este levantado.
-- PostgreSQL no necesita exponerse al host para que la aplicacion funcione dentro de Docker Compose.
+- The backend is configured for `Java 21`.
+- Recent project validation confirms:
+  - `mvn -q -DskipTests package` succeeds in `backend`
+  - `npm run build` succeeds in `frontend`
+- If the project does not start locally, first check that Docker Desktop is running.
+- PostgreSQL does not need to be exposed to the host for the application to work within Docker Compose.

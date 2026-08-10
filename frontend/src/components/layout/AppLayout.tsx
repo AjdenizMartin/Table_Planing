@@ -18,7 +18,6 @@ import { useAuth } from "@/features/auth/context/AuthContext";
 import { useRealtime } from "@/features/realtime/RealtimeProvider";
 import { NotificationBell } from "@/features/notifications/components/NotificationBell";
 import { NotificationToast } from "@/features/notifications/components/NotificationToast";
-import { LanguageSwitcher } from "@/features/i18n/LanguageSwitcher";
 import { useI18n } from "@/features/i18n/I18nProvider";
 
 interface NavigationItem {
@@ -35,24 +34,24 @@ interface NavigationGroup {
 
 const navigationGroups: NavigationGroup[] = [
   {
-    label: "Operacion",
+    label: "Operations",
     items: [
-      { to: "/", label: "Resumen", icon: LayoutDashboard, end: true },
+      { to: "/", label: "Overview", icon: LayoutDashboard, end: true },
       { to: "/planning", label: "Planning", icon: CalendarDays },
-      { to: "/reservations", label: "Reservas", icon: TableProperties },
-      { to: "/customers", label: "Clientes", icon: Users },
+      { to: "/reservations", label: "Reservations", icon: TableProperties },
+      { to: "/customers", label: "Customers", icon: Users },
     ],
   },
   {
-    label: "Configuracion",
+    label: "Settings",
     items: [
-      { to: "/settings/restaurant", label: "Restaurante", icon: Utensils },
-      { to: "/settings/dining-rooms", label: "Salones", icon: Armchair },
-      { to: "/settings/tables", label: "Mesas", icon: TableProperties },
-      { to: "/settings/layout", label: "Plano", icon: Map },
+      { to: "/settings/restaurant", label: "Restaurant", icon: Utensils },
+      { to: "/settings/dining-rooms", label: "Dining rooms", icon: Armchair },
+      { to: "/settings/tables", label: "Tables", icon: TableProperties },
+      { to: "/settings/layout", label: "Floor plan", icon: Map },
       {
         to: "/settings/table-combinations",
-        label: "Combinaciones",
+        label: "Combinations",
         icon: Combine,
       },
     ],
@@ -64,7 +63,7 @@ const mobileItems = [
   navigationGroups[0].items[1],
   navigationGroups[0].items[2],
   navigationGroups[0].items[3],
-  { to: "/settings/restaurant", label: "Configuracion", icon: Settings },
+  { to: "/settings/restaurant", label: "Settings", icon: Settings },
 ];
 
 export function AppLayout() {
@@ -78,12 +77,12 @@ export function AppLayout() {
 
   const realtimeLabel =
     realtimeStatus === "connected"
-      ? t("Tiempo real conectado")
+      ? t("Live updates connected")
       : realtimeStatus === "connecting"
-        ? t("Tiempo real conectando")
+        ? t("Connecting live updates")
         : realtimeStatus === "error"
-          ? t("Tiempo real con error")
-          : t("Tiempo real desconectado");
+          ? t("Live updates unavailable")
+          : t("Live updates disconnected");
 
   return (
     <div className="min-h-screen bg-[#0c0f0e] lg:grid lg:grid-cols-[248px_minmax(0,1fr)]">
@@ -125,8 +124,8 @@ export function AppLayout() {
             <button
               type="button"
               className="grid h-9 w-9 place-items-center rounded-lg text-slate-400 transition hover:bg-rose-500/10 hover:text-rose-300"
-              title={t("Cerrar sesion")}
-              aria-label={t("Cerrar sesion")}
+              title={t("Sign out")}
+              aria-label={t("Sign out")}
               onClick={() => void logout()}
             >
               <LogOut className="h-4 w-4" />
@@ -149,14 +148,14 @@ export function AppLayout() {
           <div className="ml-auto flex min-w-0 items-center gap-2 sm:gap-3">
             {session.restaurants.length > 1 ? (
               <label className="relative hidden sm:block">
-                <span className="sr-only">{t("Restaurante activo")}</span>
+                <span className="sr-only">{t("Active restaurant")}</span>
                 <select
                   className="h-9 max-w-56 appearance-none rounded-lg border border-white/10 bg-white/5 py-0 pl-3 pr-9 text-sm text-white outline-none focus:border-emerald-400/60"
                   value={session.activeRestaurantId ?? ""}
                   onChange={(event) => setActiveRestaurantId(Number(event.target.value))}
                 >
                   <option value="" disabled>
-                    {t("Seleccionar")}
+                    {t("Select")}
                   </option>
                   {session.restaurants.map((restaurant) => (
                     <option key={restaurant.id} value={restaurant.id}>
@@ -189,13 +188,12 @@ export function AppLayout() {
               <span className="sr-only">{realtimeLabel}</span>
             </div>
 
-            <LanguageSwitcher compact />
             <NotificationBell />
             <button
               type="button"
               className="grid h-9 w-9 place-items-center rounded-lg text-slate-400 transition hover:bg-white/5 hover:text-white lg:hidden"
-              title={t("Cerrar sesion")}
-              aria-label={t("Cerrar sesion")}
+              title={t("Sign out")}
+              aria-label={t("Sign out")}
               onClick={() => void logout()}
             >
               <LogOut className="h-4 w-4" />

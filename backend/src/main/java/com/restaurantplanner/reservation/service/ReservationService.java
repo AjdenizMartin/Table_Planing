@@ -563,7 +563,7 @@ public class ReservationService {
         details.put("recommendationSummary", assignmentResponse.recommendationSummary());
 
         throw new ConflictException(
-            "No se puede confirmar esta reserva porque no hay mesa disponible a la hora solicitada.",
+            "This reservation cannot be confirmed because no table is available at the requested time.",
             details
         );
     }

@@ -1,357 +1,357 @@
 # Roadmap
 
-## Estado de fases
+## Phase status
 
-- `Fase 1`: PARTIALLY_DONE
-- `Fase 2`: PARTIALLY_DONE
-- `Fase 3`: PARTIALLY_DONE
-- `Fase 4`: PARTIALLY_DONE
-- `Fase 5`: PARTIALLY_DONE
-- `Fase 6`: PARTIALLY_DONE
-- `Fase 7`: PARTIALLY_DONE
-- `Fase 8`: PARTIALLY_DONE
-- `Fase 9`: NOT_STARTED
-- `Fase 10`: IN_PROGRESS
+- `Phase 1`: PARTIALLY_DONE
+- `Phase 2`: PARTIALLY_DONE
+- `Phase 3`: PARTIALLY_DONE
+- `Phase 4`: PARTIALLY_DONE
+- `Phase 5`: PARTIALLY_DONE
+- `Phase 6`: PARTIALLY_DONE
+- `Phase 7`: PARTIALLY_DONE
+- `Phase 8`: PARTIALLY_DONE
+- `Phase 9`: NOT_STARTED
+- `Phase 10`: IN_PROGRESS
 
-## Enfoque
+## Approach
 
-El roadmap prioriza primero el nucleo de valor del producto: configuracion del restaurante, reservas, motor de asignacion y planning visual. Integraciones avanzadas e IA se incorporan despues de estabilizar la operativa principal.
+The roadmap prioritizes the product's core value first: restaurant configuration, reservations, assignment engine, and visual planning. Advanced integrations and AI are incorporated after the main operation has been stabilized.
 
-## Fase 1. Base del proyecto y autenticacion
+## Phase 1. Project foundation and authentication
 
-**Estado:** `PARTIALLY_DONE`
+**Status:** `PARTIALLY_DONE`
 
-### Objetivos
+### Objectives
 
-- crear estructura tecnica inicial
-- configurar backend y frontend
-- establecer autenticacion y autorizacion
-- preparar aislamiento multi-tenant basico
+- create the initial technical structure
+- configure the backend and frontend
+- establish authentication and authorization
+- prepare basic multi-tenant isolation
 
-### Entregables
+### Deliverables
 
-- repositorio estructurado
-- proyecto Spring Boot base
-- proyecto React base
+- structured repository
+- base Spring Boot project
+- base React project
 - login
-- JWT y refresh token
-- roles iniciales
+- JWT and refresh token
+- initial roles
 
-### Criterios de finalizacion
+### Completion criteria
 
-- un usuario autenticado puede acceder solo a sus recursos
-- la app arranca en entorno local con Docker
+- an authenticated user can access only their resources
+- the app starts in a local environment with Docker
 
-## Fase 2. Configuracion del restaurante
+## Phase 2. Restaurant configuration
 
-**Estado:** `PARTIALLY_DONE`
+**Status:** `PARTIALLY_DONE`
 
-### Objetivos
+### Objectives
 
-- modelar restaurante, salones y mesas
-- permitir configuracion visual y operativa
-- soportar combinaciones de mesas y reglas iniciales
+- model the restaurant, dining areas, and tables
+- enable visual and operational configuration
+- support table combinations and initial rules
 
-### Entregables
+### Deliverables
 
-- CRUD de restaurante
-- CRUD de salones
-- CRUD de mesas
-- CRUD de combinaciones
-- reglas operativas minimas
+- restaurant CRUD
+- dining area CRUD
+- table CRUD
+- combination CRUD
+- minimum operational rules
 
-### Criterios de finalizacion
+### Completion criteria
 
-- un restaurante puede quedar totalmente configurado sin tocar codigo
+- a restaurant can be fully configured without modifying code
 
-## Fase 3. Gestion de reservas
+## Phase 3. Reservation management
 
-**Estado:** `PARTIALLY_DONE`
+**Status:** `PARTIALLY_DONE`
 
-### Objetivos
+### Objectives
 
-- crear reservas manuales
-- gestionar clientes
-- controlar estados de reservas
-- validar conflictos horarios
+- create reservations manually
+- manage customers
+- control reservation statuses
+- validate scheduling conflicts
 
-### Entregables
+### Deliverables
 
-- modulo de clientes
-- modulo de reservas
-- estados de reserva
-- validacion temporal
-- historial basico
+- customer module
+- reservation module
+- reservation statuses
+- temporal validation
+- basic history
 
-### Criterios de finalizacion
+### Completion criteria
 
-- se puede operar un servicio real de forma manual sin errores graves
+- a real service can be operated manually without serious errors
 
-## Fase 4. Algoritmo basico de asignacion
+## Phase 4. Basic assignment algorithm
 
-**Estado:** `PARTIALLY_DONE`
+**Status:** `PARTIALLY_DONE`
 
-### Objetivos
+### Objectives
 
-- asignar mesas automaticamente
-- aplicar scoring serio
-- soportar combinaciones validas
-- explicar la decision tomada
+- assign tables automatically
+- apply robust scoring
+- support valid combinations
+- explain the decision made
 
-### Entregables
+### Deliverables
 
-- motor de candidatos
-- validacion de disponibilidad
-- scoring inicial
-- explicacion de asignacion
+- candidate engine
+- availability validation
+- initial scoring
+- assignment explanation
 
-### Extension avanzada prevista
+### Planned advanced extension
 
-- excluir mesas de almacen del algoritmo normal
-- evaluar sillas extra y almacen solo en niveles avanzados con coste operativo
-- generar planes de montaje y tareas antes de aplicar opciones especiales
+- exclude storage tables from the normal algorithm
+- evaluate extra chairs and storage only at advanced levels with an operational cost
+- generate setup plans and tasks before applying special options
 
-### Criterios de finalizacion
+### Completion criteria
 
-- el sistema asigna de forma consistentemente mejor que una regla trivial
+- the system assigns tables consistently better than a trivial rule
 
-## Fase 5. Planning visual
+## Phase 5. Visual planning
 
-**Estado:** `PARTIALLY_DONE`
+**Status:** `PARTIALLY_DONE`
 
-### Objetivos
+### Objectives
 
-- ofrecer una vista clara del servicio diario
-- permitir mover reservas manualmente
-- visualizar disponibilidad y conflictos
+- provide a clear view of daily service
+- allow reservations to be moved manually
+- display availability and conflicts
 
-### Entregables
+### Deliverables
 
-- planning por hora y mesa
-- filtros por salon
-- acciones operativas rapidas
-- drag and drop inicial
+- planning by time and table
+- filters by dining area
+- quick operational actions
+- initial drag and drop
 
-### Extension avanzada prevista
+### Planned advanced extension
 
-- mostrar recursos de almacen y montajes especiales como elementos operativos diferenciados
-- mostrar tareas de preparacion asociadas a reservas
-- permitir aprobar o rechazar opciones avanzadas sin cambiar horas existentes
+- display storage resources and special setups as distinct operational elements
+- display preparation tasks associated with reservations
+- allow advanced options to be approved or rejected without changing existing times
 
-### Criterios de finalizacion
+### Completion criteria
 
-- el manager puede trabajar principalmente desde el planning
+- the manager can work primarily from the planning view
 
-## Fase 6. Tiempo real
+## Phase 6. Real time
 
-**Estado:** `PARTIALLY_DONE`
+**Status:** `PARTIALLY_DONE`
 
-### Objetivos
+### Objectives
 
-- sincronizar cambios entre dispositivos
-- reflejar estado actualizado del planning
+- synchronize changes between devices
+- reflect the current planning status
 
-### Entregables
+### Deliverables
 
 - WebSocket/STOMP
-- eventos de reservas
-- eventos de planning
-- actualizacion reactiva del frontend
+- reservation events
+- planning events
+- reactive frontend updates
 
-### Criterios de finalizacion
+### Completion criteria
 
-- cambios visibles casi en tiempo real en dos clientes conectados
+- changes are visible almost in real time on two connected clients
 
-## Fase 7. Confirmaciones SMS y WhatsApp
+## Phase 7. SMS and WhatsApp confirmations
 
-**Estado:** `PARTIALLY_DONE`
+**Status:** `PARTIALLY_DONE`
 
-### Objetivos
+### Objectives
 
-- automatizar recordatorios y confirmaciones
-- reducir no-shows y reservas dudosas
+- automate reminders and confirmations
+- reduce no-shows and uncertain reservations
 
-### Entregables
+### Deliverables
 
-- integracion con Twilio SMS
-- abstraccion de proveedor
-- logs de envio
-- reintentos
-- base para WhatsApp
+- Twilio SMS integration
+- provider abstraction
+- delivery logs
+- retries
+- foundation for WhatsApp
 
-### Criterios de finalizacion
+### Completion criteria
 
-- mensajes enviados y auditables end-to-end
+- messages are sent and auditable end-to-end
 
-## Fase 8. IA y recomendaciones
+## Phase 8. AI and recommendations
 
-**Estado:** `PARTIALLY_DONE`
+**Status:** `PARTIALLY_DONE`
 
-### Objetivos
+### Objectives
 
-- añadir una capa de inteligencia explicativa
-- detectar oportunidades de mejora
+- add a layer of explanatory intelligence
+- identify opportunities for improvement
 
-### Entregables
+### Deliverables
 
-- recomendaciones de planning
-- explicaciones de decisiones
-- alertas de uso suboptimo
+- planning recommendations
+- decision explanations
+- suboptimal usage alerts
 
-### Criterios de finalizacion
+### Completion criteria
 
-- la IA aporta contexto util sin sustituir al algoritmo
+- AI provides useful context without replacing the algorithm
 
-## Fase 9. Estadisticas y optimizacion avanzada
+## Phase 9. Statistics and advanced optimization
 
-**Estado:** `NOT_STARTED`
+**Status:** `NOT_STARTED`
 
-### Objetivos
+### Objectives
 
-- medir rendimiento operativo
-- mejorar scoring con datos historicos
-- evaluar escenarios futuros
+- measure operational performance
+- improve scoring with historical data
+- evaluate future scenarios
 
-### Entregables
+### Deliverables
 
-- metricas de ocupacion
+- occupancy metrics
 - no-show rate
-- analisis de huecos muertos
-- simulaciones avanzadas
+- analysis of unusable gaps
+- advanced simulations
 
-### Criterios de finalizacion
+### Completion criteria
 
-- se pueden justificar mejoras del producto con metricas
+- product improvements can be justified with metrics
 
-## Fase 10. Preparacion para produccion
+## Phase 10. Production readiness
 
-**Estado:** `IN_PROGRESS`
+**Status:** `IN_PROGRESS`
 
-**Tramo de codigo:** `DONE`; pendiente validacion en infraestructura real.
+**Code track:** `DONE`; validation in real infrastructure remains pending.
 
-### Objetivos
+### Objectives
 
-- endurecer la plataforma
-- preparar despliegue piloto y soporte
+- harden the platform
+- prepare pilot deployment and support
 
-### Entregables
+### Deliverables
 
-- configuracion de produccion
+- production configuration
 - backups
-- observabilidad
-- documentacion operativa
-- seguridad revisada
+- observability
+- operational documentation
+- reviewed security
 
-### Implementado para el piloto
+### Implemented for the pilot
 
-- perfil productivo sin registro publico ni credenciales demo en frontend
-- backend no privilegiado, filesystem de solo lectura, capacidades eliminadas y secretos por archivo
-- TLS, CSP, rate limiting, red interna y rotacion de logs
-- preflight reproducible y monitor de HTTPS, TLS, disco y backups con alerta opcional
-- onboarding, backup cifrado externo, restauracion, rollback y UAT documentados
+- production profile without public registration or demo credentials in the frontend
+- unprivileged backend, read-only filesystem, capabilities removed, and file-based secrets
+- TLS, CSP, rate limiting, internal network, and log rotation
+- reproducible preflight and monitoring of HTTPS, TLS, disk, and backups with optional alerts
+- documented onboarding, encrypted external backup, restoration, rollback, and UAT
 
-### Pendiente de cierre
+### Pending closure
 
-- ejecutar preflight y despliegue del tag aprobado en Ubuntu 24.04
-- comprobar backup S3 y restauracion real
-- validar rendimiento, Android fisico y UAT con usuarios/datos reales
+- run preflight and deploy the approved tag on Ubuntu 24.04
+- verify S3 backup and actual restoration
+- validate performance, a physical Android device, and UAT with real users/data
 
-### Criterios de finalizacion
+### Completion criteria
 
-- el producto esta listo para un piloto real con restaurantes
+- the product is ready for a real pilot with restaurants
 
-## MVP recomendado
+## Recommended MVP
 
-El MVP debe incluir solo lo esencial para demostrar valor real:
+The MVP should include only what is essential to demonstrate real value:
 
-- autenticacion
-- restaurante, salones y mesas
-- combinaciones
-- reservas manuales
-- asignacion automatica inicial
-- planning visual
-- confirmacion SMS basica
+- authentication
+- restaurant, dining areas, and tables
+- combinations
+- manual reservations
+- initial automatic assignment
+- visual planning
+- basic SMS confirmation
 
-## MVP avanzado recomendado
+## Recommended advanced MVP
 
-Para demostrar valor en el problema real de mesas moviles y almacen sin romper el sistema actual:
+To demonstrate value for the real-world problem of movable and stored tables without disrupting the current system:
 
-- `tableType` en mesas (`FIXED`, `MOVABLE`, `STORAGE`, `TEMPORARY`)
-- inventario `StorageResource` para sillas extra y mesas guardadas
-- exclusion de mesas `STORAGE` del planning normal y candidatos basicos
-- UI minima para ver y crear recursos de almacen
-- documentacion del algoritmo por niveles antes de implementar montajes automaticos
+- `tableType` on tables (`FIXED`, `MOVABLE`, `STORAGE`, `TEMPORARY`)
+- `StorageResource` inventory for extra chairs and stored tables
+- exclusion of `STORAGE` tables from normal planning and basic candidates
+- minimum UI for viewing and creating storage resources
+- documentation of the tiered algorithm before implementing automatic setups
 
 ### Sprint 1. Storage Inventory
 
-**Estado:** `DONE`
+**Status:** `DONE`
 
-- inventario configurable con tipos operativos, cantidad, capacidad por unidad y tiempo de preparacion
-- filtros por tipo y estado
-- resumen de sillas, mesas y recursos activos/inactivos
-- edicion, desactivacion y reactivacion sin borrado fisico
-- aislamiento por restaurante y validaciones negativas cubiertas por tests de integracion
-- sin uso automatico por el algoritmo
+- configurable inventory with operational types, quantity, capacity per unit, and preparation time
+- filters by type and status
+- summary of chairs, tables, and active/inactive resources
+- editing, deactivation, and reactivation without physical deletion
+- restaurant isolation and negative validations covered by integration tests
+- no automatic use by the algorithm
 
-### Sprint 2. Combinaciones Avanzadas
+### Sprint 2. Advanced Combinations
 
-**Estado:** `DONE`
+**Status:** `DONE`
 
-- V16 con tipo, coste, preparacion y requisitos de inventario
-- CRUD backend/frontend con capacidad efectiva y validacion multi-tenant
-- proteccion de inventario comprometido por reservas futuras
+- V16 with type, cost, preparation, and inventory requirements
+- backend/frontend CRUD with effective capacity and multi-tenant validation
+- protection of inventory committed to future reservations
 
-### Sprint 3. Sugerencias y aplicacion segura
+### Sprint 3. Suggestions and safe application
 
-**Estado:** `DONE`
+**Status:** `DONE`
 
-- modos automatico/manual separados y top 3 determinista
-- V17 con snapshots de recursos por asignacion
-- seleccion transaccional, bloqueo pesimista, auditoria y realtime
+- separate automatic/manual modes and deterministic top 3
+- V17 with resource snapshots per assignment
+- transactional selection, pessimistic locking, auditing, and real time
 
-### Sprint 4. Operacion y tablet
+### Sprint 4. Operations and tablet
 
-**Estado:** `DONE`
+**Status:** `DONE`
 
-- comparador de sugerencias, recursos e historial en el panel de reserva
-- permisos de aprobacion separados para manager y staff
-- Vitest, Testing Library y Playwright a 768/1024 px
+- comparison of suggestions, resources, and history in the reservation panel
+- separate approval permissions for manager and staff
+- Vitest, Testing Library, and Playwright at 768/1024 px
 
-### Sprint 5. Despliegue del piloto
+### Sprint 5. Pilot deployment
 
-**Estado:** `READY_FOR_ENVIRONMENT`
+**Status:** `READY_FOR_ENVIRONMENT`
 
-- frontend estatico Nginx, proxy API/WebSocket, TLS y rate limiting
-- Compose productivo con red interna, secretos, health checks y reinicio
-- backup, restauracion y rollback documentados
+- static Nginx frontend, API/WebSocket proxy, TLS, and rate limiting
+- production Compose with internal network, secrets, health checks, and restart
+- documented backup, restoration, and rollback
 
-### Sprint 6. Salida a piloto
+### Sprint 6. Pilot launch
 
-**Estado:** `READY_FOR_UAT`
+**Status:** `READY_FOR_UAT`
 
-- E2E criticos automatizados y script de rendimiento
-- runner de onboarding transaccional, fixture de 150 reservas y checklist UAT disponibles
-- renovacion TLS y backup externo cifrado automatizables
-- pendientes externos: dominio, certificados, datos reales, cuentas y ejecucion UAT en VPS
+- automated critical E2E tests and performance script
+- transactional onboarding runner, fixture with 150 reservations, and available UAT checklist
+- automatable TLS renewal and encrypted external backup
+- external dependencies: domain, certificates, real data, accounts, and UAT execution on VPS
 
-Los planes de montaje, tareas operativas y editor visual avanzado siguen fuera del piloto. La seleccion explicita del manager actua como aprobacion.
+Setup plans, operational tasks, and the advanced visual editor remain outside the pilot. Explicit selection by the manager serves as approval.
 
-## Fuera del MVP
+## Outside the MVP
 
-- recepcion automatica desde todos los canales externos
-- forecasting avanzado
-- IA con replanificacion compleja
-- dashboards empresariales multi-sede
+- automatic intake from all external channels
+- advanced forecasting
+- AI with complex replanning
+- multi-location enterprise dashboards
 
-## Orden sugerido de implementacion
+## Suggested implementation order
 
-1. documentacion y decisiones base
-2. estructura de repositorio
-3. backend base y seguridad
-4. frontend base
-5. dominio restaurante y layout
-6. reservas y clientes
-7. algoritmo inicial
-8. planning visual
-9. tiempo real
-10. mensajeria
+1. documentation and foundational decisions
+2. repository structure
+3. base backend and security
+4. base frontend
+5. restaurant domain and layout
+6. reservations and customers
+7. initial algorithm
+8. visual planning
+9. real time
+10. messaging

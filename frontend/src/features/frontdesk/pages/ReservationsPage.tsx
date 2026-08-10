@@ -138,15 +138,15 @@ export function ReservationsPage() {
   }
 
   return (
-    <OperationsShell title={t("Reservas")}>
+    <OperationsShell title={t("Reservations")}>
       <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
         <div className="grid gap-6">
-          <ConfigCard title={searchMode ? t("Buscar reservas") : t("Reservas del dia")}>
+          <ConfigCard title={searchMode ? t("Search reservations") : t("Today's reservations")}>
             <div className="mb-5 grid gap-4 sm:grid-cols-[220px_auto] sm:items-end">
               {searchMode ? (
                 <TextField
-                  label={t("Buscar cliente")}
-                  placeholder={t("Nombre o apellidos")}
+                  label={t("Find customer")}
+                  placeholder={t("First or last name")}
                   value={searchFilters.customerQuery ?? ""}
                   onChange={(event) =>
                     setSearchFilters((prev) => ({ ...prev, customerQuery: event.target.value }))
@@ -154,7 +154,7 @@ export function ReservationsPage() {
                 />
               ) : (
                 <TextField
-                  label={t("Fecha")}
+                  label={t("Date")}
                   type="date"
                   value={selectedDate}
                   onChange={(event) => {
@@ -182,7 +182,7 @@ export function ReservationsPage() {
                 >
                   <span className="inline-flex items-center gap-2">
                     <CalendarSearch className="h-4 w-4" />
-                    {searchMode ? t("Ver por fecha") : t("Buscar")}
+                    {searchMode ? t("View by date") : t("Search")}
                   </span>
                 </button>
                 <button
@@ -201,7 +201,7 @@ export function ReservationsPage() {
                 >
                   <span className="inline-flex items-center gap-2">
                     <Plus className="h-4 w-4" />
-                    {t("Nueva reserva")}
+                    {t("New reservation")}
                   </span>
                 </button>
               </div>
@@ -210,22 +210,22 @@ export function ReservationsPage() {
             {searchMode ? (
               <div className="mb-5 grid gap-4 sm:grid-cols-3">
                 <SelectField
-                  label={t("Estado")}
+                  label={t("Status")}
                   value={searchFilters.status ?? ""}
                   onChange={(event) =>
                     setSearchFilters((prev) => ({ ...prev, status: event.target.value }))
                   }
                 >
-                  <option value="">{t("Todos")}</option>
-                  <option value="PENDING">{t("Pendiente")}</option>
-                  <option value="CONFIRMED">{t("Confirmada")}</option>
-                  <option value="SEATED">{t("Sentada")}</option>
-                  <option value="COMPLETED">{t("Completada")}</option>
-                  <option value="CANCELLED">{t("Cancelada")}</option>
-                  <option value="NO_SHOW">{t("No presentado")}</option>
+                  <option value="">{t("All")}</option>
+                  <option value="PENDING">{t("Pending")}</option>
+                  <option value="CONFIRMED">{t("Confirmed")}</option>
+                  <option value="SEATED">{t("Seated")}</option>
+                  <option value="COMPLETED">{t("Completed")}</option>
+                  <option value="CANCELLED">{t("Cancelled")}</option>
+                  <option value="NO_SHOW">{t("No show")}</option>
                 </SelectField>
                 <TextField
-                  label={t("Desde")}
+                  label={t("From")}
                   type="date"
                   value={searchFilters.dateFrom ?? ""}
                   onChange={(event) =>
@@ -233,7 +233,7 @@ export function ReservationsPage() {
                   }
                 />
                 <TextField
-                  label={t("Hasta")}
+                  label={t("To")}
                   type="date"
                   value={searchFilters.dateTo ?? ""}
                   onChange={(event) =>
@@ -244,7 +244,7 @@ export function ReservationsPage() {
             ) : null}
 
             {reservationsQuery.isLoading || searchQuery.isLoading ? (
-              <StatusMessage tone="info">{t("Cargando reservas...")}</StatusMessage>
+              <StatusMessage tone="info">{t("Loading reservations...")}</StatusMessage>
             ) : null}
             {reservationsQuery.error || searchQuery.error ? (
               <StatusMessage tone="error">
@@ -287,7 +287,7 @@ export function ReservationsPage() {
                         {reservation.endTime
                           ? ` - ${normalizeTimeForInput(reservation.endTime)}`
                           : ""}
-                        {` · ${reservation.partySize} ${t("personas")} · ${reservation.channel}`}
+                        {` · ${reservation.partySize} ${t("guests")} · ${reservation.channel}`}
                       </p>
                       {reservation.specialRequests ? (
                         <p className="mt-2 line-clamp-2 text-sm text-slate-500">
@@ -301,7 +301,7 @@ export function ReservationsPage() {
 
               {reservations.length === 0 ? (
                 <StatusMessage tone="info">
-                  {t("No hay reservas para la fecha seleccionada.")}
+                  {t("There are no reservations for the selected date.")}
                 </StatusMessage>
               ) : null}
             </div>
@@ -310,7 +310,7 @@ export function ReservationsPage() {
 
         <div ref={createReservationSectionRef}>
           <ConfigCard
-            title={selectedReservation ? t("Detalle de reserva") : t("Crear reserva manual")}
+            title={selectedReservation ? t("Reservation details") : t("Create reservation")}
           >
             {selectedReservation ? (
               <ReservationDetailPanel

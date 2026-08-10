@@ -1,122 +1,122 @@
 # AGENTS
 
-## Proposito
+## Purpose
 
-Este documento define como deben colaborar agentes de desarrollo sobre este proyecto, especialmente en fases tempranas donde la arquitectura, el modelo de datos y el algoritmo son mas importantes que la velocidad de implementar pantallas o integraciones secundarias.
+This document defines how development agents should collaborate on this project, especially in the early stages, when the architecture, data model, and algorithm are more important than the speed of implementing screens or secondary integrations.
 
-## Objetivo del proyecto
+## Project Objective
 
-Construir una aplicacion profesional de reservas y planificacion inteligente de mesas para restaurantes, con capacidad de evolucionar a producto comercializable multi-restaurante.
+Build a professional restaurant reservation and intelligent table planning application capable of evolving into a marketable multi-restaurant product.
 
-## Prioridades del equipo
+## Team Priorities
 
-1. Proteger la calidad del dominio y del algoritmo.
-2. Mantener coherencia entre backend, frontend y base de datos.
-3. Evitar complejidad innecesaria en etapas tempranas.
-4. Documentar decisiones importantes antes de escalar implementacion.
+1. Protect the quality of the domain and the algorithm.
+2. Maintain consistency across the backend, frontend, and database.
+3. Avoid unnecessary complexity in the early stages.
+4. Document important decisions before scaling implementation.
 
-## Reglas de trabajo
+## Working Rules
 
-### 1. No introducir microservicios prematuramente
+### 1. Do Not Introduce Microservices Prematurely
 
-La base del sistema sera un monolito modular. No fragmentar servicios salvo decision explicita documentada.
+The system will be based on a modular monolith. Do not split services unless an explicit, documented decision has been made.
 
-### 2. No sustituir el algoritmo con IA
+### 2. Do Not Replace the Algorithm with AI
 
-La IA puede explicar, resumir o sugerir. Nunca debe ser la fuente primaria de asignacion de mesas.
+AI may explain, summarize, or suggest. It must never be the primary source of table assignments.
 
-### 3. Todo modulo de negocio debe respetar multi-tenant
+### 3. Every Business Module Must Support Multi-Tenancy
 
-Las entidades de negocio deben incluir `restaurant_id` cuando aplique. Las consultas y permisos deben filtrar por restaurante.
+Business entities must include `restaurant_id` where applicable. Queries and permissions must be filtered by restaurant.
 
-### 4. No implementar flujos sin trazabilidad
+### 4. Do Not Implement Workflows Without Traceability
 
-Cambios de estado importantes deben dejar rastro:
+Important state changes must leave an audit trail of:
 
-- quien hizo la accion
-- cuando
-- sobre que entidad
-- con que contexto
+- who performed the action
+- when it was performed
+- which entity it affected
+- the context in which it was performed
 
-### 5. Priorizar explicabilidad
+### 5. Prioritize Explainability
 
-Cada decision automatica relevante debe poder justificarse.
+Every relevant automated decision must be justifiable.
 
-### 6. No codificar reglas duras en UI
+### 6. Do Not Hard-Code Rules in the UI
 
-La logica de negocio y validacion vive en backend. El frontend debe consumir capacidades y reglas, no inventarlas.
+Business logic and validation belong in the backend. The frontend must consume capabilities and rules, not invent them.
 
-## Orden recomendado de implementacion
+## Recommended Implementation Order
 
-1. documentacion fundacional
-2. estructura del repositorio
-3. modelo de datos y migraciones
-4. autenticacion y permisos
-5. configuracion de restaurante
-6. reservas y clientes
-7. algoritmo de asignacion
-8. planning visual
-9. tiempo real
-10. integraciones externas
+1. foundational documentation
+2. repository structure
+3. data model and migrations
+4. authentication and permissions
+5. restaurant configuration
+6. reservations and customers
+7. assignment algorithm
+8. visual planning
+9. real-time functionality
+10. external integrations
 
-## Convenciones de arquitectura
+## Architecture Conventions
 
 ### Backend
 
 - Java 21
 - Spring Boot
-- modularizacion por dominio
-- servicios de aplicacion pequenos y claros
-- entidades y repositorios por modulo
-- reglas de negocio fuera de controladores
+- domain-based modularization
+- small, clear application services
+- entities and repositories by module
+- business rules outside controllers
 
 ### Frontend
 
-- React con TypeScript
-- estructura por features
-- server state con TanStack Query
-- UI orientada a tablet y operacion rapida
+- React with TypeScript
+- feature-based structure
+- server state with TanStack Query
+- tablet-oriented UI for fast operation
 
-### Base de datos
+### Database
 
-- PostgreSQL como fuente de verdad
-- Flyway para migraciones
-- `jsonb` solo cuando aporte flexibilidad real
+- PostgreSQL as the source of truth
+- Flyway for migrations
+- `jsonb` only when it provides genuine flexibility
 
-## Convenciones de cambios
+## Change Conventions
 
-- no mezclar refactors grandes con nuevas features si puede evitarse
-- no romper documentos base sin actualizar referencias relacionadas
-- si cambia el algoritmo, actualizar tambien `ALGORITHM.md`
-- si cambia el modelo de datos, actualizar `DATABASE.md`
-- si cambia una decision estructural, actualizar `ARCHITECTURE.md`
+- do not mix large refactors with new features when avoidable
+- do not break foundational documents without updating related references
+- if the algorithm changes, also update `ALGORITHM.md`
+- if the data model changes, update `DATABASE.md`
+- if a structural decision changes, update `ARCHITECTURE.md`
 
-## Convenciones de calidad
+## Quality Conventions
 
-- preferir cambios pequeños y revisables
-- escribir tests para logica critica
-- proteger especialmente calculos temporales y de asignacion
-- medir impacto de cambios en permisos y multi-tenant
+- prefer small, reviewable changes
+- write tests for critical logic
+- take particular care to protect temporal and assignment calculations
+- assess the impact of changes on permissions and multi-tenancy
 
-## Riesgos a vigilar
+## Risks to Monitor
 
-- algoritmo trivial que no aporte valor real
-- reglas contradictorias sin validacion
-- solapamientos de reservas por errores temporales
-- UI de planning demasiado compleja demasiado pronto
-- dependencia excesiva de integraciones externas
+- a trivial algorithm that does not provide real value
+- contradictory rules without validation
+- overlapping reservations caused by temporal errors
+- an overly complex planning UI introduced too early
+- excessive dependence on external integrations
 
-## Definition of done orientativa
+## Indicative Definition of Done
 
-Un cambio esta realmente terminado cuando:
+A change is truly complete when it:
 
-- cumple la necesidad funcional
-- respeta el aislamiento por restaurante
-- mantiene trazabilidad
-- incluye validaciones razonables
-- actualiza documentacion relevante si cambia diseño
+- meets the functional need
+- respects restaurant isolation
+- maintains traceability
+- includes reasonable validations
+- updates relevant documentation if it changes the design
 
-## Documentos de referencia obligatorios
+## Required Reference Documents
 
 - [README.md](./README.md)
 - [ARCHITECTURE.md](./ARCHITECTURE.md)
@@ -128,6 +128,6 @@ Un cambio esta realmente terminado cuando:
 - [DEPLOYMENT.md](./DEPLOYMENT.md)
 - [ROADMAP.md](./ROADMAP.md)
 
-## Instruccion final para agentes
+## Final Instruction for Agents
 
-Antes de implementar cualquier modulo importante, revisar si la decision ya esta definida en estos documentos. Si no lo esta, documentarla primero o dejar una decision explicita pendiente.
+Before implementing any major module, check whether the decision is already defined in these documents. If it is not, document it first or explicitly record the decision as pending.

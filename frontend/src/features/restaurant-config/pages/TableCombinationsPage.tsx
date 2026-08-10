@@ -74,7 +74,7 @@ export function TableCombinationsPage() {
   }, [selected]);
 
   const availableTables = useMemo(
-    () => (tablesQuery.data ?? []).filter((table) => table.active && table.tableType !== "STORAGE"),
+    () => (tablesQuery.data ?? []).filter((table) => table.active && table.tableType !== "Storage"),
     [tablesQuery.data],
   );
 
@@ -133,31 +133,31 @@ export function TableCombinationsPage() {
 
   function validateForm() {
     if (!form.name.trim()) {
-      return t("El nombre de la combinacion es obligatorio.");
+      return t("Combination name is required.");
     }
 
     if (form.tableIds.length < 2) {
-      return t("Selecciona al menos dos mesas.");
+      return t("Select at least two tables.");
     }
 
     if (Number(form.minCapacity) <= 0 || Number(form.maxCapacity) <= 0) {
-      return t("Las capacidades deben ser mayores que cero.");
+      return t("Capacities must be greater than zero.");
     }
 
     if (Number(form.minCapacity) > Number(form.maxCapacity)) {
-      return t("La capacidad minima no puede ser mayor que la maxima.");
+      return t("Minimum capacity cannot exceed maximum capacity.");
     }
 
     if (Number(form.setupTimeMinutes) < 0) {
-      return t("El tiempo de preparacion no puede ser negativo.");
+      return t("Setup time cannot be negative.");
     }
 
     if (form.combinationType === "STANDARD" && Number(form.setupTimeMinutes) !== 0) {
-      return t("Una combinacion estandar no puede tener preparacion.");
+      return t("A standard combination cannot have setup time.");
     }
 
     if (Object.values(form.resourceQuantities).some((quantity) => Number(quantity) <= 0)) {
-      return t("Las cantidades de inventario deben ser mayores que cero.");
+      return t("Inventory quantities must be greater than zero.");
     }
 
     return null;
@@ -185,11 +185,11 @@ export function TableCombinationsPage() {
   }
 
   return (
-    <ConfigShell title={t("Combinaciones")}>
+    <ConfigShell title={t("Combinations")}>
       <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-        <ConfigCard title={t("Combinaciones activas")}>
+        <ConfigCard title={t("Active combinations")}>
           {combinationsQuery.isLoading ? (
-            <StatusMessage tone="info">{t("Cargando combinaciones...")}</StatusMessage>
+            <StatusMessage tone="info">{t("Loading combinations...")}</StatusMessage>
           ) : null}
           {combinationsQuery.error ? (
             <StatusMessage tone="error">
@@ -212,22 +212,22 @@ export function TableCombinationsPage() {
                   <div>
                     <h3 className="text-lg font-semibold text-white">{combination.name}</h3>
                     <p className="mt-2 text-sm text-slate-400">
-                      {t("Capacidad")} {combination.minCapacity}-{combination.maxCapacity} {t("personas")}
+                      {t("Capacity")} {combination.minCapacity}-{combination.maxCapacity} {t("guests")}
                     </p>
                     <p className="mt-1 text-sm text-slate-500">
-                      {t("Mesas")}:{" "}
+                      {t("Tables")}:{" "}
                       {combination.items
                         .map((item) => item.tableCode)
                         .join(" + ")}
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2 text-xs">
                       <span className="rounded-full border border-white/10 bg-slate-950/60 px-2.5 py-1 text-slate-300">
-                        {combination.combinationType === "ADVANCED" ? t("Avanzada") : t("Estandar")}
+                        {combination.combinationType === "ADVANCED" ? t("Advanced") : t("Standard")}
                       </span>
                       {combination.combinationType === "ADVANCED" ? (
                         <>
                           <span className="rounded-full border border-amber-400/20 bg-amber-500/10 px-2.5 py-1 text-amber-100">
-                            {t("Coste")} {t(costLabel(combination.operationalCostLevel))}
+                            {t("Cost")} {t(costLabel(combination.operationalCostLevel))}
                           </span>
                           <span className="rounded-full border border-white/10 bg-slate-950/60 px-2.5 py-1 text-slate-300">
                             {combination.setupTimeMinutes} min
@@ -237,7 +237,7 @@ export function TableCombinationsPage() {
                     </div>
                     {combination.resourceRequirements.length > 0 ? (
                       <p className="mt-2 text-sm text-slate-400">
-                        {t("Recursos")}: {combination.resourceRequirements
+                        {t("Resources")}: {combination.resourceRequirements
                           .map((resource) => `${resource.quantity} x ${resource.resourceName}`)
                           .join(", ")}
                       </p>
@@ -251,7 +251,7 @@ export function TableCombinationsPage() {
                     >
                       <span className="inline-flex items-center gap-2">
                         <Pencil className="h-4 w-4" />
-                        {t("Editar")}
+                        {t("Edit")}
                       </span>
                     </button>
                     <button
@@ -261,7 +261,7 @@ export function TableCombinationsPage() {
                     >
                       <span className="inline-flex items-center gap-2">
                         <Power className="h-4 w-4" />
-                        {t("Desactivar")}
+                        {t("Deactivate")}
                       </span>
                     </button>
                   </div>
@@ -271,13 +271,13 @@ export function TableCombinationsPage() {
 
             {combinationsQuery.data?.length === 0 ? (
               <StatusMessage tone="info">
-                {t("Todavia no hay combinaciones configuradas.")}
+                {t("No combinations have been configured.")}
               </StatusMessage>
             ) : null}
           </div>
         </ConfigCard>
 
-        <ConfigCard title={selected ? t("Editar combinacion") : t("Crear combinacion")}>
+        <ConfigCard title={selected ? t("Edit combination") : t("Create combination")}>
           {feedbackError ? (
             <StatusMessage tone="error">{getErrorMessage(feedbackError)}</StatusMessage>
           ) : null}
@@ -303,7 +303,7 @@ export function TableCombinationsPage() {
             }}
           >
             <TextField
-              label={t("Nombre")}
+              label={t("First name")}
               value={form.name}
               onChange={(event) =>
                 setForm((current) => ({ ...current, name: event.target.value }))
@@ -312,7 +312,7 @@ export function TableCombinationsPage() {
             />
             <div className="grid gap-4 sm:grid-cols-2">
               <TextField
-                label={t("Capacidad minima")}
+                label={t("Minimum capacity")}
                 type="number"
                 min={1}
                 value={form.minCapacity}
@@ -325,7 +325,7 @@ export function TableCombinationsPage() {
                 required
               />
               <TextField
-                label={t("Capacidad maxima")}
+                label={t("Maximum capacity")}
                 type="number"
                 min={1}
                 value={form.maxCapacity}
@@ -340,7 +340,7 @@ export function TableCombinationsPage() {
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <SelectField
-                label={t("Tipo de combinacion")}
+                label={t("Combination type")}
                 value={form.combinationType}
                 onChange={(event) => {
                   const combinationType = event.target.value as "STANDARD" | "ADVANCED";
@@ -352,11 +352,11 @@ export function TableCombinationsPage() {
                   }));
                 }}
               >
-                <option value="STANDARD">{t("Estandar")}</option>
-                <option value="ADVANCED">{t("Avanzada")}</option>
+                <option value="STANDARD">{t("Standard")}</option>
+                <option value="ADVANCED">{t("Advanced")}</option>
               </SelectField>
               <SelectField
-                label={t("Coste operativo")}
+                label={t("Operational cost")}
                 value={form.operationalCostLevel}
                 disabled={form.combinationType === "STANDARD"}
                 onChange={(event) =>
@@ -366,26 +366,26 @@ export function TableCombinationsPage() {
                   }))
                 }
               >
-                <option value="LOW">{t("Bajo")}</option>
-                <option value="MEDIUM">{t("Medio")}</option>
-                <option value="HIGH">{t("Alta")}</option>
+                <option value="LOW">{t("Low")}</option>
+                <option value="MEDIUM">{t("Medium")}</option>
+                <option value="HIGH">{t("High")}</option>
               </SelectField>
             </div>
             {form.combinationType === "ADVANCED" ? (
               <TextField
-                label={t("Tiempo de preparacion")}
+                label={t("Setup time")}
                 type="number"
                 min={0}
                 value={form.setupTimeMinutes}
                 onChange={(event) =>
                   setForm((current) => ({ ...current, setupTimeMinutes: event.target.value }))
                 }
-                hint={t("Minutos")}
+                hint={t("Minutes")}
                 required
               />
             ) : null}
             <CheckboxField
-              label={t("Combinacion activa")}
+              label={t("Active combination")}
               checked={form.active}
               onChange={(checked) =>
                 setForm((current) => ({ ...current, active: checked }))
@@ -395,7 +395,7 @@ export function TableCombinationsPage() {
             <div className="grid gap-3">
               <div>
                 <h3 className="text-sm font-medium text-slate-200">
-                  {t("Mesas incluidas")}
+                  {t("Included tables")}
                 </h3>
               </div>
               <div className="grid gap-2">
@@ -412,7 +412,7 @@ export function TableCombinationsPage() {
                     />
                     <span className="text-sm text-slate-200">
                       {table.code}
-                      {table.label ? ` · ${table.label}` : ""} · {table.minCapacity}-{table.maxCapacity} {t("personas")}
+                      {table.label ? ` · ${table.label}` : ""} · {table.minCapacity}-{table.maxCapacity} {t("guests")}
                     </span>
                   </label>
                 ))}
@@ -422,9 +422,9 @@ export function TableCombinationsPage() {
             {form.combinationType === "ADVANCED" ? (
               <div className="grid gap-3">
                 <div>
-                  <h3 className="text-sm font-medium text-slate-200">{t("Inventario requerido")}</h3>
+                  <h3 className="text-sm font-medium text-slate-200">{t("Required inventory")}</h3>
                 </div>
-                {storageQuery.isLoading ? <StatusMessage tone="info">Cargando inventario...</StatusMessage> : null}
+                {storageQuery.isLoading ? <StatusMessage tone="info">Loading inventory...</StatusMessage> : null}
                 {storageQuery.error ? (
                   <StatusMessage tone="error">{getErrorMessage(storageQuery.error)}</StatusMessage>
                 ) : null}
@@ -445,7 +445,7 @@ export function TableCombinationsPage() {
                         <div className="min-w-0">
                           <p className="truncate text-sm text-slate-200">{resource.name}</p>
                           <p className="text-xs text-slate-500">
-                            {resource.resourceType} · {resource.quantity} {t("disponibles")} · +{resource.capacityPerUnit} {t("personas")}/{t("unidad")}
+                            {resource.resourceType} · {resource.quantity} {t("available")} · +{resource.capacityPerUnit} {t("guests")}/{t("unit")}
                           </p>
                         </div>
                         <input
@@ -483,7 +483,7 @@ export function TableCombinationsPage() {
                     setValidationError(null);
                   }}
                 >
-                  {t("Cancelar")}
+                  {t("Cancel")}
                 </button>
               ) : null}
               <button
@@ -493,11 +493,11 @@ export function TableCombinationsPage() {
               >
                 {selected
                   ? updateMutation.isPending
-                    ? t("Guardando...")
-                    : t("Guardar combinacion")
+                    ? t("Saving...")
+                    : t("Save combination")
                   : createMutation.isPending
-                    ? t("Creando...")
-                    : t("Crear combinacion")}
+                    ? t("Creating...")
+                    : t("Create combination")}
               </button>
             </div>
           </form>
@@ -515,5 +515,5 @@ export function resourceRequirementsFromForm(resourceQuantities: Record<number, 
 }
 
 function costLabel(level: "LOW" | "MEDIUM" | "HIGH") {
-  return level === "LOW" ? "bajo" : level === "MEDIUM" ? "medio" : "alto";
+  return level === "LOW" ? "low" : level === "MEDIUM" ? "medium" : "high";
 }

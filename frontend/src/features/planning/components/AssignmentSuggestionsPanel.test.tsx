@@ -8,7 +8,7 @@ import type { ReactElement } from "react";
 const advancedSuggestion: AssignmentSuggestionResponse = {
   candidateType: "TABLE_COMBINATION",
   candidateId: 42,
-  displayName: "Terraza ampliada",
+  displayName: "Extended terrace",
   tableIds: [10, 11],
   minCapacity: 6,
   maxCapacity: 10,
@@ -19,22 +19,21 @@ const advancedSuggestion: AssignmentSuggestionResponse = {
   resources: [{
     storageResourceId: 7,
     resourceType: "EXTRA_CHAIR",
-    resourceName: "Sillas extra",
+    resourceName: "Extra chairs",
     requiredQuantity: 2,
     availableQuantity: 4,
     capacityPerUnit: 1,
     capacityContribution: 2,
   }],
   explanation: {
-    summary: "Cabe el grupo y mantiene libre la sala principal.",
-    reasons: ["Capacidad suficiente"],
+    summary: "Fits the party while keeping the main dining room available.",
+    reasons: ["Sufficient capacity"],
     bonuses: {},
     penalties: { operationalCost: 24, setupTime: 10 },
   },
 };
 
 function renderPanel(panel: ReactElement) {
-  window.localStorage.setItem("table-planning-language", "es");
   return render(
     <I18nProvider>
       {panel}
@@ -56,11 +55,11 @@ describe("AssignmentSuggestionsPanel", () => {
       />,
     );
 
-    expect(screen.getByText("Terraza ampliada")).toBeInTheDocument();
-    expect(screen.getByText(/coste medio · 20 min/i)).toBeInTheDocument();
-    expect(screen.getByText("2 x Sillas extra")).toBeInTheDocument();
+    expect(screen.getByText("Extended terrace")).toBeInTheDocument();
+    expect(screen.getByText(/cost medium · 20 min/i)).toBeInTheDocument();
+    expect(screen.getByText("2 x Extra chairs")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Aplicar" }));
+    fireEvent.click(screen.getByRole("button", { name: "Apply" }));
     expect(onSelect).toHaveBeenCalledWith({ candidateType: "TABLE_COMBINATION", candidateId: 42 });
   });
 
@@ -69,22 +68,22 @@ describe("AssignmentSuggestionsPanel", () => {
       <AssignmentSuggestionsPanel
         suggestions={[]}
         loading={false}
-        errorMessage="El inventario acaba de agotarse."
+        errorMessage="The required inventory is no longer available."
         selecting={false}
         onRefresh={vi.fn()}
         onSelect={vi.fn()}
       />,
     );
 
-    expect(screen.getByRole("alert")).toHaveTextContent("El inventario acaba de agotarse.");
-    expect(screen.queryByText("No hay opciones viables en este momento.")).not.toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent("The required inventory is no longer available.");
+    expect(screen.queryByText("No viable options are available right now.")).not.toBeInTheDocument();
   });
 
   it("never renders more than three server candidates", () => {
     const suggestions = Array.from({ length: 4 }, (_, index) => ({
       ...advancedSuggestion,
       candidateId: index + 1,
-      displayName: `Opcion ${index + 1}`,
+      displayName: `Option ${index + 1}`,
     }));
 
     renderPanel(
@@ -98,7 +97,7 @@ describe("AssignmentSuggestionsPanel", () => {
       />,
     );
 
-    expect(screen.getAllByRole("button", { name: "Aplicar" })).toHaveLength(3);
-    expect(screen.queryByText("Opcion 4", { selector: "h4" })).not.toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Apply" })).toHaveLength(3);
+    expect(screen.queryByText("Option 4", { selector: "h4" })).not.toBeInTheDocument();
   });
 });

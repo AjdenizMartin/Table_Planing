@@ -1,20 +1,20 @@
 # API
 
-## Objetivo
+## Objective
 
-Este documento distingue entre la API realmente implementada hoy y la API planificada para fases futuras.
+This document distinguishes between the API actually implemented today and the API planned for future phases.
 
-## Principios de la API
+## API Principles
 
-- API REST sobre `Spring Boot`
-- versionado inicial simple con prefijo `/api`
-- autenticacion por JWT
-- aislamiento multi-tenant obligatorio
-- validacion de entrada en backend
-- respuestas consistentes y trazables
-- WebSocket para tiempo real, no para operaciones de escritura
+- REST API on `Spring Boot`
+- simple initial versioning with the `/api` prefix
+- JWT authentication
+- mandatory multi-tenant isolation
+- backend input validation
+- consistent, traceable responses
+- WebSocket for real-time updates, not write operations
 
-## Convenciones generales
+## General Conventions
 
 ### Base path
 
@@ -22,37 +22,37 @@ Este documento distingue entre la API realmente implementada hoy y la API planif
 /api
 ```
 
-### Formato
+### Format
 
-- `application/json` para request y response
-- fechas en `ISO-8601`
-- timestamps en UTC
+- `application/json` for request and response
+- dates in `ISO-8601`
+- timestamps in UTC
 
-### Autenticacion
+### Authentication
 
-Salvo excepciones publicas definidas, los endpoints requieren:
+Except for defined public exceptions, endpoints require:
 
 ```text
 Authorization: Bearer <access_token>
 ```
 
-### Contexto de restaurante
+### Restaurant Context
 
-La aplicacion es multi-restaurante. El backend debe resolver el contexto de restaurante a partir de:
+The application supports multiple restaurants. The backend must resolve the restaurant context from:
 
-- claims del token
-- permisos del usuario
-- recurso objetivo
+- token claims
+- user permissions
+- target resource
 
-En fases futuras se puede admitir un header explicito como apoyo, por ejemplo:
+In future phases, an explicit supporting header may be accepted, for example:
 
 ```text
-X-Restaurant-Id: <uuid o id>
+X-Restaurant-Id: <uuid or id>
 ```
 
-Pero nunca debe sustituir la validacion de permisos.
+However, it must never replace permission validation.
 
-## Estados HTTP sugeridos
+## Suggested HTTP Statuses
 
 - `200 OK`
 - `201 Created`
@@ -64,7 +64,7 @@ Pero nunca debe sustituir la validacion de permisos.
 - `409 Conflict`
 - `422 Unprocessable Entity`
 
-## Estructura de error sugerida
+## Suggested Error Structure
 
 ```json
 {
@@ -80,29 +80,29 @@ Pero nunca debe sustituir la validacion de permisos.
 }
 ```
 
-## Estado actual
+## Current Status
 
-- `IMPLEMENTED`: existe controlador y flujo base funcional
-- `PARTIAL`: existe de forma limitada o con alcance menor al plan original
-- `PLANNED`: documentado pero no presente en el backend actual
+- `IMPLEMENTED`: a controller and functional base flow exist
+- `PARTIAL`: exists in a limited form or with a narrower scope than originally planned
+- `PLANNED`: documented but not present in the current backend
 
 ## Endpoints
 
 ### 1. System
 
-Uso interno o tecnico para verificar estado base del backend.
+Internal or technical use to verify the backend's basic status.
 
 - `GET /api/system/ping` - `IMPLEMENTED`
 - `GET /actuator/health` - `IMPLEMENTED`
 
 ### 2. Auth
 
-Responsabilidad:
+Responsibility:
 
 - login
 - refresh token
-- sesion actual
-- logout logico
+- current session
+- logical logout
 
 Endpoints:
 
@@ -110,9 +110,9 @@ Endpoints:
 - `POST /api/auth/refresh` - `IMPLEMENTED`
 - `POST /api/auth/logout` - `IMPLEMENTED`
 - `GET /api/auth/me` - `IMPLEMENTED`
-- `POST /api/auth/register` - `DEV_ONLY`; el controlador no se registra con perfil `prod` y Nginx devuelve `404`
+- `POST /api/auth/register` - `DEV_ONLY`; the controller is not registered under the `prod` profile, and Nginx returns `404`
 
-Payloads iniciales esperados:
+Expected initial payloads:
 
 `POST /api/auth/login`
 
@@ -123,7 +123,7 @@ Payloads iniciales esperados:
 }
 ```
 
-Respuesta conceptual:
+Conceptual response:
 
 ```json
 {
@@ -147,11 +147,11 @@ Respuesta conceptual:
 
 ### 3. Restaurants
 
-Responsabilidad:
+Responsibility:
 
-- alta y edicion de restaurantes
-- consulta de configuracion general
-- administracion multi-tenant
+- restaurant creation and editing
+- general configuration queries
+- multi-tenant administration
 
 Endpoints:
 
@@ -164,10 +164,10 @@ Endpoints:
 
 ### 4. Dining Rooms
 
-Responsabilidad:
+Responsibility:
 
-- gestionar salones o zonas del restaurante
-- definir prioridad y accesibilidad
+- manage restaurant dining rooms or zones
+- define priority and accessibility
 
 Endpoints:
 
@@ -179,11 +179,11 @@ Endpoints:
 
 ### 5. Tables
 
-Responsabilidad:
+Responsibility:
 
-- gestionar mesas
-- capacidad minima y maxima
-- estado y posicion visual
+- manage tables
+- minimum and maximum capacity
+- status and visual position
 
 Endpoints:
 
@@ -196,21 +196,21 @@ Endpoints:
 - `POST /api/tables/{tableId}/enable` - `PLANNED`
 - `POST /api/tables/{tableId}/disable` - `PLANNED`
 
-Fase 1 de planificacion avanzada anade `tableType` a mesas:
+Phase 1 of advanced planning adds `tableType` to tables:
 
 - `FIXED`
 - `MOVABLE`
 - `STORAGE`
 - `TEMPORARY`
 
-Las mesas `STORAGE` se registran como inventario operativo y no aparecen como mesas normales del planning.
+`STORAGE` tables are recorded as operational inventory and do not appear as regular tables in the plan.
 
 ### 6. Table Combinations
 
-Responsabilidad:
+Responsibility:
 
-- configurar combinaciones validas de mesas
-- habilitar o deshabilitar combinaciones
+- configure valid table combinations
+- enable or disable combinations
 
 Endpoints:
 
@@ -220,14 +220,14 @@ Endpoints:
 - `PATCH /api/restaurants/{restaurantId}/table-combinations/{combinationId}` - `IMPLEMENTED`
 - `DELETE /api/restaurants/{restaurantId}/table-combinations/{combinationId}` - `IMPLEMENTED`
 
-Los contratos de alta y edicion aceptan `combinationType`, `operationalCostLevel`, `setupTimeMinutes` y `resourceRequirements: [{storageResourceId, quantity}]`. Los campos omitidos conservan compatibilidad como `STANDARD`, `LOW`, `0` y lista vacia. Una combinacion estandar no puede consumir inventario ni tener preparacion previa.
+The creation and editing contracts accept `combinationType`, `operationalCostLevel`, `setupTimeMinutes`, and `resourceRequirements: [{storageResourceId, quantity}]`. Omitted fields maintain compatibility as `STANDARD`, `LOW`, `0`, and an empty list. A standard combination cannot consume inventory or require prior setup.
 
 ### 6b. Storage Resources
 
-Responsabilidad:
+Responsibility:
 
-- gestionar inventario de almacen como sillas extra o mesas guardadas
-- validar cantidades disponibles para futuras opciones de montaje
+- manage storage inventory such as extra chairs or stored tables
+- validate available quantities for future setup options
 
 Endpoints:
 
@@ -238,7 +238,7 @@ Endpoints:
 - `DELETE /api/restaurants/{restaurantId}/storage-resources/{resourceId}` - `IMPLEMENTED`
 - `POST /api/restaurants/{restaurantId}/storage-resources/{resourceId}/availability-check` - `IMPLEMENTED`
 
-Tipos de recurso actuales:
+Current resource types:
 
 - `EXTRA_TABLE`
 - `EXTRA_CHAIR`
@@ -249,9 +249,9 @@ Tipos de recurso actuales:
 - `STORAGE_TABLE`
 - `OTHER`
 
-Los filtros `resourceType` y `active` son opcionales y combinables. Todas las consultas y modificaciones se resuelven por `restaurantId`; un identificador de recurso perteneciente a otro restaurante devuelve `NOT_FOUND`.
+The `resourceType` and `active` filters are optional and may be combined. All queries and modifications are resolved by `restaurantId`; a resource identifier belonging to another restaurant returns `NOT_FOUND`.
 
-Campos editables mediante `PATCH`:
+Fields editable through `PATCH`:
 
 - `resourceType`
 - `name`
@@ -261,18 +261,18 @@ Campos editables mediante `PATCH`:
 - `notes`
 - `active`
 
-`quantity`, `capacityPerUnit` y `setupTimeMinutes` deben ser enteros no negativos. `name` y `resourceType` son obligatorios al crear. Los dos campos operativos añadidos en Sprint 1 aceptan omision al crear y se inicializan a `0` para mantener compatibilidad con clientes anteriores.
+`quantity`, `capacityPerUnit`, and `setupTimeMinutes` must be non-negative integers. `name` and `resourceType` are required on creation. The two operational fields added in Sprint 1 may be omitted on creation and are initialized to `0` to maintain compatibility with previous clients.
 
-`DELETE` no borra fisicamente el registro: mantiene compatibilidad con el endpoint existente y realiza una desactivacion logica. La UI usa `PATCH` con `active=false` o `active=true` para desactivar y reactivar.
+`DELETE` does not physically delete the record: it maintains compatibility with the existing endpoint and performs a logical deactivation. The UI uses `PATCH` with `active=false` or `active=true` to deactivate and reactivate it.
 
-No se permite reducir o desactivar un recurso por debajo de su pico de consumo futuro ya comprometido. El calculo considera asignaciones activas y las ventanas de preparacion, servicio y limpieza.
+A resource may not be reduced or deactivated below its already committed peak future consumption. The calculation considers active assignments and the setup, service, and cleaning windows.
 
 ### 7. Customers
 
-Responsabilidad:
+Responsibility:
 
-- crear y mantener ficha de cliente
-- almacenar preferencias e incidencias operativas
+- create and maintain customer records
+- store preferences and operational incidents
 
 Endpoints:
 
@@ -282,12 +282,12 @@ Endpoints:
 - `PATCH /api/restaurants/{restaurantId}/customers/{customerId}` - `IMPLEMENTED`
 - `DELETE /api/restaurants/{restaurantId}/customers/{customerId}` - `IMPLEMENTED`
 
-El borrado fisico exige rol `PLATFORM_ADMIN`, `RESTAURANT_OWNER` o `MANAGER`,
-respeta el aislamiento por restaurante y registra `customer.deleted` en auditoria.
-Devuelve `204` cuando se aplica y `409` con `reason=HAS_RESERVATIONS` si existen
-reservas asociadas; `WAITER` puede consultar la ficha, pero no eliminarla.
+Physical deletion requires the `PLATFORM_ADMIN`, `RESTAURANT_OWNER`, or `MANAGER` role,
+respects restaurant isolation, and records `customer.deleted` in the audit log.
+It returns `204` when applied and `409` with `reason=HAS_RESERVATIONS` if associated
+reservations exist; `WAITER` may view the record but cannot delete it.
 
-Filtros previstos:
+Planned filters:
 
 - `phone`
 - `email`
@@ -296,12 +296,12 @@ Filtros previstos:
 
 ### 8. Reservations
 
-Responsabilidad:
+Responsibility:
 
-- alta y mantenimiento de reservas
-- cambio de estado
-- confirmacion, cancelacion y no-show
-- asignacion automatica o manual
+- reservation creation and maintenance
+- status changes
+- confirmation, cancellation, and no-show
+- automatic or manual assignment
 
 Endpoints:
 
@@ -321,9 +321,9 @@ Endpoints:
 - `POST /api/restaurants/{restaurantId}/reservations/{reservationId}/reassign` - `PLANNED`
 - `POST /api/restaurants/{restaurantId}/reservations/{reservationId}/arrived` - `IMPLEMENTED`
 
-`assignment-suggestions` devuelve como maximo tres candidatos deterministas y no escribe en base de datos. Cada opcion incluye mesas, capacidad, score, coste, preparacion, inventario requerido/disponible y explicacion estructurada.
+`assignment-suggestions` returns at most three deterministic candidates and does not write to the database. Each option includes tables, capacity, score, cost, setup, required/available inventory, and a structured explanation.
 
-`assignment-selection` recibe:
+`assignment-selection` receives:
 
 ```json
 {
@@ -332,11 +332,11 @@ Endpoints:
 }
 ```
 
-La seleccion se revalida en transaccion, bloquea los recursos de inventario en orden estable, vuelve a comprobar solapes y solo entonces desactiva la asignacion anterior y persiste la nueva. Un conflicto concurrente devuelve `409` y no sobrevende inventario.
+The selection is revalidated within a transaction, locks inventory resources in a stable order, rechecks overlaps, and only then deactivates the previous assignment and persists the new one. A concurrent conflict returns `409` and does not oversell inventory.
 
-Owner, manager y platform admin pueden consultar y aplicar sugerencias. Staff puede consultar planning, recursos asignados e historial, pero no solicitar ni aprobar sugerencias. El endpoint automatico `assign`, confirmacion automatica y recalculo diario siguen limitados a mesas y combinaciones `STANDARD`.
+Owner, manager, and platform admin users may view and apply suggestions. Staff may view planning, assigned resources, and history, but may not request or approve suggestions. The automatic `assign` endpoint, automatic confirmation, and daily recalculation remain limited to `STANDARD` tables and combinations.
 
-Filtros previstos:
+Planned filters:
 
 - `restaurantId`
 - `date`
@@ -344,7 +344,7 @@ Filtros previstos:
 - `channel`
 - `customerId`
 
-Payload conceptual para crear reserva:
+Conceptual payload for creating a reservation:
 
 ```json
 {
@@ -389,10 +389,10 @@ Payload conceptual para crear reserva:
 - `GET /api/restaurants/{restaurantId}/ai/insights/summary?date=YYYY-MM-DD` - `IMPLEMENTED`
 - `PATCH /api/restaurants/{restaurantId}/ai/insights/{insightId}/dismiss` - `IMPLEMENTED`
 
-## Notas de implementacion futura
+## Future Implementation Notes
 
-- no exponer logica del algoritmo directamente en controladores
-- separar DTOs de entidades
-- documentar contratos con OpenAPI mas adelante
-- mantener naming coherente con `DATABASE.md`, `ARCHITECTURE.md` y `ALGORITHM.md`
-- la IA no asigna mesas por si sola; en el estado actual solo analiza y explica planning
+- do not expose algorithm logic directly in controllers
+- separate DTOs from entities
+- document contracts with OpenAPI later
+- maintain naming consistent with `DATABASE.md`, `ARCHITECTURE.md`, and `ALGORITHM.md`
+- AI does not assign tables by itself; in the current state, it only analyzes and explains planning

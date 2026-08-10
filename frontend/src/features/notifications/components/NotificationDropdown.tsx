@@ -41,7 +41,7 @@ export function NotificationDropdown({ onClose }: NotificationDropdownProps) {
     >
       <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
         <span className="text-xs font-semibold uppercase text-slate-400">
-          {t("Notificaciones")}
+          {t("Notifications")}
         </span>
         {notifications.length > 0 && (
           <button
@@ -51,14 +51,14 @@ export function NotificationDropdown({ onClose }: NotificationDropdownProps) {
               markAllAsRead.mutate();
             }}
           >
-            {t("Marcar todas como leidas")}
+            {t("Mark all as read")}
           </button>
         )}
       </div>
       <div className="max-h-80 overflow-y-auto">
         {notifications.length === 0 ? (
           <p className="px-4 py-8 text-center text-sm text-slate-500">
-            {t("Sin notificaciones")}
+            {t("No notifications")}
           </p>
         ) : (
           notifications.slice(0, 20).map((notification) => (
@@ -92,7 +92,7 @@ export function NotificationDropdown({ onClose }: NotificationDropdownProps) {
             onClose();
           }}
         >
-          {t("Ver todas")}
+          {t("View all")}
         </button>
       </div>
     </div>

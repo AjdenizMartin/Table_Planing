@@ -42,7 +42,7 @@ export function CustomerDetailPage() {
   const queryClient = useQueryClient();
   const { customerId } = useParams();
   const { session } = useAuth();
-  const { t, language } = useI18n();
+  const { t } = useI18n();
   const { activeRestaurantId } = useActiveRestaurant();
   const parsedCustomerId = Number(customerId);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -110,20 +110,20 @@ export function CustomerDetailPage() {
 
   function validateForm() {
     if (!form.phone.trim() && !form.firstName.trim() && !form.lastName.trim()) {
-      return t("Introduce telefono o al menos un nombre para este cliente.");
+      return t("Enter a phone number or at least one name.");
     }
     return null;
   }
 
   return (
-    <OperationsShell title={t("Ficha de cliente")}>
+    <OperationsShell title={t("Customer profile")}>
       <div className="flex items-center justify-between gap-3">
         <Link
           className="inline-flex h-10 items-center gap-2 rounded-lg px-3 text-sm font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"
           to="/customers"
         >
           <ArrowLeft className="h-4 w-4" />
-          {t("Volver a clientes")}
+          {t("Back to customers")}
         </Link>
         {canManageCustomers && customerQuery.data ? (
           <button
@@ -132,13 +132,13 @@ export function CustomerDetailPage() {
             onClick={() => setDeleteDialogOpen(true)}
           >
             <Trash2 className="h-4 w-4" />
-            {t("Eliminar cliente")}
+            {t("Delete customer")}
           </button>
         ) : null}
       </div>
 
       {customerQuery.isLoading ? (
-        <StatusMessage tone="info">{t("Cargando ficha...")}</StatusMessage>
+        <StatusMessage tone="info">{t("Loading profile...")}</StatusMessage>
       ) : null}
       {customerQuery.error ? (
         <StatusMessage tone="error">{getErrorMessage(customerQuery.error)}</StatusMessage>
@@ -146,36 +146,34 @@ export function CustomerDetailPage() {
 
       {customerQuery.data ? (
         <div className="grid gap-5 xl:grid-cols-[320px_minmax(0,1fr)]">
-          <ConfigCard title={t("Resumen")}>
+          <ConfigCard title={t("Overview")}>
             <h2 className="text-xl font-semibold text-white">
               {formatCustomerName(customerQuery.data)}
             </h2>
             <div className="mt-5 grid gap-3 text-sm">
               <div className="flex items-center gap-3 text-slate-300">
                 <Phone className="h-4 w-4 text-slate-500" />
-                <span>{customerQuery.data.phone || t("Sin telefono")}</span>
+                <span>{customerQuery.data.phone || t("No phone")}</span>
               </div>
               <div className="flex items-center gap-3 text-slate-300">
                 <Mail className="h-4 w-4 text-slate-500" />
                 <span className="truncate">
-                  {customerQuery.data.email || t("Sin email")}
+                  {customerQuery.data.email || t("No email")}
                 </span>
               </div>
             </div>
             <div className="mt-6 border-t border-white/8 pt-4">
-              <p className="text-xs text-slate-500">{t("Actualizado")}</p>
+              <p className="text-xs text-slate-500">{t("Updated")}</p>
               <p className="mt-1 text-sm text-slate-300">
-                {new Date(customerQuery.data.updatedAt).toLocaleString(
-                  language === "es" ? "es-ES" : "en-GB",
-                )}
+                {new Date(customerQuery.data.updatedAt).toLocaleString("en-GB")}
               </p>
             </div>
           </ConfigCard>
 
-          <ConfigCard title={t("Datos del cliente")}>
+          <ConfigCard title={t("Customer details")}>
             {!canManageCustomers ? (
               <StatusMessage tone="info">
-                {t("Tu rol permite consultar, pero no editar clientes.")}
+                {t("Your role can view customers but cannot edit them.")}
               </StatusMessage>
             ) : null}
             {validationError ? (
@@ -202,7 +200,7 @@ export function CustomerDetailPage() {
             >
               <div className="grid gap-4 sm:grid-cols-2">
                 <TextField
-                  label={t("Nombre")}
+                  label={t("First name")}
                   value={form.firstName}
                   onChange={(event) =>
                     setForm((current) => ({
@@ -212,7 +210,7 @@ export function CustomerDetailPage() {
                   }
                 />
                 <TextField
-                  label={t("Apellidos")}
+                  label={t("Last name")}
                   value={form.lastName}
                   onChange={(event) =>
                     setForm((current) => ({
@@ -222,7 +220,7 @@ export function CustomerDetailPage() {
                   }
                 />
                 <TextField
-                  label={t("Telefono")}
+                  label={t("Phone")}
                   value={form.phone}
                   onChange={(event) =>
                     setForm((current) => ({ ...current, phone: event.target.value }))
@@ -238,14 +236,14 @@ export function CustomerDetailPage() {
                 />
               </div>
               <TextField
-                label={t("Etiquetas")}
+                label={t("Tags")}
                 value={form.tags}
                 onChange={(event) =>
                   setForm((current) => ({ ...current, tags: event.target.value }))
                 }
               />
               <TextField
-                label={t("Necesidades de movilidad")}
+                label={t("Accessibility needs")}
                 value={form.mobilityNeeds}
                 onChange={(event) =>
                   setForm((current) => ({
@@ -255,7 +253,7 @@ export function CustomerDetailPage() {
                 }
               />
               <TextAreaField
-                label={t("Notas")}
+                label={t("Notes")}
                 value={form.notes}
                 onChange={(event) =>
                   setForm((current) => ({ ...current, notes: event.target.value }))
@@ -270,8 +268,8 @@ export function CustomerDetailPage() {
                 >
                   <Save className="h-4 w-4" />
                   {updateMutation.isPending
-                    ? t("Guardando...")
-                    : t("Guardar cliente")}
+                    ? t("Saving...")
+                    : t("Save customer")}
                 </button>
               </div>
             </form>
@@ -301,10 +299,10 @@ export function CustomerDetailPage() {
               </span>
               <div>
                 <h2 id="delete-customer-title" className="text-lg font-semibold text-white">
-                  {t("Eliminar cliente")}
+                  {t("Delete customer")}
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-slate-400">
-                  {t("Esta accion no se puede deshacer.")}
+                  {t("This action cannot be undone.")}
                 </p>
               </div>
             </div>
@@ -324,7 +322,7 @@ export function CustomerDetailPage() {
                 onClick={() => setDeleteDialogOpen(false)}
                 disabled={deleteMutation.isPending}
               >
-                {t("Cancelar")}
+                {t("Cancel")}
               </button>
               <button
                 type="button"
@@ -334,8 +332,8 @@ export function CustomerDetailPage() {
               >
                 <Trash2 className="h-4 w-4" />
                 {deleteMutation.isPending
-                  ? t("Eliminando...")
-                  : t("Eliminar definitivamente")}
+                  ? t("Deleting...")
+                  : t("Delete permanently")}
               </button>
             </div>
           </div>
@@ -351,7 +349,7 @@ function getDeleteErrorMessage(
 ) {
   const message = getErrorMessage(error);
   if (message.includes("reservations are linked")) {
-    return t("No puedes eliminar un cliente con reservas asociadas.");
+    return t("Customers with linked reservations cannot be deleted.");
   }
   return message;
 }

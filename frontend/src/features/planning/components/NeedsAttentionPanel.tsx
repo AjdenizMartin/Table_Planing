@@ -201,19 +201,19 @@ export function NeedsAttentionPanel({ planning, onSelectReservation }: Props) {
         onClick={() => setCollapsed((c) => !c)}
       >
         <div className="flex items-center gap-2.5">
-          <span className="text-sm font-medium text-white">{t("Requiere atencion")}</span>
+          <span className="text-sm font-medium text-white">{t("Needs attention")}</span>
           <span className="rounded-md border border-white/10 bg-white/5 px-2 py-0.5 text-xs font-semibold text-slate-300">{totalCount}</span>
           {highCount > 0 ? (
-            <span className="rounded-md border border-rose-400/30 bg-rose-500/15 px-2 py-0.5 text-xs font-semibold text-rose-200">{highCount} {t("urgentes")}</span>
+            <span className="rounded-md border border-rose-400/30 bg-rose-500/15 px-2 py-0.5 text-xs font-semibold text-rose-200">{highCount} {t("urgent")}</span>
           ) : null}
         </div>
-        <span className="text-xs text-slate-500">{collapsed ? t("Mostrar") : t("Ocultar")}</span>
+        <span className="text-xs text-slate-500">{collapsed ? t("Show") : t("Hide")}</span>
       </button>
 
       {!collapsed ? (
         <div className="max-h-[300px] overflow-y-auto border-t border-white/[0.04] px-4 py-2.5">
           {items.length === 0 ? (
-            <p className="py-4 text-center text-sm text-slate-500">{t("No hay incidencias pendientes.")}</p>
+            <p className="py-4 text-center text-sm text-slate-500">{t("No items need attention.")}</p>
           ) : (
             <div className="grid gap-1.5">
               {items.map((item) => {

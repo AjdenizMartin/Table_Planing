@@ -38,9 +38,9 @@ class AiServiceTest {
         );
         LocalDate date = LocalDate.of(2026, 6, 2);
         Restaurant restaurant = restaurant(1L);
-        AiInsight dismissed = insight(AiInsightType.CAPACITY_UNDERUTILIZED, "Reservation", 20L, "Capacidad infrautilizada", true);
-        AiInsight regenerated = insight(AiInsightType.CAPACITY_UNDERUTILIZED, "Reservation", 20L, "Capacidad infrautilizada", false);
-        AiInsight newInsight = insight(AiInsightType.DEAD_GAP_OPPORTUNITY, "RestaurantTable", 5L, "Hueco muerto reutilizable", false);
+        AiInsight dismissed = insight(AiInsightType.CAPACITY_UNDERUTILIZED, "Reservation", 20L, "Underused capacity", true);
+        AiInsight regenerated = insight(AiInsightType.CAPACITY_UNDERUTILIZED, "Reservation", 20L, "Underused capacity", false);
+        AiInsight newInsight = insight(AiInsightType.DEAD_GAP_OPPORTUNITY, "RestaurantTable", 5L, "Reusable scheduling gap", false);
 
         when(restaurantRepository.findById(1L)).thenReturn(Optional.of(restaurant));
         when(insightRepository.findByRestaurantIdAndDateOrderByDismissedAscSeverityDescCreatedAtDesc(1L, date)).thenReturn(List.of(dismissed));

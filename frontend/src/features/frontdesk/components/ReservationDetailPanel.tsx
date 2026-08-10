@@ -80,13 +80,13 @@ export function ReservationDetailPanel({
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-xs uppercase text-slate-500">
-              {t("Reserva")} #{reservation.id}
+              {t("Reservation")} #{reservation.id}
             </p>
             <h3 className="mt-2 text-2xl font-semibold text-white">
               {formatReservationCustomerName(reservation)}
             </h3>
             <p className="mt-2 text-sm text-slate-400">
-              {reservation.partySize} {t("personas")} · {reservation.reservationDate} ·{" "}
+              {reservation.partySize} {t("guests")} · {reservation.reservationDate} ·{" "}
               {normalizeTimeForInput(reservation.startTime)}
               {reservation.endTime ? ` - ${normalizeTimeForInput(reservation.endTime)}` : ""}
             </p>
@@ -97,29 +97,29 @@ export function ReservationDetailPanel({
 
       <dl className="grid gap-3 sm:grid-cols-2">
         <div className="rounded-lg border border-white/10 bg-slate-950/55 p-4">
-          <dt className="text-xs uppercase text-slate-500">{t("Canal")}</dt>
+          <dt className="text-xs uppercase text-slate-500">{t("Channel")}</dt>
           <dd className="mt-2 text-sm text-slate-200">{reservation.channel}</dd>
         </div>
         <div className="rounded-lg border border-white/10 bg-slate-950/55 p-4">
-          <dt className="text-xs uppercase text-slate-500">{t("Accesibilidad")}</dt>
+          <dt className="text-xs uppercase text-slate-500">{t("Accessibility")}</dt>
           <dd className="mt-2 text-sm text-slate-200">
-            {reservation.accessibilityRequired ? t("Si") : t("No")}
+            {reservation.accessibilityRequired ? t("Yes") : t("No")}
           </dd>
         </div>
         <div className="rounded-lg border border-white/10 bg-slate-950/55 p-4">
-          <dt className="text-xs uppercase text-slate-500">{t("Duracion")}</dt>
+          <dt className="text-xs uppercase text-slate-500">{t("Duration")}</dt>
           <dd className="mt-2 text-sm text-slate-200">
-            {reservation.estimatedDurationMin} min + {reservation.cleaningBufferMin} min {t("limpieza")}
+            {reservation.estimatedDurationMin} min + {reservation.cleaningBufferMin} min {t("cleaning")}
           </dd>
         </div>
         <div className="rounded-lg border border-white/10 bg-slate-950/55 p-4">
-          <dt className="text-xs uppercase text-slate-500">{t("Estado")}</dt>
+          <dt className="text-xs uppercase text-slate-500">{t("Status")}</dt>
           <dd className="mt-2 text-sm text-slate-200">
             {reservation.confirmedAt
-              ? `${t("Confirmada")} ${new Date(reservation.confirmedAt).toLocaleString()}`
+              ? `${t("Confirmed")} ${new Date(reservation.confirmedAt).toLocaleString()}`
               : reservation.cancelledAt
-                ? `${t("Cancelada")} ${new Date(reservation.cancelledAt).toLocaleString()}`
-                : t("Sin actividad registrada")}
+                ? `${t("Cancelled")} ${new Date(reservation.cancelledAt).toLocaleString()}`
+                : t("No activity recorded")}
           </dd>
         </div>
       </dl>
@@ -127,7 +127,7 @@ export function ReservationDetailPanel({
       {reservation.specialRequests ? (
         <div className="rounded-lg border border-white/10 bg-slate-950/55 p-5">
           <p className="text-xs uppercase text-slate-500">
-            {t("Peticiones especiales")}
+            {t("Special requests")}
           </p>
           <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-200">
             {reservation.specialRequests}
@@ -138,7 +138,7 @@ export function ReservationDetailPanel({
       <div className="grid gap-3">
         {!canOperateReservations ? (
           <StatusMessage tone="info">
-            {t("Tu rol puede consultar reservas, pero no cambiar su estado.")}
+            {t("Your role can view reservations, but cannot change their status.")}
           </StatusMessage>
         ) : null}
 
@@ -152,7 +152,7 @@ export function ReservationDetailPanel({
                 void runAction("confirm");
               }}
             >
-              {pendingAction === "confirm" ? t("Confirmando...") : t("Confirmar")}
+              {pendingAction === "confirm" ? t("Confirming...") : t("Confirm")}
             </button>
           ) : null}
 
@@ -165,7 +165,7 @@ export function ReservationDetailPanel({
                 void runAction("seat");
               }}
             >
-              {pendingAction === "seat" ? t("Guardando...") : t("Sentar")}
+              {pendingAction === "seat" ? t("Saving...") : t("Seat")}
             </button>
           ) : null}
 
@@ -178,7 +178,7 @@ export function ReservationDetailPanel({
                 void runAction("complete");
               }}
             >
-              {pendingAction === "complete" ? t("Guardando...") : t("Completar")}
+              {pendingAction === "complete" ? t("Saving...") : t("Complete")}
             </button>
           ) : null}
 
@@ -191,7 +191,7 @@ export function ReservationDetailPanel({
                 void runAction("cancel");
               }}
             >
-              {pendingAction === "cancel" ? t("Cancelando...") : t("Cancelar")}
+              {pendingAction === "cancel" ? t("Cancelling...") : t("Cancel")}
             </button>
           ) : null}
 
@@ -204,7 +204,7 @@ export function ReservationDetailPanel({
                 void runAction("no-show");
               }}
             >
-              {pendingAction === "no-show" ? t("Guardando...") : t("No presentado")}
+              {pendingAction === "no-show" ? t("Saving...") : t("No show")}
             </button>
           ) : null}
         </div>
@@ -250,9 +250,9 @@ function AvailabilityConflictCard({ details }: { details: AvailabilityConflictDe
   const { t } = useI18n();
   return (
     <div className="rounded-lg border border-rose-300/30 bg-rose-500/10 p-5 text-sm text-rose-50">
-      <p className="font-semibold text-white">{t("No hay mesa disponible para confirmar")}</p>
+      <p className="font-semibold text-white">{t("No table is available")}</p>
       <p className="mt-2 text-rose-100/90">
-        {t("La reserva no puede asignarse en la hora solicitada.")}
+        {t("The reservation cannot be assigned at the requested time.")}
       </p>
 
       {details.reasons?.length ? (
@@ -267,7 +267,7 @@ function AvailabilityConflictCard({ details }: { details: AvailabilityConflictDe
 
       <div className="mt-4 rounded-lg border border-brand-300/30 bg-brand-400/10 p-3 text-brand-50">
         <p className="text-xs font-semibold uppercase text-brand-200">
-          {t("Proxima opcion")}
+          {t("Next option")}
         </p>
         {details.recommendedStartTime ? (
           <>
@@ -275,12 +275,12 @@ function AvailabilityConflictCard({ details }: { details: AvailabilityConflictDe
               {normalizeTimeForInput(details.recommendedStartTime)}
             </p>
             <p className="mt-1 text-sm text-brand-100">
-              {t("Cambia la hora y vuelve a confirmar.")}
+              {t("Change the time and confirm again.")}
             </p>
           </>
         ) : (
           <p className="mt-2 text-sm text-brand-100">
-            {t("No se encontro otra opcion para este dia.")}
+            {t("No other option was found for this date.")}
           </p>
         )}
       </div>
@@ -290,13 +290,13 @@ function AvailabilityConflictCard({ details }: { details: AvailabilityConflictDe
 
 function humanizeAvailabilityReason(reason: string) {
   return reason
-    .replace(/candidate\(s\) rejected due to insufficient_capacity/g, "opciones descartadas por capacidad insuficiente")
-    .replace(/candidate\(s\) rejected due to below_min_capacity/g, "opciones descartadas por capacidad minima demasiado alta")
-    .replace(/candidate\(s\) rejected due to time_overlap/g, "opciones descartadas por solapamiento con otra reserva")
-    .replace(/candidate\(s\) rejected due to accessibility_mismatch/g, "opciones descartadas por accesibilidad")
-    .replace(/candidate\(s\) rejected due to inactive_table/g, "opciones descartadas por mesa inactiva")
-    .replace(/candidate\(s\) rejected due to inactive_dining_room/g, "opciones descartadas por salon inactivo")
-    .replace(/candidate\(s\) rejected due to inactive_combination/g, "opciones descartadas por combinacion inactiva")
-    .replace("No active tables or combinations are configured for this restaurant", "No hay mesas ni combinaciones activas configuradas")
-    .replace("No candidate satisfied the hard constraints", "Ninguna mesa o combinacion cumple las reglas obligatorias");
+    .replace(/candidate\(s\) rejected due to insufficient_capacity/g, "options rejected due to insufficient capacity")
+    .replace(/candidate\(s\) rejected due to below_min_capacity/g, "options rejected due to minimum capacity")
+    .replace(/candidate\(s\) rejected due to time_overlap/g, "options rejected due to another reservation")
+    .replace(/candidate\(s\) rejected due to accessibility_mismatch/g, "options rejected due to accessibility")
+    .replace(/candidate\(s\) rejected due to inactive_table/g, "options rejected because a table is inactive")
+    .replace(/candidate\(s\) rejected due to inactive_dining_room/g, "options rejected because a dining room is inactive")
+    .replace(/candidate\(s\) rejected due to inactive_combination/g, "options rejected because a combination is inactive")
+    .replace("No active tables or combinations are configured for this restaurant", "No active tables or combinations are configured")
+    .replace("No candidate satisfied the hard constraints", "No table or combination satisfies the required rules");
 }

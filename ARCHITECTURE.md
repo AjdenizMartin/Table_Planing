@@ -1,19 +1,19 @@
 # Architecture
 
-## Resumen
+## Summary
 
-La solucion se diseña como un monolito modular con frontend desacoplado. La prioridad es maximizar velocidad de desarrollo, coherencia transaccional y claridad del dominio, manteniendo espacio suficiente para evolucionar a integraciones y capacidades avanzadas.
+The solution is designed as a modular monolith with a decoupled frontend. The priority is to maximize development speed, transactional consistency, and domain clarity while retaining sufficient room to evolve toward advanced integrations and capabilities.
 
-## Objetivos arquitectonicos
+## Architectural Objectives
 
-- soportar uno o varios restaurantes en una unica plataforma
-- permitir configuracion operativa sin tocar codigo
-- mantener consistencia transaccional en reservas y asignaciones
-- ofrecer actualizacion en tiempo real del planning
-- separar claramente algoritmo, negocio y UI
-- permitir crecimiento gradual hacia un SaaS comercial
+- support one or more restaurants on a single platform
+- allow operational configuration without modifying code
+- maintain transactional consistency in reservations and assignments
+- provide real-time planning updates
+- clearly separate the algorithm, business logic, and UI
+- enable gradual growth toward a commercial SaaS
 
-## Arquitectura de alto nivel
+## High-Level Architecture
 
 ```text
 Tablet / Web PWA (React + TypeScript)
@@ -28,17 +28,17 @@ PostgreSQL
         ↓
 Redis (cache, locks, realtime helpers)
         ↓
-Servicios externos
+External services
   - Twilio SMS
   - WhatsApp Cloud API
-  - Proveedor IA via Spring AI
+  - AI provider via Spring AI
 ```
 
-## Estilo arquitectonico
+## Architectural Style
 
 ### Backend
 
-Se recomienda un monolito modular con separacion por dominios:
+A modular monolith separated by domain is recommended:
 
 - `auth`
 - `user`
@@ -55,163 +55,163 @@ Se recomienda un monolito modular con separacion por dominios:
 - `ai`
 - `audit`
 
-Ventajas:
+Advantages:
 
-- transacciones simples y seguras
-- menor complejidad operativa
-- mas velocidad de entrega para MVP
-- dominio fuertemente cohesionado
+- simple, safe transactions
+- lower operational complexity
+- faster MVP delivery
+- highly cohesive domain
 
 ### Frontend
 
-Aplicacion SPA/PWA en React orientada a tablet:
+Tablet-oriented React SPA/PWA application:
 
-- vistas operativas rapidas
-- planning visual por hora y mesa
-- formularios de alta frecuencia de uso
-- sincronizacion con backend por REST y WebSocket
+- fast operational views
+- visual planning by time and table
+- high-frequency-use forms
+- backend synchronization through REST and WebSocket
 
-## Componentes principales
+## Main Components
 
 ### 1. Frontend React PWA
 
-Responsabilidades:
+Responsibilities:
 
-- autenticacion y contexto de restaurante
-- dashboard diario
-- planning visual
-- gestion de reservas y clientes
-- configuracion de salones, mesas y reglas
-- consumo de eventos en tiempo real
+- authentication and restaurant context
+- daily dashboard
+- visual planning
+- reservation and customer management
+- dining room, table, and rule configuration
+- consumption of real-time events
 
 ### 2. API Spring Boot
 
-Responsabilidades:
+Responsibilities:
 
-- exponer endpoints REST
-- aplicar autenticacion y autorizacion
-- coordinar servicios de dominio
-- emitir eventos WebSocket
-- integrar servicios externos
+- expose REST endpoints
+- enforce authentication and authorization
+- coordinate domain services
+- emit WebSocket events
+- integrate external services
 
 ### 3. Planning Engine
 
-Responsabilidades:
+Responsibilities:
 
-- construir el planning diario
-- calcular ventanas efectivas de ocupacion
-- detectar conflictos y huecos
-- preparar informacion operativa para UI
+- build the daily plan
+- calculate effective occupancy windows
+- detect conflicts and gaps
+- prepare operational information for the UI
 
-Implementacion actual:
+Current implementation:
 
-- `PlanningService` orquesta permisos, recalculo, movimientos manuales, auditoria y eventos realtime
-- `PlanningSnapshotService` construye el snapshot diario reutilizable por planning, asignacion e insights
-- `ReservationAssignmentService` no depende de `PlanningService`; usa `PlanningSnapshotService` para regenerar insights despues de asignar
+- `PlanningService` orchestrates permissions, recalculation, manual moves, auditing, and real-time events
+- `PlanningSnapshotService` builds the daily snapshot reused by planning, assignment, and insights
+- `ReservationAssignmentService` does not depend on `PlanningService`; it uses `PlanningSnapshotService` to regenerate insights after assignment
 
 ### 4. Optimization Engine
 
-Responsabilidades:
+Responsibilities:
 
-- buscar mesas y combinaciones validas
-- calcular puntuaciones
-- justificar decisiones
-- probar recolocaciones acotadas
+- find valid tables and combinations
+- calculate scores
+- justify decisions
+- test bounded reallocations
 
 ### 5. Persistence Layer
 
-Responsabilidades:
+Responsibilities:
 
-- almacenar configuracion, reservas, asignaciones y logs
-- asegurar integridad de datos
-- soportar auditoria y multi-tenant
+- store configuration, reservations, assignments, and logs
+- ensure data integrity
+- support auditing and multi-tenancy
 
 ### 6. Notification Layer
 
-Responsabilidades:
+Responsibilities:
 
-- confirmaciones y recordatorios
-- reintentos y logs de envio
-- abstraccion de proveedores
+- confirmations and reminders
+- retries and delivery logs
+- provider abstraction
 
 ### 7. AI Assistance Layer
 
-Responsabilidades:
+Responsibilities:
 
-- explicar decisiones del algoritmo
-- detectar patrones suboptimos
-- sugerir reorganizaciones
-- no tomar decisiones autonomas de asignacion
+- explain algorithm decisions
+- detect suboptimal patterns
+- suggest reorganizations
+- never make autonomous assignment decisions
 
-## Principios clave
+## Key Principles
 
-### 1. El algoritmo manda, la IA explica
+### 1. The Algorithm Decides; AI Explains
 
-La asignacion de mesas debe depender de reglas y scoring determinista. La IA nunca debe sustituir el motor principal.
+Table assignment must depend on rules and deterministic scoring. AI must never replace the primary engine.
 
-### 2. Multi-tenant logico desde el inicio
+### 2. Logical Multi-Tenancy from the Start
 
-Cada recurso de negocio debe estar vinculado a `restaurant_id`. Toda query, permiso y evento debe respetar ese aislamiento.
+Every business resource must be linked to `restaurant_id`. Every query, permission, and event must respect that isolation.
 
-### 3. Configuracion sin codigo
+### 3. Configuration Without Code
 
-El restaurante debe poder crear:
+The restaurant must be able to create:
 
-- salones
-- mesas
-- combinaciones
-- prioridades
-- reglas operativas
+- dining rooms
+- tables
+- combinations
+- priorities
+- operational rules
 
-### 4. Explicabilidad
+### 4. Explainability
 
-Cada asignacion debe poder responder:
+Every assignment must be able to explain:
 
-- que opcion se eligio
-- que alternativas se descartaron
-- que reglas influyeron
+- which option was selected
+- which alternatives were rejected
+- which rules influenced the decision
 
-### 5. Tiempo real con backend como fuente de verdad
+### 5. Real Time with the Backend as the Source of Truth
 
-WebSocket se usa para sincronizacion visual. La validacion y consistencia siguen viviendo en el backend.
+WebSocket is used for visual synchronization. Validation and consistency remain in the backend.
 
-## Seguridad
+## Security
 
-- JWT con access token y refresh token
-- autorizacion basada en roles
-- filtro obligatorio por restaurante
-- auditoria en cambios criticos
-- rate limiting para login y mensajeria
+- JWT with access token and refresh token
+- role-based authorization
+- mandatory filtering by restaurant
+- auditing of critical changes
+- rate limiting for login and messaging
 
-## Roles previstos
+## Planned Roles
 
 - `PLATFORM_ADMIN`
 - `RESTAURANT_OWNER`
 - `MANAGER`
 - `WAITER`
 
-## Modulos del backend
+## Backend Modules
 
-| Modulo | Responsabilidad |
+| Module | Responsibility |
 |---|---|
-| `auth` | login, JWT, refresh y permisos |
-| `user` | usuarios, perfiles y membresias |
-| `restaurant` | datos globales del restaurante |
-| `diningroom` | salones, zonas, prioridades |
-| `table` | mesas, capacidades, estados, layout |
-| `customer` | clientes y preferencias |
-| `reservation` | reservas, estados y ciclo de vida |
-| `planning` | vista operativa del dia y snapshot reutilizable |
-| `optimization` | scoring, candidatos y recolocacion |
-| `availability` | consulta de disponibilidad |
-| `notification` | SMS, WhatsApp y logs |
-| `rules` | reglas configurables del negocio |
-| `ai` | recomendaciones y explicaciones |
-| `audit` | trazabilidad de acciones |
+| `auth` | login, JWT, refresh, and permissions |
+| `user` | users, profiles, and memberships |
+| `restaurant` | global restaurant data |
+| `diningroom` | dining rooms, zones, priorities |
+| `table` | tables, capacities, statuses, layout |
+| `customer` | customers and preferences |
+| `reservation` | reservations, statuses, and lifecycle |
+| `planning` | daily operational view and reusable snapshot |
+| `optimization` | scoring, candidates, and reallocation |
+| `availability` | availability queries |
+| `notification` | SMS, WhatsApp, and logs |
+| `rules` | configurable business rules |
+| `ai` | recommendations and explanations |
+| `audit` | action traceability |
 
-## Infraestructura recomendada
+## Recommended Infrastructure
 
-### Desarrollo
+### Development
 
 - Docker Compose
 - backend
@@ -219,27 +219,27 @@ WebSocket se usa para sincronizacion visual. La validacion y consistencia siguen
 - PostgreSQL
 - Redis
 
-### Produccion inicial
+### Initial Production
 
-- VPS o plataforma tipo Render, Railway o Fly.io
-- Nginx como reverse proxy
-- backend empaquetado en contenedor
-- frontend servido como assets estaticos
-- PostgreSQL gestionado o autoadministrado
+- VPS or a platform such as Render, Railway, or Fly.io
+- Nginx as a reverse proxy
+- backend packaged in a container
+- frontend served as static assets
+- managed or self-managed PostgreSQL
 
-## Observabilidad prevista
+## Planned Observability
 
-- logs estructurados
-- trazas de eventos clave
-- metricas de asignacion y ocupacion
-- auditoria funcional
+- structured logs
+- key event traces
+- assignment and occupancy metrics
+- functional auditing
 
-## Evolucion futura
+## Future Evolution
 
-Se podra separar a futuro:
+The following may be separated in the future:
 
-- servicio de notificaciones
-- integraciones con canales externos
-- analitica avanzada
+- notification service
+- external channel integrations
+- advanced analytics
 
-Pero no se recomienda fragmentar antes de validar el producto y el algoritmo central.
+However, fragmentation is not recommended before validating the product and the core algorithm.

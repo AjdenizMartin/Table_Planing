@@ -1,42 +1,42 @@
 # Pilot UAT Checklist
 
-## Datos y acceso
+## Data and access
 
-- [ ] Dominio y HTTPS validos.
-- [ ] Restaurante, zona horaria, salones y 40 mesas revisados.
-- [ ] Inventario y 20 combinaciones revisados por manager.
-- [ ] Owner, manager y staff acceden con cuentas no compartidas.
-- [ ] Credenciales demo y registro publico no estan disponibles.
-- [ ] Onboarding repetido no duplica usuarios ni cambia contrasenas.
+- [ ] Domain and HTTPS validated.
+- [ ] Restaurant, time zone, dining areas, and 40 tables reviewed.
+- [ ] Inventory and 20 combinations reviewed by the manager.
+- [ ] Owner, manager, and staff access the system with individual accounts.
+- [ ] Demo credentials and public registration are unavailable.
+- [ ] Repeated onboarding does not duplicate users or change passwords.
 
-## Flujo manager
+## Manager workflow
 
-- [ ] Crear una reserva y confirmar que la hora no cambia.
-- [ ] Abrir top 3 sin crear ni modificar una asignacion.
-- [ ] Comparar capacidad, score, coste, preparacion y recursos.
-- [ ] Aplicar una combinacion avanzada y verla en planning.
-- [ ] Confirmar actor, instante, explicacion y recursos en historial.
-- [ ] Reasignar y comprobar que el consumo anterior queda liberado.
-- [ ] Simular dos selecciones simultaneas sobre inventario limitado.
+- [ ] Create a reservation and confirm that the time does not change.
+- [ ] Open the top 3 without creating or modifying an assignment.
+- [ ] Compare capacity, score, cost, preparation, and resources.
+- [ ] Apply an advanced combination and view it in planning.
+- [ ] Confirm the actor, timestamp, explanation, and resources in the history.
+- [ ] Reassign and verify that the previous resource consumption is released.
+- [ ] Simulate two simultaneous selections against limited inventory.
 
-## Flujo staff
+## Staff workflow
 
-- [ ] Ver planning, mesa, preparacion y recursos asignados.
-- [ ] Cambiar llegada, sentado y completado segun permisos.
-- [ ] Confirmar que no aparece la accion de aprobar sugerencias.
-- [ ] Completar el flujo en Chrome sobre tablet Android real.
-- [ ] Validar tactil, teclado virtual, rotacion y reconexion tras suspender la tablet.
+- [ ] View planning, table, preparation, and assigned resources.
+- [ ] Change arrival, seated, and completed statuses according to permissions.
+- [ ] Confirm that the action to approve suggestions is not displayed.
+- [ ] Complete the workflow in Chrome on a physical Android tablet.
+- [ ] Validate touch input, the virtual keyboard, rotation, and reconnection after suspending the tablet.
 
-## Resiliencia
+## Resilience
 
-- [ ] Ejecutar 150 reservas/40 mesas/20 combinaciones.
-- [ ] Planning responde por debajo de 2 s en VPS.
-- [ ] Sugerencias responden por debajo de 1 s en VPS.
-- [ ] Backup diario creado y copiado fuera del VPS.
-- [ ] Restic valida el repositorio cifrado sin errores.
-- [ ] Restauracion realizada y documentada.
-- [ ] Rollback ensayado con la version anterior.
-- [ ] Dos turnos paralelos completados usando el procedimiento manual como respaldo.
-- [ ] CI completamente verde y cero incidencias criticas abiertas.
+- [ ] Run 150 reservations/40 tables/20 combinations.
+- [ ] Planning responds in under 2 seconds on the VPS.
+- [ ] Suggestions respond in under 1 second on the VPS.
+- [ ] Daily backup created and copied off the VPS.
+- [ ] Restic validates the encrypted repository without errors.
+- [ ] Restoration completed and documented.
+- [ ] Rollback rehearsed with the previous version.
+- [ ] Two concurrent shifts completed using the manual procedure as a fallback.
+- [ ] CI fully green and zero open critical incidents.
 
-Firmas: owner, manager, responsable tecnico y fecha de aprobacion.
+Signatures: owner, manager, technical lead, and approval date.
